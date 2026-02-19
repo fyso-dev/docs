@@ -56,6 +56,11 @@ const config: Config = {
           label: 'Documentación',
         },
         {
+          href: 'https://app.fyso.dev',
+          label: 'Panel',
+          position: 'right',
+        },
+        {
           type: 'localeDropdown',
           position: 'right',
         },
@@ -70,27 +75,27 @@ const config: Config = {
       style: 'dark',
       links: [
         {
-          title: 'Docs',
+          title: 'Documentación',
           items: [
             {
-              label: 'Getting Started',
-              to: '/docs/getting-started/quick-start',
+              label: 'Inicio',
+              to: '/docs',
             },
             {
-              label: 'MCP Reference',
-              to: '/docs/api/mcp-tools',
+              label: 'Entidades',
+              to: '/docs/category/entidades',
             },
             {
-              label: 'REST API',
-              to: '/docs/api/rest-api',
+              label: 'API REST',
+              to: '/docs/category/api-rest',
             },
           ],
         },
         {
-          title: 'Fyso',
+          title: 'Plataforma',
           items: [
             {
-              label: 'Dashboard',
+              label: 'Panel',
               href: 'https://app.fyso.dev',
             },
             {
@@ -100,7 +105,7 @@ const config: Config = {
           ],
         },
         {
-          title: 'Community',
+          title: 'Comunidad',
           items: [
             {
               label: 'GitHub',
@@ -108,8 +113,25 @@ const config: Config = {
             },
           ],
         },
+        {
+          title: 'Legal',
+          items: [
+            {
+              label: 'Privacidad',
+              href: 'https://app.fyso.dev/privacy',
+            },
+            {
+              label: 'Términos',
+              href: 'https://app.fyso.dev/terms',
+            },
+            {
+              label: 'Cookies',
+              href: 'https://app.fyso.dev/cookies',
+            },
+          ],
+        },
       ],
-      copyright: `Copyright © ${new Date().getFullYear()} Fyso. Built with Docusaurus.`,
+      copyright: `Copyright © ${new Date().getFullYear()} Fyso. Hecho en España.`,
     },
     prism: {
       theme: prismThemes.github,
