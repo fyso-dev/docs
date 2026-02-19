@@ -73,8 +73,16 @@ const config: Config = {
           title: 'Docs',
           items: [
             {
-              label: 'Inicio',
-              to: '/docs',
+              label: 'Getting Started',
+              to: '/docs/getting-started/quick-start',
+            },
+            {
+              label: 'MCP Reference',
+              to: '/docs/api/mcp-tools',
+            },
+            {
+              label: 'REST API',
+              to: '/docs/api/rest-api',
             },
           ],
         },
@@ -82,8 +90,21 @@ const config: Config = {
           title: 'Fyso',
           items: [
             {
-              label: 'Panel',
+              label: 'Dashboard',
               href: 'https://app.fyso.dev',
+            },
+            {
+              label: 'Landing',
+              href: 'https://fyso.dev',
+            },
+          ],
+        },
+        {
+          title: 'Community',
+          items: [
+            {
+              label: 'GitHub',
+              href: 'https://github.com/fyso-dev/docs',
             },
           ],
         },
