@@ -1,12 +1,12 @@
-# Reglas de negocio
+# Business Rules
 
-Las reglas de negocio automatizan logica sobre los datos: calculos, validaciones y acciones.
+Business rules automate logic over data: computations, validations, and actions.
 
-## Tipos de reglas
+## Rule Types
 
 ### compute
 
-Calcula campos automaticamente cuando cambian otros campos.
+Calculates fields automatically when other fields change.
 
 ```json
 {
@@ -20,7 +20,7 @@ Calcula campos automaticamente cuando cambian otros campos.
 
 ### validate
 
-Valida datos antes de guardar el registro. Si la validacion falla, el guardado se rechaza.
+Validates data before saving the record. If the validation fails, the save is rejected.
 
 ```json
 {
@@ -37,7 +37,7 @@ Valida datos antes de guardar el registro. Si la validacion falla, el guardado s
 
 ### action
 
-Ejecuta efectos secundarios despues de guardar (ej: actualizar registros relacionados).
+Executes side effects after saving (e.g., update related records).
 
 ```json
 {
@@ -61,32 +61,32 @@ Ejecuta efectos secundarios despues de guardar (ej: actualizar registros relacio
 }
 ```
 
-## Ciclo de vida
+## Lifecycle
 
-Las reglas tienen el mismo ciclo draft/published que las entidades:
+Rules have the same draft/published lifecycle as entities:
 
-1. Se crean como **draft**
-2. Se publican con `publish_business_rule`
-3. Solo las reglas publicadas se ejecutan
+1. Created as a **draft**
+2. Published with `publish_business_rule`
+3. Only published rules are executed
 
-## Trigger types
+## Trigger Types
 
-| Tipo | Cuando se ejecuta |
-|------|-------------------|
-| `field_change` | Cuando cambia uno de los campos trigger (default) |
-| `before_save` | Antes de guardar el registro |
-| `after_save` | Despues de guardar el registro |
-| `on_load` | Al cargar el registro |
+| Type | When it executes |
+|------|-----------------|
+| `field_change` | When one of the trigger fields changes (default) |
+| `before_save` | Before saving the record |
+| `after_save` | After saving the record |
+| `on_load` | When loading the record |
 
-## Tools MCP relacionados
+## Related MCP Tools
 
-| Tool | Perfil | Descripcion |
-|------|--------|-------------|
-| `generate_business_rule` | core | Crear regla (via DSL o prompt) |
-| `create_business_rule` | advanced | Crear regla con DSL directo |
-| `list_business_rules` | core | Listar reglas de una entidad |
-| `get_business_rule` | advanced | Ver detalle de una regla |
-| `test_business_rule` | advanced | Probar una regla con datos de prueba |
-| `publish_business_rule` | core | Publicar una regla draft |
-| `delete_business_rule` | advanced | Eliminar una regla |
-| `get_rule_logs` | advanced | Ver logs de ejecucion |
+| Tool | Profile | Description |
+|------|---------|-------------|
+| `generate_business_rule` | core | Create rule (via DSL or prompt) |
+| `create_business_rule` | advanced | Create rule with direct DSL |
+| `list_business_rules` | core | List rules for an entity |
+| `get_business_rule` | advanced | View rule details |
+| `test_business_rule` | advanced | Test a rule with test data |
+| `publish_business_rule` | core | Publish a draft rule |
+| `delete_business_rule` | advanced | Delete a rule |
+| `get_rule_logs` | advanced | View execution logs |

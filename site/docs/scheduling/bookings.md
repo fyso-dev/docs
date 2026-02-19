@@ -1,30 +1,30 @@
-# Reservas (Bookings)
+# Bookings
 
 ## MCP Tool: `create_booking`
 
-**Perfil:** core
+**Profile:** core
 
-Crea una reserva validando primero que el slot este disponible.
+Creates a booking after validating that the slot is available.
 
-### Parametros
+### Parameters
 
-| Parametro | Tipo | Requerido | Descripcion |
-|-----------|------|-----------|-------------|
-| `profesional_id` | string | Si | UUID del profesional |
-| `paciente_id` | string | Si | UUID del paciente/cliente |
-| `fecha` | string | Si | Fecha (YYYY-MM-DD) |
-| `hora` | string | Si | Hora (HH:MM) |
-| `duracion` | number | No | Duracion en minutos. Default: duracion del slot del profesional |
-| `notas` | string | No | Notas opcionales |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `profesional_id` | string | Yes | Professional's UUID |
+| `paciente_id` | string | Yes | Patient/client UUID |
+| `fecha` | string | Yes | Date (YYYY-MM-DD) |
+| `hora` | string | Yes | Time (HH:MM) |
+| `duracion` | number | No | Duration in minutes. Default: professional's slot duration |
+| `notas` | string | No | Optional notes |
 
-### Flujo interno
+### Internal Flow
 
-1. Consulta slots disponibles para la fecha
-2. Verifica que `fecha + hora` este en la lista de slots disponibles
-3. Si esta disponible, crea un registro en la entidad `turnos` con `estado = "confirmado"`
-4. Si no esta disponible, retorna error
+1. Queries available slots for the date
+2. Verifies that `fecha + hora` is in the available slots list
+3. If available, creates a record in the `turnos` entity with `estado = "confirmado"`
+4. If not available, returns an error
 
-### Ejemplo
+### Example
 
 ```
 create_booking({
@@ -36,7 +36,7 @@ create_booking({
 })
 ```
 
-### Respuesta exitosa
+### Successful Response
 
 ```json
 {
@@ -55,7 +55,7 @@ create_booking({
 }
 ```
 
-### Error: slot no disponible
+### Error: Slot Not Available
 
 ```json
 {
@@ -64,9 +64,9 @@ create_booking({
 }
 ```
 
-## Cancelar un turno
+## Cancel an Appointment
 
-No hay tool dedicado para cancelar. Actualizar el registro directamente:
+There is no dedicated tool for canceling. Update the record directly:
 
 ```
 update_record({
@@ -78,7 +78,7 @@ update_record({
 
 ## REST API
 
-El endpoint REST para disponibilidad:
+The REST endpoint for availability:
 
 ```
 GET /api/scheduling/available-slots?profesional_id=uuid&fecha=2026-02-20

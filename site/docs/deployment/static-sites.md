@@ -1,29 +1,29 @@
-# Sites estaticos
+# Static Sites
 
-Fyso permite desplegar sitios estaticos (Astro, Vite, Next.js export, etc.) en subdominios de `sites.fyso.dev`.
+Fyso allows deploying static sites (Astro, Vite, Next.js export, etc.) on subdomains of `sites.fyso.dev`.
 
 ## MCP Tool: `deploy_static_site`
 
-**Perfil:** core
+**Profile:** core
 
-### Parametros
+### Parameters
 
-| Parametro | Tipo | Requerido | Descripcion |
-|-----------|------|-----------|-------------|
-| `subdomain` | string | Si | Subdominio (ej: `"mi-portfolio"` -> `mi-portfolio.sites.fyso.dev`) |
-| `path` | string | Condicional | Ruta absoluta al directorio de build (ej: `/home/user/my-site/dist`) |
-| `bundle_base64` | string | Condicional | ZIP en base64 (solo para sites < 5KB) |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `subdomain` | string | Yes | Subdomain (e.g., `"mi-portfolio"` -> `mi-portfolio.sites.fyso.dev`) |
+| `path` | string | Conditional | Absolute path to the build directory (e.g., `/home/user/my-site/dist`) |
+| `bundle_base64` | string | Conditional | ZIP in base64 (only for sites < 5KB) |
 
-Se debe proporcionar `path` o `bundle_base64`.
+Either `path` or `bundle_base64` must be provided.
 
-### Restricciones del subdomain
+### Subdomain Restrictions
 
-- Solo letras minusculas, numeros y guiones
-- Sin espacios ni caracteres especiales
+- Only lowercase letters, numbers, and hyphens
+- No spaces or special characters
 
-### Modo local (MCP tiene acceso al filesystem)
+### Local Mode (MCP has filesystem access)
 
-El MCP server comprime el directorio y lo sube automaticamente:
+The MCP server compresses the directory and uploads it automatically:
 
 ```
 deploy_static_site({
@@ -32,9 +32,9 @@ deploy_static_site({
 })
 ```
 
-### Modo remoto (MCP no tiene acceso al filesystem)
+### Remote Mode (MCP does not have filesystem access)
 
-Si el MCP server no puede acceder a la ruta, retorna un comando `curl` para ejecutar manualmente:
+If the MCP server cannot access the path, it returns a `curl` command to execute manually:
 
 ```json
 {
@@ -47,9 +47,9 @@ Si el MCP server no puede acceder a la ruta, retorna un comando `curl` para ejec
 }
 ```
 
-El agente debe ejecutar el comando retornado con el tool Bash.
+The agent must execute the returned command using the Bash tool.
 
-### Respuesta exitosa
+### Successful Response
 
 ```json
 {
@@ -64,41 +64,41 @@ El agente debe ejecutar el comando retornado con el tool Bash.
 
 ## MCP Tool: `list_static_sites`
 
-**Perfil:** core
+**Profile:** core
 
-Lista todos los deployments activos.
+Lists all active deployments.
 
 ```
 list_static_sites()
 ```
 
-Retorna subdominio, URL, tamano y fecha de deploy.
+Returns subdomain, URL, size, and deployment date.
 
 ## MCP Tool: `delete_static_site`
 
-**Perfil:** advanced
+**Profile:** advanced
 
-Elimina un site desplegado.
+Deletes a deployed site.
 
-### Parametros
+### Parameters
 
-| Parametro | Tipo | Requerido | Descripcion |
-|-----------|------|-----------|-------------|
-| `subdomain` | string | Si | Subdominio del site a eliminar |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `subdomain` | string | Yes | Subdomain of the site to delete |
 
-## Limites
+## Limits
 
 | Plan | Sites |
 |------|-------|
 | Free | 1 |
-| Pro | Ilimitado |
+| Pro | Unlimited |
 
-## Frameworks soportados
+## Supported Frameworks
 
-Cualquier framework que genere output estatico:
+Any framework that generates static output:
 
 - **Astro** -- `npm run build` -> `dist/`
 - **Vite** -- `npm run build` -> `dist/`
 - **Next.js** (export) -- `next export` -> `out/`
 - **Create React App** -- `npm run build` -> `build/`
-- **HTML/CSS/JS puro** -- directorio con `index.html`
+- **Plain HTML/CSS/JS** -- directory with `index.html`

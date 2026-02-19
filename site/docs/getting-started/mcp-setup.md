@@ -1,15 +1,15 @@
-# Configurar MCP
+# Configure MCP
 
-Fyso se conecta a agentes de IA a traves del protocolo MCP (Model Context Protocol).
+Fyso connects to AI agents through the MCP (Model Context Protocol) protocol.
 
-## Requisitos
+## Requirements
 
 - Node.js 18+
-- API key de Fyso (obtenida desde el panel admin o el script de setup)
+- Fyso API key (obtained from the admin panel or the setup script)
 
-## Configuracion en Claude Desktop
+## Configuration in Claude Desktop
 
-Agrega la siguiente configuracion en tu archivo `claude_desktop_config.json`:
+Add the following configuration to your `claude_desktop_config.json` file:
 
 ```json
 {
@@ -27,33 +27,33 @@ Agrega la siguiente configuracion en tu archivo `claude_desktop_config.json`:
 }
 ```
 
-## Variables de entorno
+## Environment Variables
 
-| Variable | Requerida | Descripcion |
-|----------|-----------|-------------|
-| `FYSO_API_KEY` | Si | API key para autenticacion |
-| `FYSO_API_URL` | Si | URL base de la API (ej: `https://api.fyso.dev/api`) |
-| `FYSO_TOOLS` | No | Perfil de herramientas: `core` (default), `advanced`, `all` |
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `FYSO_API_KEY` | Yes | API key for authentication |
+| `FYSO_API_URL` | Yes | Base URL of the API (e.g., `https://api.fyso.dev/api`) |
+| `FYSO_TOOLS` | No | Tool profile: `core` (default), `advanced`, `all` |
 
-## Verificar conexion
+## Verify Connection
 
-Una vez configurado, el agente puede verificar la conexion:
+Once configured, the agent can verify the connection:
 
 ```
 list_tenants()
 ```
 
-Deberia devolver la lista de tenants accesibles.
+It should return the list of accessible tenants.
 
-## Flujo tipico de sesion MCP
+## Typical MCP Session Flow
 
-1. `list_tenants()` -- ver tenants disponibles
-2. `select_tenant({ tenantSlug: "mi-empresa" })` -- seleccionar contexto
-3. `list_entities()` -- ver entidades existentes
-4. Trabajar con entidades, registros y reglas
+1. `list_tenants()` -- see available tenants
+2. `select_tenant({ tenantSlug: "mi-empresa" })` -- select context
+3. `list_entities()` -- see existing entities
+4. Work with entities, records, and rules
 
-Todos los tools posteriores a `select_tenant` operan en el contexto del tenant seleccionado.
+All tools after `select_tenant` operate in the context of the selected tenant.
 
-## Perfiles de herramientas
+## Tool Profiles
 
-Ver [Tool Profiles](../api/tool-profiles.md) para el detalle de que herramientas incluye cada perfil.
+See [Tool Profiles](../api/tool-profiles.md) for details on which tools each profile includes.

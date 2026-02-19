@@ -1,33 +1,33 @@
-# Generar PDFs
+# Generate PDFs
 
 ## MCP Tool: `generate_pdf`
 
-**Perfil:** core
+**Profile:** core
 
-Genera un PDF combinando una plantilla con datos de un registro.
+Generates a PDF by combining a template with data from a record.
 
-### Parametros
+### Parameters
 
-| Parametro | Tipo | Requerido | Descripcion |
-|-----------|------|-----------|-------------|
-| `templateId` | string | Si | ID del registro en `pdf_templates` |
-| `recordId` | string | No | ID del registro con los datos |
-| `entityName` | string | Condicional | Nombre de la entidad (requerido si se usa `recordId`) |
-| `data` | object | No | Datos adicionales o override. Keys = nombres de campo del template |
-| `store` | boolean | No | Guardar el PDF en storage. Default: true |
-| `updateField` | string | No | Campo del registro donde guardar la referencia al PDF. Default: `pdf_documento` |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `templateId` | string | Yes | ID of the record in `pdf_templates` |
+| `recordId` | string | No | ID of the record with the data |
+| `entityName` | string | Conditional | Entity name (required if using `recordId`) |
+| `data` | object | No | Additional or override data. Keys = template field names |
+| `store` | boolean | No | Save the PDF to storage. Default: true |
+| `updateField` | string | No | Record field where to save the PDF reference. Default: `pdf_documento` |
 
-### Flujo de generacion
+### Generation Flow
 
-1. Busca la plantilla por `templateId`
-2. Si se proporciona `recordId`, busca el registro de la entidad
-3. Mapea los campos: el `name` del template debe coincidir con el `fieldKey` del registro
-4. Si se proporciona `data`, se mergea (override) sobre los datos del registro
-5. Genera el PDF
-6. Si `store=true`, lo guarda en file storage
-7. Si `updateField` esta definido, actualiza ese campo del registro con el link al PDF
+1. Finds the template by `templateId`
+2. If `recordId` is provided, fetches the record from the entity
+3. Maps the fields: the template `name` must match the record `fieldKey`
+4. If `data` is provided, it is merged (override) over the record data
+5. Generates the PDF
+6. If `store=true`, saves it to file storage
+7. If `updateField` is defined, updates that field of the record with the PDF link
 
-### Ejemplo: PDF de una factura
+### Example: Invoice PDF
 
 ```
 generate_pdf({
@@ -38,7 +38,7 @@ generate_pdf({
 })
 ```
 
-### Ejemplo: PDF con datos custom
+### Example: PDF with Custom Data
 
 ```
 generate_pdf({
@@ -51,7 +51,7 @@ generate_pdf({
 })
 ```
 
-### Ejemplo: PDF de registro con datos extra
+### Example: Record PDF with Extra Data
 
 ```
 generate_pdf({
@@ -64,12 +64,12 @@ generate_pdf({
 })
 ```
 
-### Respuesta
+### Response
 
-Retorna los metadatos del archivo generado (URL, tamano, etc.) o el PDF en base64 si `store=false`.
+Returns the metadata of the generated file (URL, size, etc.) or the PDF in base64 if `store=false`.
 
-### Notas
+### Notes
 
-- Los nombres de campos importan: el `name` en el template JSON debe ser exactamente igual al `fieldKey` de la entidad
-- Los datos en `data` sobreescriben los del registro si ambos existen para el mismo campo
-- Para campos calculados o texto fijo que no esta en el registro, usar el parametro `data`
+- Field names matter: the `name` in the template JSON must be exactly the same as the entity's `fieldKey`
+- Data in `data` overrides record data if both exist for the same field
+- For calculated fields or fixed text not in the record, use the `data` parameter

@@ -1,8 +1,8 @@
-# CI/CD con GitHub Actions
+# CI/CD with GitHub Actions
 
-Ejemplo de configuracion para desplegar automaticamente a Fyso Sites desde GitHub Actions.
+Example configuration for automatically deploying to Fyso Sites from GitHub Actions.
 
-## Workflow basico
+## Basic Workflow
 
 ```yaml
 name: Deploy to Fyso Sites
@@ -36,17 +36,17 @@ jobs:
             -F "file=@/tmp/site.zip"
 ```
 
-## Secrets requeridos
+## Required Secrets
 
-Configurar en Settings > Secrets and variables > Actions:
+Configure in Settings > Secrets and variables > Actions:
 
-| Secret | Valor |
+| Secret | Value |
 |--------|-------|
-| `FYSO_API_KEY` | Tu API key de Fyso |
-| `FYSO_API_URL` | URL de la API (ej: `https://api.fyso.dev/api`) |
+| `FYSO_API_KEY` | Your Fyso API key |
+| `FYSO_API_URL` | API URL (e.g., `https://api.fyso.dev/api`) |
 
-## Notas
+## Notes
 
-- El directorio de build depende del framework (`dist/`, `build/`, `out/`)
-- El subdomain debe existir previamente (crear con `deploy_static_site` la primera vez)
-- Los deployments sucesivos reemplazan el contenido anterior
+- The build directory depends on the framework (`dist/`, `build/`, `out/`)
+- The subdomain must exist beforehand (create with `deploy_static_site` the first time)
+- Successive deployments replace the previous content

@@ -1,42 +1,42 @@
-# Conceptos clave
+# Key Concepts
 
 ## Tenant
 
-Un tenant es un espacio de trabajo aislado. Cada tenant tiene su propio esquema de base de datos, sus entidades, reglas, usuarios y configuraciones. Los datos entre tenants estan completamente separados.
+A tenant is an isolated workspace. Each tenant has its own database schema, entities, rules, users, and configurations. Data between tenants is completely separated.
 
-- Cada tenant tiene un **slug** unico (ej: `mi-empresa`)
-- Un admin puede tener acceso a multiples tenants
-- Se selecciona el tenant activo al inicio de cada sesion MCP
+- Each tenant has a unique **slug** (e.g., `mi-empresa`)
+- An admin can have access to multiple tenants
+- The active tenant is selected at the start of each MCP session
 
-## Entidad (Entity)
+## Entity
 
-Una entidad define la estructura de datos -- equivale a una tabla. Tiene un nombre, campos y configuracion.
+An entity defines the data structure -- it is equivalent to a table. It has a name, fields, and configuration.
 
-**Ciclo de vida:**
-1. Se crea como **draft** (borrador)
-2. Se **publica** con un mensaje de version
-3. Cada cambio crea un nuevo draft que debe publicarse
+**Lifecycle:**
+1. Created as a **draft**
+2. **Published** with a version message
+3. Each change creates a new draft that must be published
 
-Cada entidad tiene campos del sistema (`id`, `created_at`, `updated_at`) y campos definidos por el usuario.
+Each entity has system fields (`id`, `created_at`, `updated_at`) and user-defined fields.
 
-## Campo (Field)
+## Field
 
-Los campos definen las columnas de una entidad.
+Fields define the columns of an entity.
 
-| Propiedad | Descripcion |
-|-----------|-------------|
-| `name` | Nombre visible (ej: "Nombre del cliente") |
-| `fieldKey` | Clave tecnica (ej: `nombre_cliente`) |
-| `fieldType` | Tipo de dato (ver [Tipos de campo](../entities/field-types.md)) |
-| `isRequired` | Si es obligatorio |
-| `isUnique` | Si el valor debe ser unico |
-| `config` | Configuracion especifica del tipo |
+| Property | Description |
+|----------|-------------|
+| `name` | Display name (e.g., "Customer Name") |
+| `fieldKey` | Technical key (e.g., `nombre_cliente`) |
+| `fieldType` | Data type (see [Field Types](../entities/field-types.md)) |
+| `isRequired` | Whether it is required |
+| `isUnique` | Whether the value must be unique |
+| `config` | Type-specific configuration |
 
-**Tipos de campos disponibles:** `text`, `textarea`, `number`, `email`, `phone`, `date`, `boolean`, `select`, `relation`, `file`, `location`.
+**Available field types:** `text`, `textarea`, `number`, `email`, `phone`, `date`, `boolean`, `select`, `relation`, `file`, `location`.
 
-## Registro (Record)
+## Record
 
-Un registro es una fila dentro de una entidad. La estructura en la base de datos es:
+A record is a row within an entity. The database structure is:
 
 ```json
 {
@@ -51,27 +51,27 @@ Un registro es una fila dentro de una entidad. La estructura en la base de datos
 }
 ```
 
-**Importante:** Los campos de la entidad estan dentro de `record.data`, no en la raiz del registro. Acceso correcto: `record.data.email`.
+**Important:** Entity fields are inside `record.data`, not at the root of the record. Correct access: `record.data.email`.
 
-## Regla de negocio (Business Rule)
+## Business Rule
 
-Las reglas automatizan logica sobre los datos. Se definen usando un DSL (Domain Specific Language).
+Rules automate logic over data. They are defined using a DSL (Domain Specific Language).
 
-**Tipos:**
-- **compute** -- Calcula campos automaticamente (ej: `total = cantidad * precio`)
-- **validate** -- Valida datos antes de guardar (ej: "el precio debe ser positivo")
-- **action** -- Ejecuta efectos secundarios despues de guardar (ej: actualizar un registro padre)
+**Types:**
+- **compute** -- Calculates fields automatically (e.g., `total = cantidad * precio`)
+- **validate** -- Validates data before saving (e.g., "the price must be positive")
+- **action** -- Executes side effects after saving (e.g., update a parent record)
 
-Las reglas tambien tienen ciclo de vida draft/published.
+Rules also have a draft/published lifecycle.
 
-## Perfiles de herramientas (Tool Profiles)
+## Tool Profiles
 
-Fyso expone herramientas MCP en tres niveles:
+Fyso exposes MCP tools in three levels:
 
-| Perfil | Cantidad | Uso |
-|--------|----------|-----|
-| `core` | ~26 tools | Para uso diario -- crear entidades, CRUD, reglas, deploy |
-| `advanced` | ~38 tools | Agrega delete, test, flows, secrets, logs |
-| `all` | ~49 tools | Todo, incluyendo channels y bots |
+| Profile | Count | Usage |
+|---------|-------|-------|
+| `core` | ~26 tools | For daily use -- create entities, CRUD, rules, deploy |
+| `advanced` | ~38 tools | Adds delete, test, flows, secrets, logs |
+| `all` | ~49 tools | Everything, including channels and bots |
 
-Se configura via la variable de entorno `FYSO_TOOLS` (valores: `core`, `advanced`, `all`). Default: `core`.
+Configured via the `FYSO_TOOLS` environment variable (values: `core`, `advanced`, `all`). Default: `core`.

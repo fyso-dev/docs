@@ -1,47 +1,47 @@
-# Planes y limites
+# Plans and Limits
 
-Fyso ofrece planes con distintos limites de uso.
+Fyso offers plans with different usage limits.
 
-## Comparacion de planes
+## Plan Comparison
 
-| Recurso | Free | Pro | Beta |
-|---------|------|-----|------|
-| Entidades | 3 | Ilimitado | Ilimitado |
-| Registros | 500 | Ilimitado | Ilimitado |
-| Sites estaticos | 1 | Ilimitado | Ilimitado |
-| Usuarios | 2 | Ilimitado | Ilimitado |
+| Resource | Free | Pro | Beta |
+|----------|------|-----|------|
+| Entities | 3 | Unlimited | Unlimited |
+| Records | 500 | Unlimited | Unlimited |
+| Static sites | 1 | Unlimited | Unlimited |
+| Users | 2 | Unlimited | Unlimited |
 
-## Plan Free
+## Free Plan
 
-Incluido sin costo. Ideal para probar la plataforma o proyectos pequenos.
+Included at no cost. Ideal for testing the platform or small projects.
 
-**Limites:**
-- Hasta 3 entidades
-- Hasta 500 registros totales (sumando todas las entidades)
-- 1 site estatico
-- 2 usuarios del tenant
+**Limits:**
+- Up to 3 entities
+- Up to 500 total records (across all entities)
+- 1 static site
+- 2 tenant users
 
-Cuando se alcanza un limite, la operacion se rechaza con un mensaje descriptivo.
+When a limit is reached, the operation is rejected with a descriptive message.
 
-## Plan Pro
+## Pro Plan
 
-Plan completo sin restricciones de uso.
+Full plan with no usage restrictions.
 
-**Incluye:**
-- Entidades ilimitadas
-- Registros ilimitados
-- Sites estaticos ilimitados
-- Usuarios ilimitados
+**Includes:**
+- Unlimited entities
+- Unlimited records
+- Unlimited static sites
+- Unlimited users
 
-## Plan Beta
+## Beta Plan
 
-Acceso completo durante la fase beta de Fyso. Mismos limites que Pro.
+Full access during the Fyso beta phase. Same limits as Pro.
 
-## Verificar uso actual
+## Check Current Usage
 
-El uso se puede consultar desde el panel admin. Muestra:
-- Plan actual
-- Entidades: usadas / limite
-- Registros: usados / limite
-- Sites: usados / limite
-- Usuarios: usados / limite
+Usage can be checked from the admin panel. It shows:
+- Current plan
+- Entities: used / limit
+- Records: used / limit
+- Sites: used / limit
+- Users: used / limit

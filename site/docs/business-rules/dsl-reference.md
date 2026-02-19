@@ -1,8 +1,8 @@
 # DSL Reference
 
-Referencia completa del DSL (Domain Specific Language) para reglas de negocio en Fyso.
+Complete reference for the DSL (Domain Specific Language) for business rules in Fyso.
 
-## Estructura general
+## General Structure
 
 ```json
 {
@@ -18,9 +18,9 @@ Referencia completa del DSL (Domain Specific Language) para reglas de negocio en
 
 ## Compute
 
-Calcula valores automaticamente. Soporta varios formatos:
+Calculates values automatically. Supports several formats:
 
-### Formula simple (shorthand)
+### Simple Formula (shorthand)
 
 ```json
 {
@@ -30,7 +30,7 @@ Calcula valores automaticamente. Soporta varios formatos:
 }
 ```
 
-El shorthand se normaliza internamente a:
+The shorthand is internally normalized to:
 
 ```json
 {
@@ -40,7 +40,7 @@ El shorthand se normaliza internamente a:
 }
 ```
 
-### Formula explicita
+### Explicit Formula
 
 ```json
 {
@@ -51,9 +51,9 @@ El shorthand se normaliza internamente a:
 }
 ```
 
-### Condicional
+### Conditional
 
-Calcula un valor basado en condiciones:
+Calculates a value based on conditions:
 
 ```json
 {
@@ -73,7 +73,7 @@ Calcula un valor basado en condiciones:
 
 ### Lookup
 
-Busca un valor en otra entidad:
+Looks up a value in another entity:
 
 ```json
 {
@@ -89,16 +89,16 @@ Busca un valor en otra entidad:
 }
 ```
 
-| Propiedad | Tipo | Descripcion |
-|-----------|------|-------------|
-| `entity` | string | Entidad donde buscar |
-| `matchField` | string | Campo de la entidad destino para hacer match |
-| `matchValue` | string | Campo del registro actual con el valor a buscar |
-| `resultField` | string | Campo de la entidad destino cuyo valor retornar |
+| Property | Type | Description |
+|----------|------|-------------|
+| `entity` | string | Entity to search in |
+| `matchField` | string | Field in the target entity to match against |
+| `matchValue` | string | Field in the current record containing the value to search for |
+| `resultField` | string | Field in the target entity whose value to return |
 
 ### Aggregate
 
-Agrega valores de multiples registros de otra entidad:
+Aggregates values from multiple records of another entity:
 
 ```json
 {
@@ -120,16 +120,16 @@ Agrega valores de multiples registros de otra entidad:
 }
 ```
 
-| Propiedad | Tipo | Descripcion |
-|-----------|------|-------------|
-| `entity` | string | Entidad a agregar |
-| `aggregateOp` | string | Operacion: `"sum"` o `"count"` |
-| `aggregateField` | string | Campo a sumar (requerido para `sum`) |
-| `filter` | object | Filtro: `{ campo_destino: "campo_actual" }` |
+| Property | Type | Description |
+|----------|------|-------------|
+| `entity` | string | Entity to aggregate |
+| `aggregateOp` | string | Operation: `"sum"` or `"count"` |
+| `aggregateField` | string | Field to sum (required for `sum`) |
+| `filter` | object | Filter: `{ target_field: "current_field" }` |
 
 ## Validate
 
-Array de reglas de validacion:
+Array of validation rules:
 
 ```json
 {
@@ -145,17 +145,17 @@ Array de reglas de validacion:
 }
 ```
 
-| Propiedad | Tipo | Requerido | Descripcion |
-|-----------|------|-----------|-------------|
-| `id` | string | Si | Identificador unico de la validacion |
-| `condition` | string | Si | Expresion booleana que debe ser verdadera |
-| `message` | string | Si | Mensaje de error si la condicion es falsa |
-| `severity` | string | Si | `"error"` (bloquea guardado), `"warning"`, `"info"` |
-| `field` | string | No | Campo al que asociar el error en la UI |
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| `id` | string | Yes | Unique identifier for the validation |
+| `condition` | string | Yes | Boolean expression that must be true |
+| `message` | string | Yes | Error message if the condition is false |
+| `severity` | string | Yes | `"error"` (blocks save), `"warning"`, `"info"` |
+| `field` | string | No | Field to associate the error with in the UI |
 
 ## Transform
 
-Transforma valores de campos:
+Transforms field values:
 
 ```json
 {
@@ -168,16 +168,16 @@ Transforma valores de campos:
 }
 ```
 
-| Tipo | Descripcion |
+| Type | Description |
 |------|-------------|
-| `uppercase` | Convierte a mayusculas |
-| `lowercase` | Convierte a minusculas |
-| `trim` | Elimina espacios al inicio y final |
-| `round` | Redondea a N decimales |
+| `uppercase` | Converts to uppercase |
+| `lowercase` | Converts to lowercase |
+| `trim` | Removes leading and trailing whitespace |
+| `round` | Rounds to N decimal places |
 
 ## Actions
 
-Efectos secundarios que se ejecutan despues de guardar:
+Side effects that execute after saving:
 
 ```json
 {
@@ -200,28 +200,28 @@ Efectos secundarios que se ejecutan despues de guardar:
 }
 ```
 
-## Operadores permitidos
+## Allowed Operators
 
-| Categoria | Operadores |
-|-----------|-----------|
-| Aritmeticos | `+`, `-`, `*`, `/` |
-| Comparacion | `>`, `<`, `>=`, `<=`, `==`, `!=` |
-| Logicos | `and`, `or` |
+| Category | Operators |
+|----------|-----------|
+| Arithmetic | `+`, `-`, `*`, `/` |
+| Comparison | `>`, `<`, `>=`, `<=`, `==`, `!=` |
+| Logical | `and`, `or` |
 
-## Funciones permitidas
+## Allowed Functions
 
-| Funcion | Descripcion | Ejemplo |
-|---------|-------------|---------|
-| `round(x, n)` | Redondea a n decimales | `round(total, 2)` |
-| `coalesce(a, b)` | Primer valor no nulo | `coalesce(descuento, 0)` |
-| `abs(x)` | Valor absoluto | `abs(diferencia)` |
-| `min(a, b)` | Minimo | `min(stock, pedido)` |
-| `max(a, b)` | Maximo | `max(precio, precio_minimo)` |
-| `floor(x)` | Redondeo hacia abajo | `floor(cantidad)` |
-| `ceil(x)` | Redondeo hacia arriba | `ceil(horas)` |
-| `len(s)` | Longitud de string | `len(nombre)` |
-| `upper(s)` | Mayusculas | `upper(codigo)` |
-| `lower(s)` | Minusculas | `lower(email)` |
-| `trim(s)` | Eliminar espacios | `trim(nombre)` |
-| `now()` | Fecha y hora actual | `now()` |
-| `today()` | Fecha actual | `today()` |
+| Function | Description | Example |
+|----------|-------------|---------|
+| `round(x, n)` | Rounds to n decimal places | `round(total, 2)` |
+| `coalesce(a, b)` | First non-null value | `coalesce(descuento, 0)` |
+| `abs(x)` | Absolute value | `abs(diferencia)` |
+| `min(a, b)` | Minimum | `min(stock, pedido)` |
+| `max(a, b)` | Maximum | `max(precio, precio_minimo)` |
+| `floor(x)` | Round down | `floor(cantidad)` |
+| `ceil(x)` | Round up | `ceil(horas)` |
+| `len(s)` | String length | `len(nombre)` |
+| `upper(s)` | Uppercase | `upper(codigo)` |
+| `lower(s)` | Lowercase | `lower(email)` |
+| `trim(s)` | Remove whitespace | `trim(nombre)` |
+| `now()` | Current date and time | `now()` |
+| `today()` | Current date | `today()` |

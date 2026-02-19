@@ -1,24 +1,24 @@
 # REST API
 
-Fyso expone una REST API para acceso externo a los datos del tenant.
+Fyso exposes a REST API for external access to tenant data.
 
-## Autenticacion
+## Authentication
 
-Dos metodos disponibles:
+Two available methods:
 
-### 1. Token de usuario del tenant
+### 1. Tenant User Token
 
 ```bash
-# 1. Login para obtener token
+# 1. Login to obtain token
 curl -X POST "https://api.fyso.dev/api/auth/tenant/login" \
   -H "Content-Type: application/json" \
   -H "X-Tenant-ID: mi-empresa" \
   -d '{"email":"user@example.com","password":"password123"}'
 
-# Respuesta:
+# Response:
 # { "success": true, "data": { "token": "jwt...", "user": {...} } }
 
-# 2. Usar el token
+# 2. Use the token
 curl -H "Authorization: Bearer JWT_TOKEN" \
   "https://api.fyso.dev/api/entities/clientes/records"
 ```
@@ -29,14 +29,14 @@ curl -H "Authorization: Bearer JWT_TOKEN" \
 curl -H "Authorization: Bearer API_KEY" \
   "https://api.fyso.dev/api/entities/clientes/records"
 
-# O alternativa:
+# Or alternative:
 curl -H "X-API-Key: API_KEY" \
   "https://api.fyso.dev/api/entities/clientes/records"
 ```
 
-## Endpoints CRUD
+## CRUD Endpoints
 
-### Listar registros
+### List Records
 
 ```
 GET /api/entities/{entityName}/records
@@ -44,17 +44,17 @@ GET /api/entities/{entityName}/records
 
 **Query params:**
 
-| Parametro | Tipo | Default | Descripcion |
+| Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `page` | number | 1 | Numero de pagina (1-indexed) |
-| `limit` | number | 20 | Items por pagina (max 100) |
-| `sort` | string | - | Campo para ordenar |
-| `order` | string | `asc` | Direccion: `asc` o `desc` |
-| `search` | string | - | Busqueda full-text en campos de texto |
-| `resolve` | boolean | - | Expandir relaciones a objetos completos |
-| `filter.{fieldKey}` | string | - | Filtro por campo (ej: `filter.estado=activo`) |
+| `page` | number | 1 | Page number (1-indexed) |
+| `limit` | number | 20 | Items per page (max 100) |
+| `sort` | string | - | Field to sort by |
+| `order` | string | `asc` | Direction: `asc` or `desc` |
+| `search` | string | - | Full-text search across text fields |
+| `resolve` | boolean | - | Expand relations to full objects |
+| `filter.{fieldKey}` | string | - | Filter by field (e.g., `filter.estado=activo`) |
 
-**Respuesta:**
+**Response:**
 
 ```json
 {
@@ -81,7 +81,7 @@ GET /api/entities/{entityName}/records
 }
 ```
 
-### Obtener un registro
+### Get a Record
 
 ```
 GET /api/entities/{entityName}/records/{id}
@@ -89,7 +89,7 @@ GET /api/entities/{entityName}/records/{id}
 
 **Query params:** `resolve` (boolean)
 
-### Crear un registro
+### Create a Record
 
 ```
 POST /api/entities/{entityName}/records
@@ -101,7 +101,7 @@ Content-Type: application/json
 }
 ```
 
-### Actualizar un registro
+### Update a Record
 
 ```
 PUT /api/entities/{entityName}/records/{id}
@@ -112,35 +112,35 @@ Content-Type: application/json
 }
 ```
 
-Soporta actualizaciones parciales.
+Supports partial updates.
 
-### Eliminar un registro
+### Delete a Record
 
 ```
 DELETE /api/entities/{entityName}/records/{id}
 ```
 
-## Estructura del registro
+## Record Structure
 
-Los campos de la entidad estan dentro de `record.data`:
+Entity fields are inside `record.data`:
 
 ```
-record.data.email     -- CORRECTO
-record.email          -- INCORRECTO
+record.data.email     -- CORRECT
+record.email          -- INCORRECT
 ```
 
-## Codigos de error
+## Error Codes
 
-| Codigo | HTTP | Descripcion |
-|--------|------|-------------|
-| `NOT_FOUND` | 404 | Entidad o registro no encontrado |
-| `VALIDATION_ERROR` | 400 | Datos invalidos |
-| `BUSINESS_RULE_ERROR` | 400 | Una regla de negocio impidio la operacion |
-| `UNAUTHORIZED` | 401 | API key faltante o invalida |
-| `FORBIDDEN` | 403 | Sin permisos para la operacion |
-| `INTERNAL_ERROR` | 500 | Error interno del servidor |
+| Code | HTTP | Description |
+|------|------|-------------|
+| `NOT_FOUND` | 404 | Entity or record not found |
+| `VALIDATION_ERROR` | 400 | Invalid data |
+| `BUSINESS_RULE_ERROR` | 400 | A business rule prevented the operation |
+| `UNAUTHORIZED` | 401 | Missing or invalid API key |
+| `FORBIDDEN` | 403 | No permissions for the operation |
+| `INTERNAL_ERROR` | 500 | Internal server error |
 
-**Formato de error:**
+**Error format:**
 
 ```json
 {
@@ -152,8 +152,8 @@ record.email          -- INCORRECTO
 }
 ```
 
-## MCP Tools relacionados
+## Related MCP Tools
 
-- `get_rest_api_spec` -- Genera la especificacion completa con curl de ejemplo
-- `generate_api_client` -- Genera un cliente TypeScript completo con tipos
-- `tenant_login` -- Login como usuario del tenant (retorna JWT)
+- `get_rest_api_spec` -- Generates the full specification with example curl commands
+- `generate_api_client` -- Generates a complete TypeScript client with types
+- `tenant_login` -- Login as a tenant user (returns JWT)

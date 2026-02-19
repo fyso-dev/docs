@@ -1,10 +1,10 @@
 # Quick Start
 
-Tu primera app en Fyso en 5 minutos.
+Your first Fyso app in 5 minutes.
 
-## 1. Seleccionar un tenant
+## 1. Select a tenant
 
-Cada espacio de trabajo en Fyso es un **tenant**. Lo primero es listar y seleccionar uno.
+Every workspace in Fyso is a **tenant**. The first step is to list and select one.
 
 **MCP:**
 ```
@@ -12,11 +12,11 @@ list_tenants()
 select_tenant({ tenantSlug: "mi-empresa" })
 ```
 
-**Panel web:** Se selecciona automaticamente al iniciar sesion.
+**Web panel:** It is selected automatically when you log in.
 
-## 2. Crear una entidad
+## 2. Create an entity
 
-Las entidades son las tablas de tu app. Ejemplo: crear una entidad `clientes`.
+Entities are the tables of your app. Example: create a `clientes` entity.
 
 **MCP:**
 ```
@@ -34,7 +34,7 @@ generate_entity({
 })
 ```
 
-## 3. Crear registros
+## 3. Create records
 
 **MCP:**
 ```
@@ -48,7 +48,7 @@ create_record({
 })
 ```
 
-## 4. Consultar registros
+## 4. Query records
 
 **MCP:**
 ```
@@ -59,9 +59,9 @@ query_records({
 })
 ```
 
-## 5. Agregar una regla de negocio
+## 5. Add a business rule
 
-Ejemplo: validar que el email sea obligatorio.
+Example: validate that the email is required.
 
 **MCP:**
 ```
@@ -81,6 +81,6 @@ generate_business_rule({
 })
 ```
 
-## Siguiente paso
+## Next step
 
-Lee [Conceptos](concepts.md) para entender la arquitectura de Fyso.
+Read [Concepts](concepts.md) to understand the Fyso architecture.

@@ -17,8 +17,8 @@ const config: Config = {
   onBrokenLinks: 'warn',
 
   i18n: {
-    defaultLocale: 'es',
-    locales: ['es', 'en'],
+    defaultLocale: 'en',
+    locales: ['en', 'es'],
   },
 
   presets: [
@@ -53,7 +53,7 @@ const config: Config = {
           type: 'docSidebar',
           sidebarId: 'tutorialSidebar',
           position: 'left',
-          label: 'Documentación',
+          label: 'Documentation',
         },
         {
           type: 'localeDropdown',
@@ -73,7 +73,7 @@ const config: Config = {
           title: 'Docs',
           items: [
             {
-              label: 'Inicio',
+              label: 'Home',
               to: '/docs',
             },
           ],
@@ -82,7 +82,7 @@ const config: Config = {
           title: 'Fyso',
           items: [
             {
-              label: 'Panel',
+              label: 'Dashboard',
               href: 'https://app.fyso.dev',
             },
           ],

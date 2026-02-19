@@ -1,28 +1,28 @@
-# Import / Export de metadata
+# Import / Export Metadata
 
-Exportar e importar la estructura (entidades, campos, reglas) de un tenant.
+Export and import the structure (entities, fields, rules) of a tenant.
 
 ## MCP Tool: `export_metadata`
 
-**Perfil:** core
+**Profile:** core
 
-Exporta la metadata del tenant actual a un JSON.
+Exports the metadata of the current tenant to a JSON.
 
-### Parametros
+### Parameters
 
-| Parametro | Tipo | Requerido | Descripcion |
-|-----------|------|-----------|-------------|
-| `tenantId` | string | No | ID o slug del tenant. Default: tenant seleccionado |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `tenantId` | string | No | Tenant ID or slug. Default: selected tenant |
 
-### Ejemplo
+### Example
 
 ```
 export_metadata()
 ```
 
-### Respuesta
+### Response
 
-Retorna un JSON con la estructura completa:
+Returns a JSON with the complete structure:
 
 ```json
 {
@@ -41,18 +41,18 @@ Retorna un JSON con la estructura completa:
 
 ## MCP Tool: `import_metadata`
 
-**Perfil:** core
+**Profile:** core
 
-Importa metadata desde un JSON a un tenant.
+Imports metadata from a JSON into a tenant.
 
-### Parametros
+### Parameters
 
-| Parametro | Tipo | Requerido | Descripcion |
-|-----------|------|-----------|-------------|
-| `metadata` | string | Si | JSON string con la metadata a importar |
-| `tenantId` | string | No | ID o slug del tenant destino. Default: tenant seleccionado |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `metadata` | string | Yes | JSON string with the metadata to import |
+| `tenantId` | string | No | Destination tenant ID or slug. Default: selected tenant |
 
-### Ejemplo
+### Example
 
 ```
 import_metadata({
@@ -60,16 +60,16 @@ import_metadata({
 })
 ```
 
-### Notas
+### Notes
 
-- La importacion crea las entidades y campos del sistema (`isSystem=true`)
-- Los campos custom (`isSystem=false`) creados con `manage_custom_fields` NO se ven afectados
-- Si una entidad ya existe, se actualizan sus campos del sistema
-- Las reglas de negocio se importan como drafts
+- The import creates entities and system fields (`isSystem=true`)
+- Custom fields (`isSystem=false`) created with `manage_custom_fields` are NOT affected
+- If an entity already exists, its system fields are updated
+- Business rules are imported as drafts
 
-## Casos de uso
+## Use Cases
 
-- **Migrar entre tenants** -- exportar desde uno, importar en otro
-- **Backup de estructura** -- exportar periodicamente
-- **Templates** -- crear un tenant modelo y exportar para replicar
-- **Publicar como app** -- `publish_app` usa export_metadata internamente
+- **Migrate between tenants** -- export from one, import into another
+- **Structure backup** -- export periodically
+- **Templates** -- create a model tenant and export to replicate
+- **Publish as app** -- `publish_app` uses export_metadata internally

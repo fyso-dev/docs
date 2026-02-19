@@ -1,28 +1,28 @@
-# Apps (catalogo)
+# Apps (Catalog)
 
-Fyso permite publicar un tenant como una app instalable. Otros usuarios pueden instalar una copia de la app en su propio tenant.
+Fyso allows publishing a tenant as an installable app. Other users can install a copy of the app in their own tenant.
 
-## Flujo
+## Flow
 
-1. Disenar la app (entidades, campos, reglas) en un tenant
-2. Publicar con `publish_app` -- exporta la metadata y la registra en el catalogo
-3. Compartir el link de instalacion
-4. Otros usuarios instalan la app -- se importa la metadata en su tenant
+1. Design the app (entities, fields, rules) in a tenant
+2. Publish with `publish_app` -- exports the metadata and registers it in the catalog
+3. Share the installation link
+4. Other users install the app -- the metadata is imported into their tenant
 
 ## MCP Tool: `publish_app`
 
-**Perfil:** core
+**Profile:** core
 
-### Parametros
+### Parameters
 
-| Parametro | Tipo | Requerido | Descripcion |
-|-----------|------|-----------|-------------|
-| `name` | string | Si | Nombre visible (ej: "CRM Taller Pro") |
-| `slug` | string | Si | Identificador URL (ej: `"crm-taller-pro"`). Solo minusculas, numeros y guiones |
-| `description` | string | No | Descripcion corta |
-| `icon` | string | No | Emoji o identificador de icono |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `name` | string | Yes | Display name (e.g., "CRM Taller Pro") |
+| `slug` | string | Yes | URL identifier (e.g., `"crm-taller-pro"`). Only lowercase letters, numbers, and hyphens |
+| `description` | string | No | Short description |
+| `icon` | string | No | Emoji or icon identifier |
 
-### Ejemplo
+### Example
 
 ```
 publish_app({
@@ -35,19 +35,19 @@ publish_app({
 
 ## MCP Tool: `update_app`
 
-**Perfil:** core
+**Profile:** core
 
-### Parametros
+### Parameters
 
-| Parametro | Tipo | Requerido | Descripcion |
-|-----------|------|-----------|-------------|
-| `slug` | string | Si | Slug de la app |
-| `name` | string | No | Nuevo nombre |
-| `description` | string | No | Nueva descripcion |
-| `icon` | string | No | Nuevo icono |
-| `refreshMetadata` | boolean | No | Re-exportar metadata del tenant actual a la app |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `slug` | string | Yes | App slug |
+| `name` | string | No | New name |
+| `description` | string | No | New description |
+| `icon` | string | No | New icon |
+| `refreshMetadata` | boolean | No | Re-export metadata from the current tenant to the app |
 
-Usar `refreshMetadata: true` despues de modificar entidades o reglas para actualizar la app publicada.
+Use `refreshMetadata: true` after modifying entities or rules to update the published app.
 
 ```
 update_app({
@@ -58,15 +58,15 @@ update_app({
 
 ## MCP Tool: `unpublish_app`
 
-**Perfil:** core
+**Profile:** core
 
-Desactiva la app del catalogo. Es un soft delete -- se puede volver a publicar despues.
+Deactivates the app from the catalog. This is a soft delete -- it can be published again later.
 
-### Parametros
+### Parameters
 
-| Parametro | Tipo | Requerido | Descripcion |
-|-----------|------|-----------|-------------|
-| `slug` | string | Si | Slug de la app |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `slug` | string | Yes | App slug |
 
 ```
 unpublish_app({ slug: "sistema-turnos" })

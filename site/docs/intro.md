@@ -5,31 +5,31 @@ slug: /
 
 # Fyso Documentation
 
-Fyso es una plataforma para construir aplicaciones de negocio usando entidades, reglas de negocio y automatizaciones. Se puede operar desde un panel web o mediante herramientas MCP (Model Context Protocol) para agentes de IA.
+Fyso is a platform for building business applications using entities, business rules, and automations. It can be operated from a web panel or through MCP (Model Context Protocol) tools for AI agents.
 
 ## Quick Start
 
-1. [Primeros pasos](getting-started/quick-start.md) -- Tu primera app en 5 minutos
-2. [Conceptos clave](getting-started/concepts.md) -- Tenants, entidades, campos, registros, reglas
-3. [Configurar MCP](getting-started/mcp-setup.md) -- Conectar agentes de IA a Fyso
+1. [Getting Started](getting-started/quick-start.md) -- Your first app in 5 minutes
+2. [Key Concepts](getting-started/concepts.md) -- Tenants, entities, fields, records, rules
+3. [Configure MCP](getting-started/mcp-setup.md) -- Connect AI agents to Fyso
 
-## Seccion por seccion
+## Section by Section
 
-| Seccion | Descripcion |
+| Section | Description |
 |---------|-------------|
-| [Entidades](entities/) | Crear, configurar y publicar entidades |
-| [Registros](records/) | CRUD, filtros, relaciones y busqueda semantica |
-| [Reglas de negocio](business-rules/) | Compute, validate, action -- DSL completo |
-| [PDF](pdf/) | Plantillas pdfme y generacion de documentos |
-| [Facturacion](billing/) | Planes Free vs Pro, limites, Stripe |
-| [Deploy](deployment/) | Sites estaticos, GitHub Actions |
-| [API](api/) | REST API, referencia MCP, perfiles de herramientas |
-| [Turnos](scheduling/) | Disponibilidad, reservas, horarios |
-| [Admin](admin/) | Usuarios, roles, apps, import/export |
+| [Entities](entities/) | Create, configure, and publish entities |
+| [Records](records/) | CRUD, filters, relations, and semantic search |
+| [Business Rules](business-rules/) | Compute, validate, action -- full DSL |
+| [PDF](pdf/) | pdfme templates and document generation |
+| [Billing](billing/) | Free vs Pro plans, limits, Stripe |
+| [Deployment](deployment/) | Static sites, GitHub Actions |
+| [API](api/) | REST API, MCP reference, tool profiles |
+| [Scheduling](scheduling/) | Availability, bookings, schedules |
+| [Admin](admin/) | Users, roles, apps, import/export |
 
-## Audiencia
+## Audience
 
-Esta documentacion sirve para dos audiencias:
+This documentation serves two audiences:
 
-- **Agentes de IA usando MCP** -- Nombres exactos de tools, parametros, tipos, respuestas esperadas
-- **Humanos usando el panel web** -- Guias claras con ejemplos y flujos de trabajo
+- **AI agents using MCP** -- Exact tool names, parameters, types, expected responses
+- **Humans using the web panel** -- Clear guides with examples and workflows

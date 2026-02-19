@@ -1,20 +1,20 @@
-# Plantillas PDF
+# PDF Templates
 
-Fyso usa **pdfme** como motor de generacion de PDFs. Las plantillas definen el layout del documento.
+Fyso uses **pdfme** as the PDF generation engine. Templates define the document layout.
 
-## Entidad `pdf_templates`
+## `pdf_templates` Entity
 
-La entidad `pdf_templates` se crea automaticamente la primera vez que se genera un PDF. Cada registro es una plantilla con estos campos:
+The `pdf_templates` entity is created automatically the first time a PDF is generated. Each record is a template with these fields:
 
-| Campo | Descripcion |
+| Field | Description |
 |-------|-------------|
-| `nombre` | Nombre descriptivo de la plantilla |
-| `template_json` | Layout en formato pdfme (JSON) |
-| `entidad_origen` | De que entidad toma los datos (ej: `"facturas"`) |
+| `nombre` | Descriptive name of the template |
+| `template_json` | Layout in pdfme format (JSON) |
+| `entidad_origen` | Which entity the data comes from (e.g., `"facturas"`) |
 
-## Formato del template_json
+## template_json Format
 
-El `template_json` define el tamano de pagina y los campos con sus posiciones:
+The `template_json` defines the page size and the fields with their positions:
 
 ```json
 {
@@ -66,42 +66,42 @@ El `template_json` define el tamano de pagina y los campos con sus posiciones:
 }
 ```
 
-## Reglas del formato
+## Format Rules
 
-- Las medidas son en **milimetros** (210x297 = A4)
-- `position.x` y `position.y`: coordenadas desde la esquina superior izquierda
-- El `name` de cada campo debe coincidir con el **fieldKey** de la entidad origen
-- `schemas` es un array de paginas -- cada pagina es un array de campos
-- Tipo disponible: `text`
+- Measurements are in **millimeters** (210x297 = A4)
+- `position.x` and `position.y`: coordinates from the top-left corner
+- The `name` of each field must match the **fieldKey** of the source entity
+- `schemas` is an array of pages -- each page is an array of fields
+- Available type: `text`
 
-## Propiedades de campo
+## Field Properties
 
-| Propiedad | Tipo | Descripcion |
-|-----------|------|-------------|
-| `name` | string | Nombre del campo (debe coincidir con fieldKey) |
-| `type` | string | Tipo de campo (`"text"`) |
-| `position` | object | `{ x: number, y: number }` en mm |
-| `width` | number | Ancho del campo en mm |
-| `height` | number | Alto del campo en mm |
-| `fontSize` | number | Tamano de fuente en pt |
-| `fontWeight` | string | `"bold"` o normal |
-| `fontColor` | string | Color en hex (ej: `"#666666"`) |
+| Property | Type | Description |
+|----------|------|-------------|
+| `name` | string | Field name (must match fieldKey) |
+| `type` | string | Field type (`"text"`) |
+| `position` | object | `{ x: number, y: number }` in mm |
+| `width` | number | Field width in mm |
+| `height` | number | Field height in mm |
+| `fontSize` | number | Font size in pt |
+| `fontWeight` | string | `"bold"` or normal |
+| `fontColor` | string | Color in hex (e.g., `"#666666"`) |
 | `alignment` | string | `"left"`, `"center"`, `"right"` |
 
-## Multiples paginas
+## Multiple Pages
 
-Agregar mas arrays dentro de `schemas`:
+Add more arrays inside `schemas`:
 
 ```json
 {
   "schemas": [
-    [ /* campos pagina 1 */ ],
-    [ /* campos pagina 2 */ ]
+    [ /* page 1 fields */ ],
+    [ /* page 2 fields */ ]
   ]
 }
 ```
 
-## Crear plantilla via MCP
+## Create Template via MCP
 
 ```
 create_record({
@@ -109,9 +109,9 @@ create_record({
   data: {
     nombre: "Factura estandar",
     entidad_origen: "facturas",
-    template_json: { /* layout pdfme */ }
+    template_json: { /* pdfme layout */ }
   }
 })
 ```
 
-O pedile al agente: "Crea una plantilla PDF para facturas con campos: empresa, cliente, items, total".
+Or ask the agent: "Create a PDF template for invoices with fields: company, customer, items, total".

@@ -1,10 +1,10 @@
-# Ejemplos de reglas de negocio
+# Business Rule Examples
 
-Patrones comunes para reglas de negocio en Fyso.
+Common patterns for business rules in Fyso.
 
-## Calculo de factura con IVA
+## Invoice Calculation with Tax
 
-Calcula subtotal, IVA y total automaticamente.
+Automatically calculates subtotal, tax, and total.
 
 ```
 generate_business_rule({
@@ -22,9 +22,9 @@ generate_business_rule({
 })
 ```
 
-## Validar stock minimo
+## Validate Minimum Stock
 
-Impide guardar si el stock es negativo.
+Prevents saving if stock is negative.
 
 ```
 generate_business_rule({
@@ -44,9 +44,9 @@ generate_business_rule({
 })
 ```
 
-## Descuento por volumen
+## Volume Discount
 
-Aplica descuento segun la cantidad comprada.
+Applies a discount based on the purchased quantity.
 
 ```
 generate_business_rule({
@@ -72,9 +72,9 @@ generate_business_rule({
 })
 ```
 
-## Lookup de precio desde catalogo
+## Price Lookup from Catalog
 
-Busca el precio del producto cuando se selecciona en una linea de pedido.
+Looks up the product price when selected in an order line.
 
 ```
 generate_business_rule({
@@ -97,9 +97,9 @@ generate_business_rule({
 })
 ```
 
-## Actualizar total del pedido padre
+## Update Parent Order Total
 
-Cuando se modifica una linea, recalcula el total del pedido.
+When an order line is modified, recalculates the order total.
 
 ```
 generate_business_rule({
@@ -133,9 +133,9 @@ generate_business_rule({
 })
 ```
 
-## Normalizar texto
+## Normalize Text
 
-Convierte nombre a mayusculas y limpia espacios del email.
+Converts name to uppercase and trims whitespace from email.
 
 ```
 generate_business_rule({
@@ -152,7 +152,7 @@ generate_business_rule({
 })
 ```
 
-## Multiples validaciones
+## Multiple Validations
 
 ```
 generate_business_rule({
