@@ -1,0 +1,65 @@
+{
+  "home.hero.subtitle": {
+    "message": "Crea apps de negocio con entidades, reglas e IA. Opera desde el panel web o herramientas MCP."
+  },
+  "home.hero.cta": {
+    "message": "Empezar"
+  },
+  "home.hero.mcp": {
+    "message": "Configurar MCP"
+  },
+  "home.section.entities": {
+    "message": "Entidades"
+  },
+  "home.section.entities.desc": {
+    "message": "Define tu modelo de datos con campos, relaciones y publica cuando estes listo."
+  },
+  "home.section.rules": {
+    "message": "Reglas de negocio"
+  },
+  "home.section.rules.desc": {
+    "message": "Automatiza calculos, validaciones y acciones con un DSL simple."
+  },
+  "home.section.api": {
+    "message": "REST API"
+  },
+  "home.section.api.desc": {
+    "message": "API auto-generada para cada entidad. Autenticacion via API key."
+  },
+  "home.section.scheduling": {
+    "message": "Turnos"
+  },
+  "home.section.scheduling.desc": {
+    "message": "Slots de disponibilidad, reservas y gestion de horarios."
+  },
+  "home.section.deploy": {
+    "message": "Despliegue"
+  },
+  "home.section.deploy.desc": {
+    "message": "Despliega sites estaticos en Fyso con GitHub Actions."
+  },
+  "home.section.pdf": {
+    "message": "Generacion PDF"
+  },
+  "home.section.pdf.desc": {
+    "message": "Crea plantillas con pdfme y genera documentos desde registros."
+  },
+  "home.install.title": {
+    "message": "Conecta agentes de IA en segundos"
+  },
+  "home.install.desc": {
+    "message": "Anade Fyso como servidor MCP en Claude, Cursor o cualquier cliente compatible con MCP."
+  },
+  "home.link.mcp": {
+    "message": "Referencia MCP"
+  },
+  "home.link.billing": {
+    "message": "Planes y limites"
+  },
+  "home.link.admin": {
+    "message": "Usuarios y roles"
+  },
+  "home.layout.title": {
+    "message": "Inicio"
+  }
+}

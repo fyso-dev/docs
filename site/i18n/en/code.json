@@ -1,0 +1,65 @@
+{
+  "home.hero.subtitle": {
+    "message": "Build business apps with entities, rules, and AI. Operate from the web panel or MCP tools."
+  },
+  "home.hero.cta": {
+    "message": "Get Started"
+  },
+  "home.hero.mcp": {
+    "message": "Configure MCP"
+  },
+  "home.section.entities": {
+    "message": "Entities"
+  },
+  "home.section.entities.desc": {
+    "message": "Define your data model with fields, relations, and publish when ready."
+  },
+  "home.section.rules": {
+    "message": "Business Rules"
+  },
+  "home.section.rules.desc": {
+    "message": "Automate computations, validations, and actions with a simple DSL."
+  },
+  "home.section.api": {
+    "message": "REST API"
+  },
+  "home.section.api.desc": {
+    "message": "Auto-generated API for every entity. Auth via API key."
+  },
+  "home.section.scheduling": {
+    "message": "Scheduling"
+  },
+  "home.section.scheduling.desc": {
+    "message": "Availability slots, bookings, and calendar management."
+  },
+  "home.section.deploy": {
+    "message": "Deployment"
+  },
+  "home.section.deploy.desc": {
+    "message": "Deploy static sites to Fyso with GitHub Actions."
+  },
+  "home.section.pdf": {
+    "message": "PDF Generation"
+  },
+  "home.section.pdf.desc": {
+    "message": "Create templates with pdfme and generate documents from records."
+  },
+  "home.install.title": {
+    "message": "Connect AI agents in seconds"
+  },
+  "home.install.desc": {
+    "message": "Add Fyso as an MCP server to Claude, Cursor, or any MCP-compatible client."
+  },
+  "home.link.mcp": {
+    "message": "MCP Reference"
+  },
+  "home.link.billing": {
+    "message": "Plans & Limits"
+  },
+  "home.link.admin": {
+    "message": "Users & Roles"
+  },
+  "home.layout.title": {
+    "message": "Home"
+  }
+}
