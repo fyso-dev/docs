@@ -1,75 +1,75 @@
-# Tipos de campo
+# Field Types
 
-Referencia completa de los tipos de campo disponibles en Fyso.
+Complete reference for the field types available in Fyso.
 
 ## text
 
-Texto corto de una sola linea.
+Short single-line text.
 
-- **Almacenamiento:** string
-- **Config:** ninguna
-- **Ejemplo de valor:** `"Juan Perez"`
+- **Storage:** string
+- **Config:** none
+- **Example value:** `"Juan Perez"`
 
 ## textarea
 
-Texto largo de multiples lineas.
+Long multi-line text.
 
-- **Almacenamiento:** string
-- **Config:** ninguna
-- **Ejemplo de valor:** `"Descripcion larga\ncon saltos de linea"`
+- **Storage:** string
+- **Config:** none
+- **Example value:** `"Long description\nwith line breaks"`
 
 ## number
 
-Valor numerico (entero o decimal).
+Numeric value (integer or decimal).
 
-- **Almacenamiento:** number
-- **Config:** ninguna
-- **Ejemplo de valor:** `150.50`
+- **Storage:** number
+- **Config:** none
+- **Example value:** `150.50`
 
 ## email
 
-Direccion de correo electronico.
+Email address.
 
-- **Almacenamiento:** string
-- **Config:** ninguna
-- **Ejemplo de valor:** `"juan@example.com"`
+- **Storage:** string
+- **Config:** none
+- **Example value:** `"juan@example.com"`
 
 ## phone
 
-Numero de telefono.
+Phone number.
 
-- **Almacenamiento:** string
-- **Config:** ninguna
-- **Ejemplo de valor:** `"+54 11 1234-5678"`
+- **Storage:** string
+- **Config:** none
+- **Example value:** `"+54 11 1234-5678"`
 
 ## date
 
-Fecha (sin hora).
+Date (without time).
 
-- **Almacenamiento:** string (ISO format `YYYY-MM-DD`)
-- **Config:** ninguna
-- **Ejemplo de valor:** `"2026-02-18"`
+- **Storage:** string (ISO format `YYYY-MM-DD`)
+- **Config:** none
+- **Example value:** `"2026-02-18"`
 
 ## boolean
 
-Valor verdadero/falso.
+True/false value.
 
-- **Almacenamiento:** boolean
-- **Config:** ninguna
-- **Ejemplo de valor:** `true`
+- **Storage:** boolean
+- **Config:** none
+- **Example value:** `true`
 
 ## select
 
-Seleccion de una opcion de una lista predefinida.
+Selection from a predefined list of options.
 
-- **Almacenamiento:** string (el valor de la opcion seleccionada)
+- **Storage:** string (the value of the selected option)
 - **Config:**
 
-| Config | Tipo | Descripcion |
+| Config | Type | Description |
 |--------|------|-------------|
-| `options` | `string[]` o `{value, label}[]` | Opciones disponibles |
+| `options` | `string[]` or `{value, label}[]` | Available options |
 
-- **Ejemplo de config:**
+- **Config example:**
 
 ```json
 {
@@ -77,7 +77,7 @@ Seleccion de una opcion de una lista predefinida.
 }
 ```
 
-O con labels:
+Or with labels:
 
 ```json
 {
@@ -88,20 +88,20 @@ O con labels:
 }
 ```
 
-- **Ejemplo de valor:** `"activo"`
+- **Example value:** `"activo"`
 
 ## relation
 
-Referencia a un registro de otra entidad.
+Reference to a record in another entity.
 
-- **Almacenamiento:** string (UUID del registro relacionado)
+- **Storage:** string (UUID of the related record)
 - **Config:**
 
-| Config | Tipo | Descripcion |
+| Config | Type | Description |
 |--------|------|-------------|
-| `relatedEntity` | string | Nombre de la entidad relacionada |
+| `relatedEntity` | string | Name of the related entity |
 
-- **Ejemplo de config:**
+- **Config example:**
 
 ```json
 {
@@ -109,15 +109,15 @@ Referencia a un registro de otra entidad.
 }
 ```
 
-- **Ejemplo de valor:** `"6bd2d1db-d104-4a15-977a-a759c38608a9"`
+- **Example value:** `"6bd2d1db-d104-4a15-977a-a759c38608a9"`
 
-Al consultar registros con `resolve=true`, la relacion se expande al registro completo.
+When querying records with `resolve=true`, the relation is expanded to the full record.
 
 ## file
 
-Archivo adjunto. Se sube usando el tool `upload_file`.
+File attachment. Uploaded using the `upload_file` tool.
 
-- **Almacenamiento:** object
+- **Storage:** object
 
 ```json
 {
@@ -131,14 +131,14 @@ Archivo adjunto. Se sube usando el tool `upload_file`.
 
 - **Config:**
 
-| Config | Tipo | Descripcion |
+| Config | Type | Description |
 |--------|------|-------------|
-| `accept` | `string[]` | MIME types permitidos (ej: `["image/*", "application/pdf"]`) |
-| `maxSize` | number | Tamano maximo en bytes |
-| `multiple` | boolean | Permitir multiples archivos. Default: false |
-| `maxFiles` | number | Maximo de archivos cuando `multiple=true` |
+| `accept` | `string[]` | Allowed MIME types (e.g., `["image/*", "application/pdf"]`) |
+| `maxSize` | number | Maximum size in bytes |
+| `multiple` | boolean | Allow multiple files. Default: false |
+| `maxFiles` | number | Maximum files when `multiple=true` |
 
-- **Ejemplo de config:**
+- **Config example:**
 
 ```json
 {
@@ -150,9 +150,9 @@ Archivo adjunto. Se sube usando el tool `upload_file`.
 
 ## location
 
-Ubicacion geografica con coordenadas y datos de direccion opcionales.
+Geographic location with coordinates and optional address data.
 
-- **Almacenamiento:** object
+- **Storage:** object
 
 ```json
 {
@@ -166,13 +166,13 @@ Ubicacion geografica con coordenadas y datos de direccion opcionales.
 
 - **Config:**
 
-| Config | Tipo | Descripcion |
+| Config | Type | Description |
 |--------|------|-------------|
-| `displayFormat` | string | `"map"`, `"text"`, o `"both"` (default: `"both"`) |
-| `defaultZoom` | number | Zoom inicial del mapa (1-20, default: 13) |
-| `defaultCenter` | object | Centro inicial: `{ lat: number, lng: number }` |
+| `displayFormat` | string | `"map"`, `"text"`, or `"both"` (default: `"both"`) |
+| `defaultZoom` | number | Initial map zoom (1-20, default: 13) |
+| `defaultCenter` | object | Initial center: `{ lat: number, lng: number }` |
 
-- **Ejemplo de config:**
+- **Config example:**
 
 ```json
 {
@@ -182,10 +182,10 @@ Ubicacion geografica con coordenadas y datos de direccion opcionales.
 }
 ```
 
-## Resumen de tipos
+## Type Summary
 
-| Tipo | Almacena | Config necesaria |
-|------|----------|-----------------|
+| Type | Stores | Required Config |
+|------|--------|-----------------|
 | `text` | string | - |
 | `textarea` | string | - |
 | `number` | number | - |

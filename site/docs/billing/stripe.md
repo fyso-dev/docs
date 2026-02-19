@@ -1,38 +1,38 @@
-# Stripe y pagos
+# Stripe and Payments
 
-La facturacion de Fyso se gestiona a traves de Stripe.
+Fyso billing is managed through Stripe.
 
-## Flujo de suscripcion
+## Subscription Flow
 
-1. El usuario elige el plan Pro desde el panel admin
-2. Se crea una sesion de Stripe Checkout
-3. El usuario completa el pago en Stripe
-4. Fyso recibe el webhook y actualiza el plan del tenant
-5. Los limites se aplican inmediatamente
+1. The user chooses the Pro plan from the admin panel
+2. A Stripe Checkout session is created
+3. The user completes the payment on Stripe
+4. Fyso receives the webhook and updates the tenant's plan
+5. Limits are applied immediately
 
-## Portal de clientes
+## Customer Portal
 
-Los usuarios con suscripcion activa pueden acceder al portal de Stripe para:
+Users with an active subscription can access the Stripe portal to:
 
-- Ver facturas y recibos
-- Actualizar metodo de pago
-- Cancelar suscripcion
+- View invoices and receipts
+- Update payment method
+- Cancel subscription
 
 ## Webhooks
 
-Fyso procesa los siguientes eventos de Stripe:
+Fyso processes the following Stripe events:
 
-- `checkout.session.completed` -- Suscripcion nueva completada
-- `customer.subscription.updated` -- Cambios en la suscripcion
-- `customer.subscription.deleted` -- Suscripcion cancelada
-- `invoice.payment_failed` -- Pago fallido
+- `checkout.session.completed` -- New subscription completed
+- `customer.subscription.updated` -- Subscription changes
+- `customer.subscription.deleted` -- Subscription canceled
+- `invoice.payment_failed` -- Failed payment
 
-## Configuracion (admin)
+## Configuration (admin)
 
-Variables de entorno requeridas:
+Required environment variables:
 
-| Variable | Descripcion |
+| Variable | Description |
 |----------|-------------|
-| `STRIPE_SECRET_KEY` | Clave secreta de Stripe |
-| `STRIPE_WEBHOOK_SECRET` | Secreto para verificar webhooks |
-| `STRIPE_PRICE_ID` | ID del precio del plan Pro |
+| `STRIPE_SECRET_KEY` | Stripe secret key |
+| `STRIPE_WEBHOOK_SECRET` | Secret for verifying webhooks |
+| `STRIPE_PRICE_ID` | Price ID for the Pro plan |

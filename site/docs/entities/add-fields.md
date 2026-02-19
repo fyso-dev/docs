@@ -1,24 +1,24 @@
-# Agregar y gestionar campos
+# Add and Manage Fields
 
-Los campos se pueden agregar al crear la entidad (via `generate_entity`) o despues usando `manage_custom_fields`.
+Fields can be added when creating the entity (via `generate_entity`) or afterwards using `manage_custom_fields`.
 
 ## MCP Tool: `manage_custom_fields`
 
-**Perfil:** advanced
+**Profile:** advanced
 
-Gestiona campos personalizados de una entidad. Permite listar, agregar, actualizar y eliminar campos creados por el usuario. Los campos custom NO se ven afectados por import/export de metadata.
+Manages custom fields of an entity. Allows listing, adding, updating, and deleting user-created fields. Custom fields are NOT affected by metadata import/export.
 
-### Parametros
+### Parameters
 
-| Parametro | Tipo | Requerido | Descripcion |
-|-----------|------|-----------|-------------|
-| `action` | string | Si | `"list"`, `"add"`, `"update"`, `"delete"` |
-| `entityName` | string | Si | Nombre de la entidad |
-| `fieldId` | string | Condicional | ID del campo (requerido para update y delete) |
-| `type` | string | No | Filtro para list: `"custom"`, `"system"`, `"all"`. Default: `"custom"` |
-| `fieldData` | object | Condicional | Datos del campo (requerido para add y update) |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `action` | string | Yes | `"list"`, `"add"`, `"update"`, `"delete"` |
+| `entityName` | string | Yes | Entity name |
+| `fieldId` | string | Conditional | Field ID (required for update and delete) |
+| `type` | string | No | Filter for list: `"custom"`, `"system"`, `"all"`. Default: `"custom"` |
+| `fieldData` | object | Conditional | Field data (required for add and update) |
 
-### Listar campos
+### List fields
 
 ```
 manage_custom_fields({
@@ -28,7 +28,7 @@ manage_custom_fields({
 })
 ```
 
-**Respuesta:**
+**Response:**
 
 ```json
 {
@@ -51,7 +51,7 @@ manage_custom_fields({
 }
 ```
 
-### Agregar un campo
+### Add a field
 
 ```
 manage_custom_fields({
@@ -67,7 +67,7 @@ manage_custom_fields({
 })
 ```
 
-Para campos con configuracion:
+For fields with configuration:
 
 ```
 manage_custom_fields({
@@ -84,12 +84,12 @@ manage_custom_fields({
 })
 ```
 
-**Campos requeridos en fieldData para add:**
-- `name` -- Nombre visible
-- `fieldKey` -- Clave tecnica (snake_case)
-- `fieldType` -- Tipo de dato
+**Required fields in fieldData for add:**
+- `name` -- Display name
+- `fieldKey` -- Technical key (snake_case)
+- `fieldType` -- Data type
 
-### Actualizar un campo
+### Update a field
 
 ```
 manage_custom_fields({
@@ -104,9 +104,9 @@ manage_custom_fields({
 })
 ```
 
-**Campos actualizables:** `name`, `description`, `isRequired`, `isUnique`, `isVisible`, `displayOrder`, `config`.
+**Updatable fields:** `name`, `description`, `isRequired`, `isUnique`, `isVisible`, `displayOrder`, `config`.
 
-### Eliminar un campo
+### Delete a field
 
 ```
 manage_custom_fields({
@@ -116,11 +116,11 @@ manage_custom_fields({
 })
 ```
 
-Solo se pueden eliminar campos custom (`isSystem=false`). Los campos del sistema estan protegidos.
+Only custom fields (`isSystem=false`) can be deleted. System fields are protected.
 
-## Campos del sistema vs custom
+## System vs Custom fields
 
-| Tipo | Creado por | Editable | Afectado por import/export |
+| Type | Created by | Editable | Affected by import/export |
 |------|-----------|----------|---------------------------|
-| System | `generate_entity` / metadata import | No | Si |
-| Custom | `manage_custom_fields` | Si | No |
+| System | `generate_entity` / metadata import | No | Yes |
+| Custom | `manage_custom_fields` | Yes | No |

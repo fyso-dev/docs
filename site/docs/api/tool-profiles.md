@@ -1,20 +1,20 @@
 # Tool Profiles
 
-Los perfiles controlan que herramientas MCP estan disponibles para el agente.
+Profiles control which MCP tools are available to the agent.
 
-## Configuracion
+## Configuration
 
-Variable de entorno: `FYSO_TOOLS`
+Environment variable: `FYSO_TOOLS`
 
-| Valor | Descripcion |
+| Value | Description |
 |-------|-------------|
-| `core` | Default. ~26 tools esenciales para uso diario |
-| `advanced` | ~38 tools. Agrega poder-usuario: delete, test, flows, secrets, logs |
-| `all` | ~49 tools. Todo, incluyendo channels y bots |
+| `core` | Default. ~26 essential tools for daily use |
+| `advanced` | ~38 tools. Adds power-user features: delete, test, flows, secrets, logs |
+| `all` | ~49 tools. Everything, including channels and bots |
 
-## Perfil: core
+## Profile: core
 
-Tools para el dia a dia de construccion de apps:
+Tools for day-to-day app building:
 
 ```
 list_tenants, select_tenant,
@@ -30,9 +30,9 @@ get_available_slots, create_booking,
 generate_pdf, upload_file
 ```
 
-## Perfil: advanced
+## Profile: advanced
 
-Todo lo de `core` mas:
+Everything in `core` plus:
 
 ```
 delete_entity, list_entity_changes, manage_custom_fields,
@@ -45,9 +45,9 @@ create_flow, list_flows, update_flow, delete_flow, toggle_flow,
 get_rule_logs
 ```
 
-## Perfil: all
+## Profile: all
 
-Todo lo de `advanced` mas channels, bots y codigos de invitacion:
+Everything in `advanced` plus channels, bots, and invitation codes:
 
 ```
 search_channels, get_channel_info, get_my_channel, get_channel_tools,
@@ -57,7 +57,7 @@ register_bot, identify_bot, list_bots, whoami_bot, revoke_bot,
 generate_invitation_code, list_invitation_codes
 ```
 
-## Ejemplo de configuracion
+## Configuration Example
 
 ```json
 {

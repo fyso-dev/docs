@@ -1,35 +1,35 @@
-# Usuarios y roles
+# Users and Roles
 
-Cada tenant tiene su propia tabla de usuarios, aislada de otros tenants.
+Each tenant has its own user table, isolated from other tenants.
 
 ## MCP Tool: `create_user`
 
-**Perfil:** core
+**Profile:** core
 
-Crea un usuario dentro del tenant.
+Creates a user within the tenant.
 
-### Parametros
+### Parameters
 
-| Parametro | Tipo | Requerido | Descripcion |
-|-----------|------|-----------|-------------|
-| `tenantSlug` | string | Si | Slug del tenant |
-| `email` | string | Si | Email (unico en el tenant) |
-| `password` | string | Si | Password (min 8 caracteres, se hashea) |
-| `name` | string | Si | Nombre completo |
-| `role` | string | No | Rol: `owner`, `admin`, `member`, `viewer`. Default: `member` |
-| `permissions` | object | No | Permisos por entidad |
-| `metadata` | object | No | Datos adicionales (telefono, departamento, posicion, avatar) |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `tenantSlug` | string | Yes | Tenant slug |
+| `email` | string | Yes | Email (unique within the tenant) |
+| `password` | string | Yes | Password (min 8 characters, hashed) |
+| `name` | string | Yes | Full name |
+| `role` | string | No | Role: `owner`, `admin`, `member`, `viewer`. Default: `member` |
+| `permissions` | object | No | Per-entity permissions |
+| `metadata` | object | No | Additional data (phone, department, position, avatar) |
 
 ### Roles
 
-| Rol | Descripcion |
-|-----|-------------|
-| `owner` | Control total. Puede gestionar todo |
-| `admin` | Puede gestionar usuarios y configuraciones |
-| `member` | Puede crear y editar registros |
-| `viewer` | Solo lectura |
+| Role | Description |
+|------|-------------|
+| `owner` | Full control. Can manage everything |
+| `admin` | Can manage users and settings |
+| `member` | Can create and edit records |
+| `viewer` | Read only |
 
-### Permisos por entidad
+### Per-Entity Permissions
 
 ```json
 {
@@ -43,7 +43,7 @@ Crea un usuario dentro del tenant.
 }
 ```
 
-### Ejemplo
+### Example
 
 ```
 create_user({
@@ -61,9 +61,9 @@ create_user({
 })
 ```
 
-### Login despues de crear
+### Login After Creating
 
-El usuario puede autenticarse via REST:
+The user can authenticate via REST:
 
 ```bash
 curl -X POST "https://api.fyso.dev/api/auth/tenant/login" \
@@ -72,7 +72,7 @@ curl -X POST "https://api.fyso.dev/api/auth/tenant/login" \
   -d '{"email":"vendedor@empresa.com","password":"password123"}'
 ```
 
-O via MCP:
+Or via MCP:
 
 ```
 tenant_login({
@@ -84,21 +84,21 @@ tenant_login({
 
 ## MCP Tool: `list_users`
 
-**Perfil:** core
+**Profile:** core
 
-### Parametros
+### Parameters
 
-| Parametro | Tipo | Requerido | Descripcion |
-|-----------|------|-----------|-------------|
-| `tenantSlug` | string | No | Slug del tenant. Default: tenant seleccionado |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `tenantSlug` | string | No | Tenant slug. Default: selected tenant |
 
-### Ejemplo
+### Example
 
 ```
 list_users({ tenantSlug: "mi-empresa" })
 ```
 
-### Respuesta
+### Response
 
 ```json
 {
@@ -117,23 +117,23 @@ list_users({ tenantSlug: "mi-empresa" })
 }
 ```
 
-Las passwords nunca se retornan.
+Passwords are never returned.
 
 ## MCP Tool: `tenant_login`
 
-**Perfil:** advanced
+**Profile:** advanced
 
-Login como usuario del tenant. Retorna un JWT para usar con la REST API.
+Login as a tenant user. Returns a JWT for use with the REST API.
 
-### Parametros
+### Parameters
 
-| Parametro | Tipo | Requerido | Descripcion |
-|-----------|------|-----------|-------------|
-| `tenantSlug` | string | Si | Slug del tenant |
-| `email` | string | Si | Email del usuario |
-| `password` | string | Si | Password |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `tenantSlug` | string | Yes | Tenant slug |
+| `email` | string | Yes | User email |
+| `password` | string | Yes | Password |
 
-### Respuesta
+### Response
 
 ```json
 {

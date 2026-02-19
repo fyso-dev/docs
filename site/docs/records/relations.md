@@ -1,10 +1,10 @@
-# Relaciones
+# Relations
 
-Las relaciones conectan registros de distintas entidades usando campos de tipo `relation`.
+Relations connect records from different entities using `relation` type fields.
 
-## Crear una relacion
+## Create a Relation
 
-Al definir un campo de tipo `relation`, se especifica la entidad relacionada:
+When defining a `relation` type field, the related entity is specified:
 
 ```
 generate_entity({
@@ -22,9 +22,9 @@ generate_entity({
 })
 ```
 
-## Almacenamiento
+## Storage
 
-El campo relation almacena el UUID del registro relacionado:
+The relation field stores the UUID of the related record:
 
 ```json
 {
@@ -32,13 +32,13 @@ El campo relation almacena el UUID del registro relacionado:
 }
 ```
 
-## Resolver relaciones
+## Resolving Relations
 
-Al consultar registros, se pueden expandir las relaciones con `resolve`:
+When querying records, relations can be expanded with `resolve`:
 
 ### MCP
 
-`query_records` resuelve relaciones automaticamente (usa `resolve=true` internamente).
+`query_records` resolves relations automatically (uses `resolve=true` internally).
 
 ### REST API
 
@@ -47,16 +47,16 @@ GET /api/entities/facturas/records?resolve=true
 GET /api/entities/facturas/records/{id}?resolve=true
 ```
 
-Sin resolve, el campo muestra solo el UUID. Con resolve, se expande al objeto completo:
+Without resolve, the field shows only the UUID. With resolve, it expands to the full object:
 
-**Sin resolve:**
+**Without resolve:**
 ```json
 {
   "cliente_id": "6bd2d1db-..."
 }
 ```
 
-**Con resolve:**
+**With resolve:**
 ```json
 {
   "cliente_id": {
@@ -69,9 +69,9 @@ Sin resolve, el campo muestra solo el UUID. Con resolve, se expande al objeto co
 }
 ```
 
-## Crear registros con relaciones
+## Create Records with Relations
 
-Al crear un registro, pasar el UUID del registro relacionado:
+When creating a record, pass the UUID of the related record:
 
 ```
 create_record({
@@ -85,9 +85,9 @@ create_record({
 })
 ```
 
-## Relaciones en reglas de negocio
+## Relations in Business Rules
 
-Las reglas pueden usar lookups para acceder a datos de entidades relacionadas:
+Rules can use lookups to access data from related entities:
 
 ```json
 {

@@ -1,10 +1,10 @@
-# CRUD de registros
+# Record CRUD
 
-Operaciones basicas sobre registros: crear, leer, actualizar y eliminar.
+Basic operations on records: create, read, update, and delete.
 
-## Estructura de un registro
+## Record Structure
 
-Los campos de la entidad se almacenan dentro de `data`:
+Entity fields are stored inside `data`:
 
 ```json
 {
@@ -21,24 +21,24 @@ Los campos de la entidad se almacenan dentro de `data`:
 }
 ```
 
-**Importante:** Acceder campos via `record.data.email`, NO `record.email`.
+**Important:** Access fields via `record.data.email`, NOT `record.email`.
 
 ---
 
 ## create_record
 
-**Perfil:** core
+**Profile:** core
 
-Crea un nuevo registro en una entidad.
+Creates a new record in an entity.
 
-### Parametros
+### Parameters
 
-| Parametro | Tipo | Requerido | Descripcion |
-|-----------|------|-----------|-------------|
-| `entityName` | string | Si | Nombre de la entidad |
-| `data` | object | Si | Datos del registro (campos de la entidad) |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `entityName` | string | Yes | Entity name |
+| `data` | object | Yes | Record data (entity fields) |
 
-### Ejemplo
+### Example
 
 ```
 create_record({
@@ -52,7 +52,7 @@ create_record({
 })
 ```
 
-### Respuesta
+### Response
 
 ```json
 {
@@ -68,30 +68,30 @@ create_record({
 }
 ```
 
-Usa `get_entity_schema` primero para conocer los campos requeridos.
+Use `get_entity_schema` first to know the required fields.
 
 ---
 
 ## query_records
 
-**Perfil:** core
+**Profile:** core
 
-Consulta registros de una entidad con filtros, paginacion, ordenamiento y busqueda semantica.
+Queries records from an entity with filters, pagination, sorting, and semantic search.
 
-### Parametros
+### Parameters
 
-| Parametro | Tipo | Requerido | Descripcion |
-|-----------|------|-----------|-------------|
-| `entityName` | string | Si | Nombre de la entidad |
-| `filter` | string | No | Filtro simple (ver [Filtros](filtering.md)) |
-| `limit` | number | No | Maximo de registros. Default: 50, max: 200 |
-| `offset` | number | No | Offset para paginacion |
-| `orderBy` | string | No | Campo para ordenar |
-| `orderDir` | string | No | Direccion: `"asc"` o `"desc"` |
-| `semantic` | string | No | Busqueda semantica en lenguaje natural |
-| `minSimilarity` | number | No | Umbral de similitud (0-1) para busqueda semantica |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `entityName` | string | Yes | Entity name |
+| `filter` | string | No | Simple filter (see [Filters](filtering.md)) |
+| `limit` | number | No | Maximum records. Default: 50, max: 200 |
+| `offset` | number | No | Offset for pagination |
+| `orderBy` | string | No | Field to sort by |
+| `orderDir` | string | No | Direction: `"asc"` or `"desc"` |
+| `semantic` | string | No | Natural language semantic search |
+| `minSimilarity` | number | No | Similarity threshold (0-1) for semantic search |
 
-### Ejemplo basico
+### Basic Example
 
 ```
 query_records({
@@ -102,7 +102,7 @@ query_records({
 })
 ```
 
-### Ejemplo con filtro
+### Example with Filter
 
 ```
 query_records({
@@ -112,7 +112,7 @@ query_records({
 })
 ```
 
-### Ejemplo con busqueda semantica
+### Example with Semantic Search
 
 ```
 query_records({
@@ -123,7 +123,7 @@ query_records({
 })
 ```
 
-### Respuesta
+### Response
 
 ```json
 {
@@ -140,25 +140,25 @@ query_records({
 }
 ```
 
-Para busqueda semantica, cada registro incluye un campo `similarity` con la puntuacion.
+For semantic search, each record includes a `similarity` field with the score.
 
 ---
 
 ## update_record
 
-**Perfil:** core
+**Profile:** core
 
-Actualiza un registro existente. Solo enviar los campos a modificar (actualizacion parcial).
+Updates an existing record. Only send the fields to modify (partial update).
 
-### Parametros
+### Parameters
 
-| Parametro | Tipo | Requerido | Descripcion |
-|-----------|------|-----------|-------------|
-| `entityName` | string | Si | Nombre de la entidad |
-| `recordId` | string | Si | ID del registro |
-| `data` | object | Si | Campos a actualizar |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `entityName` | string | Yes | Entity name |
+| `recordId` | string | Yes | Record ID |
+| `data` | object | Yes | Fields to update |
 
-### Ejemplo
+### Example
 
 ```
 update_record({
@@ -171,7 +171,7 @@ update_record({
 })
 ```
 
-### Respuesta
+### Response
 
 ```json
 {
@@ -190,18 +190,18 @@ update_record({
 
 ## delete_record
 
-**Perfil:** core
+**Profile:** core
 
-Elimina un registro. Esta accion no se puede deshacer.
+Deletes a record. This action cannot be undone.
 
-### Parametros
+### Parameters
 
-| Parametro | Tipo | Requerido | Descripcion |
-|-----------|------|-----------|-------------|
-| `entityName` | string | Si | Nombre de la entidad |
-| `recordId` | string | Si | ID del registro |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `entityName` | string | Yes | Entity name |
+| `recordId` | string | Yes | Record ID |
 
-### Ejemplo
+### Example
 
 ```
 delete_record({
@@ -210,7 +210,7 @@ delete_record({
 })
 ```
 
-### Respuesta
+### Response
 
 ```json
 {

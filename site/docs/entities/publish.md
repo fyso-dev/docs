@@ -1,27 +1,27 @@
-# Publicar entidades
+# Publish Entities
 
-Las entidades en Fyso tienen un ciclo de vida draft/published. Los cambios no son visibles hasta que se publican.
+Entities in Fyso have a draft/published lifecycle. Changes are not visible until they are published.
 
-## Flujo de publicacion
+## Publishing Flow
 
-1. Crear la entidad con `generate_entity` -- se crea como **draft** (a menos que uses `auto_publish`)
-2. Verificar el schema con `get_entity_schema({ version: "draft" })`
-3. Publicar con `publish_entity`
+1. Create the entity with `generate_entity` -- it is created as a **draft** (unless you use `auto_publish`)
+2. Verify the schema with `get_entity_schema({ version: "draft" })`
+3. Publish with `publish_entity`
 
-Cada publicacion crea una nueva **version** con un mensaje descriptivo.
+Each publication creates a new **version** with a descriptive message.
 
 ## MCP Tool: `publish_entity`
 
-**Perfil:** core
+**Profile:** core
 
-### Parametros
+### Parameters
 
-| Parametro | Tipo | Requerido | Descripcion |
-|-----------|------|-----------|-------------|
-| `entityName` | string | Si | Nombre de la entidad |
-| `version_message` | string | Si | Mensaje de version (similar a un commit message) |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `entityName` | string | Yes | Entity name |
+| `version_message` | string | Yes | Version message (similar to a commit message) |
 
-### Ejemplo
+### Example
 
 ```
 publish_entity({
@@ -30,7 +30,7 @@ publish_entity({
 })
 ```
 
-### Respuesta
+### Response
 
 ```json
 {
@@ -42,19 +42,19 @@ publish_entity({
 
 ## MCP Tool: `list_entity_changes`
 
-**Perfil:** advanced
+**Profile:** advanced
 
-Lista el historial de versiones de una entidad.
+Lists the version history of an entity.
 
-### Parametros
+### Parameters
 
-| Parametro | Tipo | Requerido | Descripcion |
-|-----------|------|-----------|-------------|
-| `entityName` | string | Si | Nombre de la entidad |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `entityName` | string | Yes | Entity name |
 
-## Auto-publicacion
+## Auto-publishing
 
-Al usar `generate_entity` con `auto_publish: true`, la entidad se crea y publica en un solo paso. Requiere `version_message`.
+When using `generate_entity` with `auto_publish: true`, the entity is created and published in a single step. Requires `version_message`.
 
 ```
 generate_entity({

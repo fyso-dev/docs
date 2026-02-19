@@ -1,22 +1,22 @@
-# Logs de ejecucion
+# Execution Logs
 
-Los logs de ejecucion permiten depurar reglas de negocio y entender que ocurrio en cada ejecucion.
+Execution logs allow you to debug business rules and understand what happened in each execution.
 
 ## MCP Tool: `get_rule_logs`
 
-**Perfil:** advanced
+**Profile:** advanced
 
-Obtiene los logs de ejecucion de reglas para una entidad.
+Gets the execution logs of rules for an entity.
 
-### Parametros
+### Parameters
 
-| Parametro | Tipo | Requerido | Descripcion |
-|-----------|------|-----------|-------------|
-| `entityName` | string | Si | Nombre de la entidad |
-| `ruleId` | string | No | Filtrar por regla especifica |
-| `limit` | number | No | Maximo de logs a retornar |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `entityName` | string | Yes | Entity name |
+| `ruleId` | string | No | Filter by specific rule |
+| `limit` | number | No | Maximum logs to return |
 
-### Ejemplo
+### Example
 
 ```
 get_rule_logs({
@@ -25,32 +25,32 @@ get_rule_logs({
 })
 ```
 
-### Informacion en los logs
+### Information in the Logs
 
-Cada log incluye:
+Each log includes:
 
-- Regla que se ejecuto (nombre e ID)
-- Registro afectado (ID)
-- Trigger que disparo la ejecucion
-- Resultado: exito, fallo o error
-- Valores de entrada y salida
+- Rule that was executed (name and ID)
+- Affected record (ID)
+- Trigger that fired the execution
+- Result: success, failure, or error
+- Input and output values
 - Timestamp
 
 ## MCP Tool: `test_business_rule`
 
-**Perfil:** advanced
+**Profile:** advanced
 
-Prueba una regla con datos de prueba sin afectar registros reales.
+Tests a rule with test data without affecting real records.
 
-### Parametros
+### Parameters
 
-| Parametro | Tipo | Requerido | Descripcion |
-|-----------|------|-----------|-------------|
-| `entityName` | string | Si | Nombre de la entidad |
-| `ruleId` | string | Si | ID de la regla a probar |
-| `testData` | object | Si | Datos de prueba |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `entityName` | string | Yes | Entity name |
+| `ruleId` | string | Yes | ID of the rule to test |
+| `testData` | object | Yes | Test data |
 
-### Ejemplo
+### Example
 
 ```
 test_business_rule({
@@ -64,4 +64,4 @@ test_business_rule({
 })
 ```
 
-El resultado muestra los valores calculados sin guardar nada en la base de datos.
+The result shows the calculated values without saving anything to the database.

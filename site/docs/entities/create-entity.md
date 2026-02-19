@@ -1,20 +1,20 @@
-# Crear entidades
+# Create Entities
 
-Una entidad define la estructura de datos de tu aplicacion. Es equivalente a una tabla.
+An entity defines the data structure of your application. It is equivalent to a table.
 
 ## MCP Tool: `generate_entity`
 
-**Perfil:** core
+**Profile:** core
 
-### Parametros
+### Parameters
 
-| Parametro | Tipo | Requerido | Descripcion |
-|-----------|------|-----------|-------------|
-| `definition` | object | Si | Estructura de la entidad y sus campos |
-| `auto_publish` | boolean | No | Publicar automaticamente (default: false) |
-| `version_message` | string | Condicional | Requerido si `auto_publish=true` |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `definition` | object | Yes | Structure of the entity and its fields |
+| `auto_publish` | boolean | No | Publish automatically (default: false) |
+| `version_message` | string | Conditional | Required if `auto_publish=true` |
 
-### Estructura de `definition`
+### Structure of `definition`
 
 ```json
 {
@@ -38,28 +38,28 @@ Una entidad define la estructura de datos de tu aplicacion. Es equivalente a una
 }
 ```
 
-### Propiedades de `entity`
+### Properties of `entity`
 
-| Propiedad | Tipo | Requerido | Descripcion |
-|-----------|------|-----------|-------------|
-| `name` | string | Si | Nombre tecnico (snake_case) |
-| `displayName` | string | No | Nombre visible. Default: `name` |
-| `description` | string | No | Descripcion de la entidad |
-| `icon` | string | No | Icono. Default: `"box"` |
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| `name` | string | Yes | Technical name (snake_case) |
+| `displayName` | string | No | Display name. Default: `name` |
+| `description` | string | No | Entity description |
+| `icon` | string | No | Icon. Default: `"box"` |
 
-### Propiedades de cada `field`
+### Properties of each `field`
 
-| Propiedad | Tipo | Requerido | Descripcion |
-|-----------|------|-----------|-------------|
-| `name` | string | Si | Nombre visible del campo |
-| `fieldKey` | string | Si | Clave tecnica (snake_case, unico) |
-| `fieldType` | string | Si | Tipo de dato (ver [Tipos de campo](field-types.md)) |
-| `isRequired` | boolean | No | Obligatorio. Default: false |
-| `isUnique` | boolean | No | Valor unico. Default: false |
-| `description` | string | No | Descripcion del campo |
-| `config` | object | No | Configuracion especifica del tipo |
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| `name` | string | Yes | Display name of the field |
+| `fieldKey` | string | Yes | Technical key (snake_case, unique) |
+| `fieldType` | string | Yes | Data type (see [Field Types](field-types.md)) |
+| `isRequired` | boolean | No | Required. Default: false |
+| `isUnique` | boolean | No | Unique value. Default: false |
+| `description` | string | No | Field description |
+| `config` | object | No | Type-specific configuration |
 
-### Ejemplo completo
+### Full Example
 
 ```
 generate_entity({
@@ -84,7 +84,7 @@ generate_entity({
 })
 ```
 
-### Respuesta exitosa
+### Successful Response
 
 ```json
 {
@@ -105,23 +105,23 @@ generate_entity({
 
 ## MCP Tool: `list_entities`
 
-**Perfil:** core
+**Profile:** core
 
-Lista las entidades del tenant. Por defecto solo muestra las publicadas.
+Lists the entities of the tenant. By default, only shows published ones.
 
-### Parametros
+### Parameters
 
-| Parametro | Tipo | Requerido | Descripcion |
-|-----------|------|-----------|-------------|
-| `include_drafts` | boolean | No | Incluir borradores. Default: false |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `include_drafts` | boolean | No | Include drafts. Default: false |
 
-### Ejemplo
+### Example
 
 ```
 list_entities({ include_drafts: true })
 ```
 
-### Respuesta
+### Response
 
 ```json
 [
@@ -138,24 +138,24 @@ list_entities({ include_drafts: true })
 
 ## MCP Tool: `get_entity_schema`
 
-**Perfil:** core
+**Profile:** core
 
-Obtiene la definicion completa de una entidad, incluyendo hints de estructura para tipos complejos (location, file, select).
+Gets the full definition of an entity, including structure hints for complex types (location, file, select).
 
-### Parametros
+### Parameters
 
-| Parametro | Tipo | Requerido | Descripcion |
-|-----------|------|-----------|-------------|
-| `entityName` | string | Si | Nombre de la entidad |
-| `version` | string | No | Version: numero, `"draft"`, o `"published"` (default) |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `entityName` | string | Yes | Entity name |
+| `version` | string | No | Version: number, `"draft"`, or `"published"` (default) |
 
-### Ejemplo
+### Example
 
 ```
 get_entity_schema({ entityName: "clientes", version: "published" })
 ```
 
-### Respuesta
+### Response
 
 ```json
 {
@@ -197,12 +197,12 @@ get_entity_schema({ entityName: "clientes", version: "published" })
 
 ## MCP Tool: `delete_entity`
 
-**Perfil:** advanced
+**Profile:** advanced
 
-Elimina una entidad y todos sus registros. Esta accion no se puede deshacer.
+Deletes an entity and all its records. This action cannot be undone.
 
-### Parametros
+### Parameters
 
-| Parametro | Tipo | Requerido | Descripcion |
-|-----------|------|-----------|-------------|
-| `entityName` | string | Si | Nombre de la entidad a eliminar |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `entityName` | string | Yes | Name of the entity to delete |

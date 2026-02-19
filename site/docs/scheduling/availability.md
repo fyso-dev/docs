@@ -1,70 +1,70 @@
-# Disponibilidad y horarios
+# Availability and Schedules
 
-El sistema de turnos de Fyso calcula disponibilidad automaticamente a partir de tres entidades.
+Fyso's scheduling system calculates availability automatically from three entities.
 
-## Entidades requeridas
+## Required Entities
 
-Para usar el sistema de turnos, el tenant debe tener estas tres entidades:
+To use the scheduling system, the tenant must have these three entities:
 
 ### `horarios`
 
-Define los horarios regulares de cada profesional.
+Defines the regular schedules for each professional.
 
-| Campo | Tipo | Descripcion |
+| Field | Type | Description |
 |-------|------|-------------|
-| `profesional_id` | relation | Referencia al profesional |
-| `rrule` | text | Regla de recurrencia (formato RFC 5545 / RRule) |
-| `hora_inicio` | text | Hora de inicio (HH:MM) |
-| `hora_fin` | text | Hora de fin (HH:MM) |
-| `duracion_turno` | number | Duracion de cada slot en minutos |
-| `activo` | boolean | Si el horario esta activo |
+| `profesional_id` | relation | Reference to the professional |
+| `rrule` | text | Recurrence rule (RFC 5545 / RRule format) |
+| `hora_inicio` | text | Start time (HH:MM) |
+| `hora_fin` | text | End time (HH:MM) |
+| `duracion_turno` | number | Duration of each slot in minutes |
+| `activo` | boolean | Whether the schedule is active |
 
-Ejemplo de `rrule`: `RRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR` (lunes a viernes).
+Example `rrule`: `RRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR` (Monday to Friday).
 
 ### `excepciones_horario`
 
-Define excepciones al horario regular (feriados, dias especiales).
+Defines exceptions to the regular schedule (holidays, special days).
 
-| Campo | Tipo | Descripcion |
+| Field | Type | Description |
 |-------|------|-------------|
-| `profesional_id` | relation | Referencia al profesional |
-| `fecha` | date | Fecha de la excepcion (YYYY-MM-DD) |
-| `tipo` | select | `"bloqueado"` (no atiende) o `"horario_especial"` |
-| `hora_inicio` | text | Hora de inicio (solo para `horario_especial`) |
-| `hora_fin` | text | Hora de fin (solo para `horario_especial`) |
+| `profesional_id` | relation | Reference to the professional |
+| `fecha` | date | Exception date (YYYY-MM-DD) |
+| `tipo` | select | `"bloqueado"` (unavailable) or `"horario_especial"` |
+| `hora_inicio` | text | Start time (only for `horario_especial`) |
+| `hora_fin` | text | End time (only for `horario_especial`) |
 
 ### `turnos`
 
-Los turnos reservados.
+The booked appointments.
 
-| Campo | Tipo | Descripcion |
+| Field | Type | Description |
 |-------|------|-------------|
-| `profesional_id` | relation | Referencia al profesional |
-| `paciente_id` | relation | Referencia al paciente/cliente |
-| `fecha` | date | Fecha del turno (YYYY-MM-DD) |
-| `hora` | text | Hora del turno (HH:MM) |
-| `duracion` | number | Duracion en minutos |
+| `profesional_id` | relation | Reference to the professional |
+| `paciente_id` | relation | Reference to the patient/client |
+| `fecha` | date | Appointment date (YYYY-MM-DD) |
+| `hora` | text | Appointment time (HH:MM) |
+| `duracion` | number | Duration in minutes |
 | `estado` | select | `"confirmado"`, `"cancelado"`, etc. |
-| `notas` | textarea | Notas opcionales |
+| `notas` | textarea | Optional notes |
 
 ## MCP Tool: `get_available_slots`
 
-**Perfil:** core
+**Profile:** core
 
-Calcula los slots disponibles considerando horarios, excepciones y turnos existentes.
+Calculates available slots considering schedules, exceptions, and existing appointments.
 
-### Parametros
+### Parameters
 
-| Parametro | Tipo | Requerido | Descripcion |
-|-----------|------|-----------|-------------|
-| `profesional_id` | string | Si | UUID del profesional |
-| `fecha` | string | No | Fecha especifica (YYYY-MM-DD) |
-| `desde` | string | No | Inicio del rango (YYYY-MM-DD) |
-| `hasta` | string | No | Fin del rango (YYYY-MM-DD, max 90 dias) |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `profesional_id` | string | Yes | Professional's UUID |
+| `fecha` | string | No | Specific date (YYYY-MM-DD) |
+| `desde` | string | No | Range start (YYYY-MM-DD) |
+| `hasta` | string | No | Range end (YYYY-MM-DD, max 90 days) |
 
-Proporcionar `fecha` para un dia, o `desde`/`hasta` para un rango.
+Provide `fecha` for a single day, or `desde`/`hasta` for a range.
 
-### Ejemplo: un dia
+### Example: Single Day
 
 ```
 get_available_slots({
@@ -73,7 +73,7 @@ get_available_slots({
 })
 ```
 
-### Ejemplo: rango de fechas
+### Example: Date Range
 
 ```
 get_available_slots({
@@ -83,7 +83,7 @@ get_available_slots({
 })
 ```
 
-### Respuesta
+### Response
 
 ```json
 [
@@ -93,10 +93,10 @@ get_available_slots({
 ]
 ```
 
-### Logica de calculo
+### Calculation Logic
 
-1. Obtiene los horarios activos del profesional
-2. Genera slots segun `hora_inicio`, `hora_fin` y `duracion_turno`
-3. Aplica la regla de recurrencia (`rrule`) para determinar que dias aplica
-4. Excluye fechas bloqueadas y ajusta horarios especiales
-5. Excluye slots que ya tienen un turno confirmado
+1. Gets the active schedules for the professional
+2. Generates slots based on `hora_inicio`, `hora_fin`, and `duracion_turno`
+3. Applies the recurrence rule (`rrule`) to determine which days it applies
+4. Excludes blocked dates and adjusts special schedules
+5. Excludes slots that already have a confirmed appointment
