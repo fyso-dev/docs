@@ -56,6 +56,11 @@ const config: Config = {
           label: 'Documentation',
         },
         {
+          href: 'https://app.fyso.dev',
+          label: 'Panel',
+          position: 'right',
+        },
+        {
           type: 'localeDropdown',
           position: 'right',
         },
@@ -70,25 +75,63 @@ const config: Config = {
       style: 'dark',
       links: [
         {
-          title: 'Docs',
+          title: 'Documentación',
           items: [
             {
               label: 'Home',
               to: '/docs',
             },
+            {
+              label: 'Entidades',
+              to: '/docs/category/entidades',
+            },
+            {
+              label: 'API REST',
+              to: '/docs/category/api-rest',
+            },
           ],
         },
         {
-          title: 'Fyso',
+          title: 'Plataforma',
           items: [
             {
               label: 'Dashboard',
               href: 'https://app.fyso.dev',
             },
+            {
+              label: 'Landing',
+              href: 'https://fyso.dev',
+            },
+          ],
+        },
+        {
+          title: 'Comunidad',
+          items: [
+            {
+              label: 'GitHub',
+              href: 'https://github.com/fyso-dev/docs',
+            },
+          ],
+        },
+        {
+          title: 'Legal',
+          items: [
+            {
+              label: 'Privacidad',
+              href: 'https://app.fyso.dev/privacy',
+            },
+            {
+              label: 'Términos',
+              href: 'https://app.fyso.dev/terms',
+            },
+            {
+              label: 'Cookies',
+              href: 'https://app.fyso.dev/cookies',
+            },
           ],
         },
       ],
-      copyright: `Copyright © ${new Date().getFullYear()} Fyso. Built with Docusaurus.`,
+      copyright: `Copyright © ${new Date().getFullYear()} Fyso. Hecho en España.`,
     },
     prism: {
       theme: prismThemes.github,
