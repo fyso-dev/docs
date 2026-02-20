@@ -1,77 +1,54 @@
+---
+sidebar_position: 2
+---
+
 # Conceptos clave
 
 ## Tenant
 
-Un tenant es un espacio de trabajo aislado. Cada tenant tiene su propio esquema de base de datos, sus entidades, reglas, usuarios y configuraciones. Los datos entre tenants estan completamente separados.
+Un espacio de trabajo aislado. Cada tenant tiene un slug único, su propio esquema de base de datos, entidades, reglas, usuarios y configuraciones.
 
-- Cada tenant tiene un **slug** unico (ej: `mi-empresa`)
-- Un admin puede tener acceso a multiples tenants
-- Se selecciona el tenant activo al inicio de cada sesion MCP
+## Entidad
 
-## Entidad (Entity)
+Define la estructura de datos de tu aplicación (equivalente a una tabla):
+- Se crea como borrador, luego se **publica** con un mensaje de versión
+- Tiene campos de sistema: `id`, `created_at`, `updated_at`
+- Más campos definidos por el usuario
 
-Una entidad define la estructura de datos -- equivale a una tabla. Tiene un nombre, campos y configuracion.
+## Campo
 
-**Ciclo de vida:**
-1. Se crea como **draft** (borrador)
-2. Se **publica** con un mensaje de version
-3. Cada cambio crea un nuevo draft que debe publicarse
+Define columnas dentro de una entidad:
+- Propiedades: `name`, `fieldKey`, `fieldType`, `isRequired`, `isUnique`, `config`
+- Tipos disponibles: `text`, `textarea`, `number`, `email`, `phone`, `date`, `boolean`, `select`, `relation`, `file`, `location`
 
-Cada entidad tiene campos del sistema (`id`, `created_at`, `updated_at`) y campos definidos por el usuario.
+## Registro
 
-## Campo (Field)
-
-Los campos definen las columnas de una entidad.
-
-| Propiedad | Descripcion |
-|-----------|-------------|
-| `name` | Nombre visible (ej: "Nombre del cliente") |
-| `fieldKey` | Clave tecnica (ej: `nombre_cliente`) |
-| `fieldType` | Tipo de dato (ver [Tipos de campo](../entities/field-types.md)) |
-| `isRequired` | Si es obligatorio |
-| `isUnique` | Si el valor debe ser unico |
-| `config` | Configuracion especifica del tipo |
-
-**Tipos de campos disponibles:** `text`, `textarea`, `number`, `email`, `phone`, `date`, `boolean`, `select`, `relation`, `file`, `location`.
-
-## Registro (Record)
-
-Un registro es una fila dentro de una entidad. La estructura en la base de datos es:
-
+Una fila dentro de una entidad:
 ```json
-{
-  "id": "uuid",
-  "entityId": "uuid",
-  "data": {
-    "nombre": "Juan Perez",
-    "email": "juan@example.com"
-  },
-  "createdAt": "2026-01-15T10:00:00Z",
-  "updatedAt": "2026-01-15T10:00:00Z"
-}
+{ "id": "uuid", "entityId": "uuid", "data": {...}, "createdAt": "...", "updatedAt": "..." }
 ```
+**Importante:** Los campos de la entidad están dentro de `record.data`, no en el nivel raíz.
 
-**Importante:** Los campos de la entidad estan dentro de `record.data`, no en la raiz del registro. Acceso correcto: `record.data.email`.
+## Regla de negocio
 
-## Regla de negocio (Business Rule)
+Automatiza lógica usando un DSL declarativo:
+- **compute** — Calcula campos automáticamente
+- **validate** — Valida datos antes de guardar (rechaza si falla)
+- **action** — Ejecuta efectos secundarios después de guardar
 
-Las reglas automatizan logica sobre los datos. Se definen usando un DSL (Domain Specific Language).
+## RBAC
 
-**Tipos:**
-- **compute** -- Calcula campos automaticamente (ej: `total = cantidad * precio`)
-- **validate** -- Valida datos antes de guardar (ej: "el precio debe ser positivo")
-- **action** -- Ejecuta efectos secundarios despues de guardar (ej: actualizar un registro padre)
+Control de acceso basado en roles. Definí roles con permisos por entidad, asignalos a usuarios. Roles del sistema: `owner`, `admin`, `member`, `viewer`. Herramientas MCP: `list_roles`, `create_role`, `assign_role`, `revoke_role`.
 
-Las reglas tambien tienen ciclo de vida draft/published.
+## Base de conocimiento
 
-## Perfiles de herramientas (Tool Profiles)
+Subí documentos (PDF, texto, markdown) y consultálos via búsqueda semántica. Los documentos se dividen en chunks e indexan con embeddings para flujos RAG. Ver [Base de conocimiento](../admin/knowledge.md).
 
-Fyso expone herramientas MCP en tres niveles:
+## Perfiles de herramientas
 
-| Perfil | Cantidad | Uso |
-|--------|----------|-----|
-| `core` | ~26 tools | Para uso diario -- crear entidades, CRUD, reglas, deploy |
-| `advanced` | ~38 tools | Agrega delete, test, flows, secrets, logs |
-| `all` | ~49 tools | Todo, incluyendo channels y bots |
+Controla qué herramientas MCP se exponen al agente:
+- `core` (~55 herramientas): uso diario — entidades, registros, reglas, RBAC, conocimiento, PDF, sitios
+- `advanced` (~73 herramientas): core + eliminar, testear, flows, secretos, tokens de deploy, logs
+- `all` (~85 herramientas): advanced + canales y bots
 
-Se configura via la variable de entorno `FYSO_TOOLS` (valores: `core`, `advanced`, `all`). Default: `core`.
+Configurar con la variable de entorno `FYSO_TOOLS`. Ver [Perfiles de herramientas](../api/tool-profiles.md).
