@@ -1,0 +1,251 @@
+---
+sidebar_position: 100
+---
+
+# Changelog
+
+All notable changes to Fyso are documented here.
+
+---
+
+## v1.11.0 — Security Hardening Wave (2026-02-20)
+
+Major security hardening release: input validation, SSRF protection, SQL injection prevention, and API hardening across the platform.
+
+### Security
+- **SQL injection prevention**: Zod validation on entity names, webhooks, rules, scheduling UUIDs, sites domains, knowledge document IDs
+- **SSRF protection**: Block redirect following in flow URL interpolation; sanitize flow email HTML
+- **RBAC on management plane**: Enforce role-based access control on management endpoints
+- **Password hash passthrough prevention**: Filter auth/me response; fix tenant isolation in update-record
+- **Webhook secret masking**: Prevent duplicate subscriptions
+- **Rule timeout bypass fix**: Prevent rule execution timeout bypass
+- **Namespace protection**: Block `_fyso_` namespace from user modification
+- **fieldKey SQL injection fix**: Guard against field key injection
+
+### Features
+- **MCP RBAC tools**: `list_roles`, `create_role`, `assign_role`, `revoke_role`
+- **Regression test suite**: 19 E2E test files, ~170 tests covering security, SSRF, RBAC, auth boundary, input validation
+
+### Fixes
+- Job deduplication: prevent duplicate emails/webhooks from after_save jobs
+- Knowledge ingestion: wrap document chunk ingestion in transaction; store content for retry
+- Formula integer overflow guard
+- Entity/flow guards: lock entity publish transaction; guard flow delete against active runs
+- Jobs API: tenant-scope; guard entity deletion; validate flow entity
+- DB error surfacing from getFieldValue/aggregate
+- Error response sanitization; fix DELETE data wrapper; fix subdomain case
+- Zod schema crash fix for flow steps; delete_flow response shape fix
+- Rules routes reordering; MCP tool missing entity handling
+
+---
+
+## v1.10.1 — Email Verification + Event Emails (2026-02-20)
+
+### Features
+- **Email verification flow** — verify-email page, dashboard banner for unverified users, resend button
+- **Soft-block** tenant creation and API key creation for unverified emails
+- **Event-driven emails** — `plan_limit_reached`, `new_user_joined` templates with 15-minute rate limiting
+- **Email rate limits** — per event type per tenant (`email_rate_limits` table)
+
+### Fixes
+- `APP_BASE_URL` added to production env for Auth0 SDK v4 compatibility
+- `RESEND_API_KEY` added to production deploy workflow
+- Safety-net migration for `email_verified` column
+
+---
+
+## v1.10.0 — Open Core + Superadmin + MCP Marketplace (2026-02-20)
+
+### Architecture
+- **Open Core**: Build-time plugin detection via `@fyso/pro`. OSS build works standalone, PRO build loads the full module at compile time
+- **Enterprise: Dedicated Deployment**: Multi-stage Dockerfiles (~50MB), complete `docker-compose.yml`, provision/update/backup scripts, GitHub Actions workflow
+- **MCP Session Persistence**: Session preferences (tenant, bot) persist to DB via `mcp_user_preferences`
+
+### Superadmin
+- **Superadmin UI**: Platform section in sidebar — manage all tenants (view, change plan, suspend), view all admin users, server health dashboard
+
+### MCP & API
+- **MCP Safety Annotations**: All 85 MCP tools annotated with `readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorldHint`
+- **MCP Marketplace Manifests**: `manifest.json` (Anthropic Connectors Directory), `smithery.yaml` (Smithery.ai)
+- **Advanced API Management**: `GET /api/openapi.json` (OpenAPI 3.1), per-API-key rate limits, `GET /api/usage/dashboard`
+- **Usage Metering & Quotas**: Per-tenant rate limiting (200 req/min), 402 status codes for quota exceeded
+- **Embedding Provider Abstraction**: `EmbeddingProvider` interface, configurable via `EMBEDDING_PROVIDER` env var
+
+### Features
+- **RAG Knowledge Base**: Document ingestion with automatic chunking, OpenAI embeddings, cosine similarity search. MCP tools: `upload_document`, `search_knowledge`, `list_documents`, `get_document`, `delete_document`, `get_knowledge_stats`
+- **RBAC**: Roles and permissions per tenant. 3 system roles (admin, member, viewer), `requirePermission` middleware
+
+---
+
+## v1.9.0 — Platform Sprint (2026-02-19)
+
+### Features
+- **Webhook subscriptions** for entity events
+- **Usage metering & audit** system for billing
+- **pgvector** status and metrics in dashboard
+- **GitHub deploy tokens** with workflow generation
+- **S3 backups** — pg_dump to S3
+- **Payment provider plugin** system with Stripe
+- **AWS SSM** Parameter Store for production secrets
+- **Anthropic marketplace** plugin metadata
+- **Super admin panel** REST API for platform management
+- **Super admin MCP tools** with security controls
+- **Next.js landing page**
+- **Storybook** for `@fyso/ui` component library
+- **Docusaurus docs site** with ES/EN i18n
+
+---
+
+## v1.8.0 — Billing, PDFs, Location & CI/CD (2026-02-19)
+
+### Features
+- **Stripe billing** — checkout, customer portal, webhooks, usage limits per plan
+- **PDF engine** with pdfme — templates, visual editor, `generate_pdf` MCP tool
+- **Location field** — Leaflet/OSM picker, geocoding proxy, lat/lng/address storage
+- **Flow engine** — triggers + steps as metadata, CRUD + toggle
+- **File storage** with FlyDrive abstraction + `upload_file` MCP tool
+- **JSONB referential integrity** — validate relations + onDelete actions
+- **Business rules execution log** for debugging
+- **Field plugin registry** — extensible system replacing hardcoded switch/case
+- **Login with invitation** — non-existent account prompts for code
+- **i18n landing page** — locale switcher + translations
+
+### Infrastructure
+- **GitHub Actions CI/CD** — test → build → deploy pipeline with smoke tests
+- **`.env` from GitHub Secrets** on each deploy
+- **PM2 + Bun** compatibility fix
+
+### MCP Tool Profiles
+- **core** (28 tools): added `generate_pdf`, `upload_file`
+- **advanced** (38 tools): added `create_flow`, `list_flows`, `update_flow`, `delete_flow`, `toggle_flow`
+
+---
+
+## v1.7.2 — Scheduling, CSV Import & Hotfixes (2026-02-17)
+
+### Features
+- **Scheduling with rrule.js** — availability, slots, and date range aggregates
+- **CSV import** with preview and type coercion
+- **Job queue** with SKIP LOCKED and async business rule actions
+- **Tenant branding** — appName, logoUrl, primaryColor
+- **App publishing** — install link, dashboard UI
+- **Redesigned empty states** with i18n
+
+### Fixes
+- Allow `*.sites.fyso.dev` subdomains in CORS
+- Cards consistency — users page table→cards
+- Tenant archive (soft delete) with confirmation dialog
+- Responsive mobile audit — 11 views fixed for 375px+
+- Unify UI language — i18n reset password pages
+
+---
+
+## v1.7.1 — UI Polish (2026-02-17)
+
+- Fix 5 visual bugs in UI polish batch
+
+---
+
+## v1.7.0 — Security Hardening + Developer Skills (2026-02-17)
+
+### Security
+- **Role-based authorization** for tenant user management
+- **Security hardening** — CORS, cookies, body limit, schema validation, JWT audience, tenant ownership, rate limit
+- **SQL injection prevention** — parameterize embedding SQL
+- **Cross-tenant access guard** via `X-Tenant-Slug` header
+- **PostgreSQL connection pool** configuration
+
+### Features
+- **fyso-architect agent** + `/fyso-publish` skill
+- **Core skills** — `/fyso-new-app`, `/fyso-add-entity`, `/fyso-deploy`
+- **`@fyso/ui` package** extracted
+- **Dynamic prebuilds** — `app_catalog` DB table
+- `generate_business_rule` accepts DSL JSON as primary input
+
+---
+
+## v1.6.0 — Auth, i18n & Developer Experience (2026-02-17)
+
+### Features
+- **Email+password login** — bypass Google OAuth dependency
+- **DB-backed invitation codes** for closed beta
+- **Password reset flow** with email token
+- **Transactional emails** — welcome + invitation via Resend
+- **i18n setup** with next-intl for frontend localization
+- **MCP tool profiles** — reduce tool surface for new builders
+- **Claude Code plugin** for Fyso MCP server
+
+### Improvements
+- MCP tool descriptions translated to English
+- API error messages in English
+
+---
+
+## v1.5.0 — Builder Landing (2026-02-17)
+
+- Builder-focused landing page
+- Roadmaps, design brief, and ADR for beta planning
+
+---
+
+## v1.4.0 — Builder Panel (2026-02-16)
+
+- Builder panel wave 1 — layout shell, command palette, dashboard redesign
+- Builder panel wave 2 — pages
+- Builder panel developer tools (wave 3)
+
+---
+
+## v1.3.0 — Prebuilds & Search (2026-02-15)
+
+### Features
+- Prebuild apps: freelancer/consultora, Taller/Servicio técnico, Tienda retail
+- **CSV export** for any entity
+- **Text search** in entity tables
+- **Hybrid search** + similarity threshold for semantic search
+- Onboarding web — guided form + auto-provisioning
+- **after_save actions** for cross-entity updates in business rules
+- `list_users` MCP tool
+- **Sentry** error tracking for API and frontend
+- Automated PostgreSQL backups with retention and alerting
+- Rate limiting middleware
+- Date picker with shadcn Calendar
+- Tenant theming — business name + primary color
+- Internal event tracking for beta analytics
+
+### Fixes
+- Functional sort in DynamicTable
+- Deploy token expiry info + default channel permissions
+- MCP JWT audience mismatch fix
+
+---
+
+## v1.2.0 — Rules Engine (2026-02-14)
+
+### Features
+- **Cross-entity lookup & aggregate in rules engine** — lookup fields read values from related entities, aggregate fields compute `count()` and `sum()`
+- **Auto-create admin on first Google login** with invitation code system
+- Landing page added
+
+---
+
+## v1.1.0 — Google Login (2026-02-14)
+
+- Auto-create admin account on first Google login with invitation code
+- New `POST /google-register` endpoint
+
+---
+
+## v1.0.0 — First Release (2026-02-14)
+
+**First public release of Fyso.**
+
+### Features
+- **OAuth 2.1 authentication** — Authorization code flow with PKCE S256, RS256 JWT tokens, refresh token rotation
+- **Static site hosting** — `*.sites.fyso.dev` with automatic HTTPS via Caddy
+- **Multipart upload** for static sites
+- **Channel tools** system
+- **Docker-based QA infrastructure**
+- **GitHub Actions CI**
+
+Pipeline: Centinela → Cero → Crisol → Lupa → Pulso
