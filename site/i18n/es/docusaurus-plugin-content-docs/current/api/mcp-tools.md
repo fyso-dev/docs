@@ -1,142 +1,192 @@
-# Referencia completa de MCP Tools
+---
+sidebar_position: 2
+---
 
-Lista de todas las herramientas MCP disponibles en Fyso, agrupadas por categoria.
+# Referencia de herramientas MCP
+
+Referencia completa de todas las herramientas MCP disponibles, agrupadas por categoría.
+
+Configurá qué herramientas se exponen con la variable de entorno `FYSO_TOOLS`. Ver [Perfiles de herramientas](tool-profiles.md).
+
+---
 
 ## Tenant
 
-| Tool | Perfil | Descripcion |
-|------|--------|-------------|
-| `list_tenants` | core | Listar tenants accesibles |
-| `select_tenant` | core | Seleccionar tenant activo para la sesion |
+| Herramienta | Perfil | Descripción |
+|-------------|--------|-------------|
+| `list_tenants` | core | Lista los tenants accesibles |
+| `select_tenant` | core | Selecciona el tenant activo para operaciones subsiguientes |
+
+---
 
 ## Entidades
 
-| Tool | Perfil | Descripcion |
-|------|--------|-------------|
-| `generate_entity` | core | Crear entidad con campos desde JSON |
-| `list_entities` | core | Listar entidades (publicadas o con drafts) |
-| `get_entity_schema` | core | Obtener schema completo con structure hints |
-| `publish_entity` | core | Publicar entidad draft |
-| `delete_entity` | advanced | Eliminar entidad y registros |
-| `list_entity_changes` | advanced | Historial de versiones |
-| `manage_custom_fields` | advanced | CRUD de campos custom |
+| Herramienta | Perfil | Descripción |
+|-------------|--------|-------------|
+| `generate_entity` | core | Crea entidad con campos desde definición JSON |
+| `list_entities` | core | Lista entidades (opcionalmente incluye borradores) |
+| `get_entity_schema` | core | Obtiene definición completa y lista de campos |
+| `publish_entity` | core | Publica versión de entidad con mensaje |
+| `delete_entity` | advanced | Elimina entidad y todos sus registros (irreversible) |
+| `list_entity_changes` | advanced | Ver historial de versiones |
+| `manage_custom_fields` | advanced | Agregar, actualizar o eliminar campos personalizados |
+
+---
 
 ## Registros
 
-| Tool | Perfil | Descripcion |
-|------|--------|-------------|
-| `query_records` | core | Consultar con filtros, paginacion, busqueda semantica |
-| `create_record` | core | Crear registro |
-| `update_record` | core | Actualizar registro (parcial) |
-| `delete_record` | core | Eliminar registro |
+| Herramienta | Perfil | Descripción |
+|-------------|--------|-------------|
+| `query_records` | core | Consultar registros con filtros, paginación, orden y búsqueda semántica |
+| `create_record` | core | Crear un nuevo registro |
+| `update_record` | core | Actualizar parcialmente un registro |
+| `delete_record` | core | Eliminar un registro |
+
+---
 
 ## Reglas de negocio
 
-| Tool | Perfil | Descripcion |
-|------|--------|-------------|
-| `generate_business_rule` | core | Crear regla (DSL o prompt) |
+| Herramienta | Perfil | Descripción |
+|-------------|--------|-------------|
+| `generate_business_rule` | core | Generar y crear una regla desde lenguaje natural o JSON DSL |
+| `create_business_rule` | core | Crear regla desde definición DSL explícita |
 | `list_business_rules` | core | Listar reglas de una entidad |
-| `publish_business_rule` | core | Publicar regla draft |
-| `create_business_rule` | advanced | Crear regla con DSL directo |
-| `get_business_rule` | advanced | Ver detalle de una regla |
-| `test_business_rule` | advanced | Probar regla con datos de prueba |
-| `delete_business_rule` | advanced | Eliminar regla |
-| `get_rule_logs` | advanced | Logs de ejecucion |
+| `get_business_rule` | core | Obtener definición completa de una regla |
+| `publish_business_rule` | core | Publicar regla (solo las publicadas se ejecutan) |
+| `test_business_rule` | advanced | Testear regla con datos de prueba sin guardar |
+| `delete_business_rule` | advanced | Eliminar una regla |
+| `get_rule_logs` | advanced | Ver logs de ejecución de una regla |
 
-## Usuarios y autenticacion
+---
 
-| Tool | Perfil | Descripcion |
-|------|--------|-------------|
-| `create_user` | core | Crear usuario en el tenant |
+## RBAC (Roles y permisos)
+
+| Herramienta | Perfil | Descripción |
+|-------------|--------|-------------|
+| `list_roles` | core | Listar roles definidos en el tenant |
+| `create_role` | core | Crear un nuevo rol con permisos |
+| `assign_role` | core | Asignar un rol a un usuario |
+| `revoke_role` | core | Revocar un rol de un usuario |
+
+---
+
+## Usuarios
+
+| Herramienta | Perfil | Descripción |
+|-------------|--------|-------------|
+| `create_user` | core | Crear usuario de tenant con rol y permisos |
 | `list_users` | core | Listar usuarios del tenant |
-| `tenant_login` | advanced | Login como usuario (retorna JWT) |
+| `tenant_login` | advanced | Autenticarse como usuario de tenant, retorna JWT |
+
+---
 
 ## Archivos
 
-| Tool | Perfil | Descripcion |
-|------|--------|-------------|
-| `upload_file` | core | Subir archivo a un campo file (via URL o base64) |
+| Herramienta | Perfil | Descripción |
+|-------------|--------|-------------|
+| `upload_file` | core | Subir un archivo, retorna metadata del archivo almacenado |
+
+---
 
 ## PDF
 
-| Tool | Perfil | Descripcion |
-|------|--------|-------------|
-| `generate_pdf` | core | Generar PDF desde plantilla + datos |
+| Herramienta | Perfil | Descripción |
+|-------------|--------|-------------|
+| `generate_pdf` | core | Generar PDF desde template y datos de registro |
+| `create_pdf_template` | core | Crear un template de PDF |
 
-## Sites estaticos
+---
 
-| Tool | Perfil | Descripcion |
-|------|--------|-------------|
-| `deploy_static_site` | core | Desplegar site en sites.fyso.dev |
-| `list_static_sites` | core | Listar deployments activos |
-| `delete_static_site` | advanced | Eliminar site |
+## Sitios estáticos
 
-## API y cliente
+| Herramienta | Perfil | Descripción |
+|-------------|--------|-------------|
+| `deploy_static_site` | core | Publicar sitio estático en `*.sites.fyso.dev` |
+| `list_static_sites` | core | Listar sitios publicados |
+| `delete_static_site` | advanced | Eliminar un sitio |
+| `generate_deploy_token` | advanced | Generar token de deploy de un solo uso para CI/CD |
 
-| Tool | Perfil | Descripcion |
-|------|--------|-------------|
-| `get_rest_api_spec` | core | Especificacion REST con curl de ejemplo |
-| `generate_api_client` | core | Generar cliente TypeScript con tipos |
+---
+
+## API
+
+| Herramienta | Perfil | Descripción |
+|-------------|--------|-------------|
+| `get_rest_api_spec` | core | Obtener spec OpenAPI de las entidades del tenant |
+| `generate_api_client` | core | Generar código de cliente API en un lenguaje dado |
+
+---
 
 ## Metadata
 
-| Tool | Perfil | Descripcion |
-|------|--------|-------------|
-| `export_metadata` | core | Exportar entidades, campos, reglas a JSON |
-| `import_metadata` | core | Importar metadata desde JSON |
+| Herramienta | Perfil | Descripción |
+|-------------|--------|-------------|
+| `export_metadata` | core | Exportar estructura del tenant (entidades, campos, reglas) como JSON |
+| `import_metadata` | core | Importar JSON de metadata en el tenant |
+
+---
 
 ## Apps
 
-| Tool | Perfil | Descripcion |
-|------|--------|-------------|
+| Herramienta | Perfil | Descripción |
+|-------------|--------|-------------|
 | `publish_app` | core | Publicar tenant como app instalable |
 | `unpublish_app` | core | Despublicar app |
-| `update_app` | core | Actualizar metadata de la app |
+| `update_app` | core | Actualizar nombre, descripción o refrescar metadata de la app |
 
-## Turnos
+---
 
-| Tool | Perfil | Descripcion |
-|------|--------|-------------|
-| `get_available_slots` | core | Consultar disponibilidad |
-| `create_booking` | core | Crear reserva con validacion |
+## Scheduling
 
-## Secrets
+| Herramienta | Perfil | Descripción |
+|-------------|--------|-------------|
+| `get_available_slots` | core | Obtener slots disponibles de un profesional |
+| `create_booking` | core | Crear un turno en un slot disponible |
 
-| Tool | Perfil | Descripcion |
-|------|--------|-------------|
-| `set_secret` | advanced | Guardar un secreto |
-| `delete_secret` | advanced | Eliminar un secreto |
+---
 
-## Flows (automatizaciones)
+## Secretos
 
-| Tool | Perfil | Descripcion |
-|------|--------|-------------|
-| `create_flow` | advanced | Crear automatizacion |
-| `list_flows` | advanced | Listar flows |
-| `update_flow` | advanced | Actualizar flow |
-| `delete_flow` | advanced | Eliminar flow |
-| `toggle_flow` | advanced | Activar/desactivar flow |
+| Herramienta | Perfil | Descripción |
+|-------------|--------|-------------|
+| `set_secret` | advanced | Almacenar un secreto encriptado para usar en flows |
+| `delete_secret` | advanced | Eliminar un secreto almacenado |
 
-## Channels y Bots (perfil: all)
+---
 
-| Tool | Descripcion |
-|------|-------------|
-| `search_channels` | Buscar canales publicos |
-| `get_channel_info` | Info de un canal |
-| `get_my_channel` | Mi canal |
-| `get_channel_tools` | Tools de un canal |
-| `publish_channel` | Publicar canal |
-| `update_channel` | Actualizar canal |
-| `unpublish_channel` | Despublicar canal |
-| `set_channel_permissions` | Configurar permisos |
-| `define_channel_tool` | Definir tool de canal |
-| `update_channel_tool` | Actualizar tool |
-| `remove_channel_tool` | Eliminar tool |
-| `execute_channel_tool` | Ejecutar tool de otro canal |
-| `register_bot` | Registrar bot |
-| `identify_bot` | Identificar bot |
-| `list_bots` | Listar bots |
-| `whoami_bot` | Identidad del bot actual |
-| `revoke_bot` | Revocar bot |
-| `generate_invitation_code` | Generar codigo de invitacion |
-| `list_invitation_codes` | Listar codigos |
+## Flows
+
+| Herramienta | Perfil | Descripción |
+|-------------|--------|-------------|
+| `create_flow` | advanced | Crear un flow de automatización con triggers y pasos |
+| `list_flows` | advanced | Listar flows del tenant |
+| `update_flow` | advanced | Actualizar definición de un flow |
+| `delete_flow` | advanced | Eliminar un flow |
+| `toggle_flow` | advanced | Habilitar o deshabilitar un flow |
+
+---
+
+## Base de conocimiento
+
+| Herramienta | Perfil | Descripción |
+|-------------|--------|-------------|
+| `upload_document` | core | Subir documento para indexación RAG (PDF, texto, markdown) |
+| `search_knowledge` | core | Búsqueda semántica en documentos indexados |
+| `list_documents` | core | Listar documentos subidos |
+| `get_document` | core | Obtener metadata y contenido de un documento |
+| `delete_document` | advanced | Eliminar un documento de la base de conocimiento |
+| `get_knowledge_stats` | core | Obtener estadísticas de indexación (documentos, chunks, cobertura de embeddings) |
+
+---
+
+## Canales y bots
+
+Estas herramientas solo están disponibles con el perfil `all`.
+
+| Herramienta | Perfil | Descripción |
+|-------------|--------|-------------|
+| `search_channels` | all | Buscar canales |
+| `get_channel_info` | all | Obtener metadata de un canal |
+| `execute_channel_tool` | all | Ejecutar una herramienta en un canal |
+| `get_my_channel` | all | Obtener el canal propio del bot actual |
+| `list_channel_tools` | all | Listar herramientas disponibles en un canal |
