@@ -117,6 +117,44 @@ List of all MCP tools available in Fyso, grouped by category.
 | `delete_flow` | advanced | Delete flow |
 | `toggle_flow` | advanced | Enable/disable flow |
 
+## Knowledge Base (RAG)
+
+| Tool | Profile | Description |
+|------|---------|-------------|
+| `upload_document` | advanced | Upload and process document (PDF, TXT, MD) |
+| `search_knowledge` | core | Semantic search in ingested documents |
+| `list_documents` | core | List documents in the knowledge base |
+| `get_document` | advanced | Get document details and metadata |
+| `delete_document` | advanced | Delete document and its chunks |
+| `get_knowledge_stats` | core | Statistics: documents, chunks, storage |
+
+## Roles and Permissions (RBAC)
+
+| Tool | Profile | Description |
+|------|---------|-------------|
+| `list_roles` | core | List tenant roles |
+| `create_role` | advanced | Create custom role with permissions |
+| `assign_role` | advanced | Assign role to a user |
+| `remove_role` | advanced | Remove role from a user |
+
+## Metrics and Usage
+
+| Tool | Profile | Description |
+|------|---------|-------------|
+| `get_usage` | core | Current tenant usage (entities, records, limits) |
+| `get_usage_dashboard` | advanced | Usage dashboard with latency and daily breakdown |
+
+## Superadmin (superadmins only)
+
+| Tool | Profile | Description |
+|------|---------|-------------|
+| `list_all_tenants` | superadmin | List all platform tenants |
+| `get_tenant_details` | superadmin | Tenant details (plan, usage, status) |
+| `change_tenant_plan` | superadmin | Change tenant plan |
+| `suspend_tenant` | superadmin | Suspend tenant |
+| `list_all_admins` | superadmin | List all administrators |
+| `get_server_health` | superadmin | Server and database status |
+
 ## Channels and Bots (profile: all)
 
 | Tool | Description |
@@ -140,3 +178,16 @@ List of all MCP tools available in Fyso, grouped by category.
 | `revoke_bot` | Revoke bot |
 | `generate_invitation_code` | Generate invitation code |
 | `list_invitation_codes` | List codes |
+
+## Safety Annotations
+
+All tools include safety annotations according to MCP spec 2025-03-26:
+
+| Annotation | Meaning | Example |
+|---|---|---|
+| `readOnlyHint: true` | Only reads data | list, get, search, export, query |
+| `destructiveHint: false` | Creates or modifies data | create, update, publish |
+| `destructiveHint: true` | Permanently deletes data | delete, drop, revoke |
+| `idempotentHint: true` | Can be executed multiple times without additional effects | get, list, select |
+
+These annotations enable agents to make informed decisions and are required for MCP marketplace listings.

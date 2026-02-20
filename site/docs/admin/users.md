@@ -119,6 +119,84 @@ list_users({ tenantSlug: "mi-empresa" })
 
 Passwords are never returned.
 
+## RBAC: Custom Roles (v1.10.0)
+
+In addition to the 4 basic roles, you can create custom roles with granular permissions.
+
+### MCP Tool: `list_roles`
+
+**Profile:** core
+
+Lists all tenant roles (system + custom).
+
+```
+list_roles()
+```
+
+### MCP Tool: `create_role`
+
+**Profile:** advanced
+
+Creates a custom role with specific permissions per entity.
+
+### Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `name` | string | Yes | Role name (e.g., "vendedor") |
+| `description` | string | No | Role description |
+| `permissions` | object | Yes | Permissions per entity |
+
+### Example
+
+```
+create_role({
+  name: "vendedor",
+  description: "Access to clients and products, read-only on invoices",
+  permissions: {
+    entities: {
+      clientes: ["create", "read", "update"],
+      productos: ["read"],
+      facturas: ["read"]
+    },
+    canManageUsers: false,
+    canManageSettings: false
+  }
+})
+```
+
+### MCP Tool: `assign_role`
+
+**Profile:** advanced
+
+```
+assign_role({
+  userId: "uuid-del-usuario",
+  roleId: "uuid-del-rol"
+})
+```
+
+### MCP Tool: `remove_role`
+
+**Profile:** advanced
+
+```
+remove_role({
+  userId: "uuid-del-usuario",
+  roleId: "uuid-del-rol"
+})
+```
+
+### System Roles
+
+| Role | Editable | Deletable |
+|------|----------|-----------|
+| `owner` | No | No |
+| `admin` | No | No |
+| `member` | No | No |
+| `viewer` | No | No |
+| Custom | Yes | Yes |
+
 ## MCP Tool: `tenant_login`
 
 **Profile:** advanced

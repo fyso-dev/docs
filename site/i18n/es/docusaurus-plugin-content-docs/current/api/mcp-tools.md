@@ -117,6 +117,44 @@ Lista de todas las herramientas MCP disponibles en Fyso, agrupadas por categoria
 | `delete_flow` | advanced | Eliminar flow |
 | `toggle_flow` | advanced | Activar/desactivar flow |
 
+## Knowledge Base (RAG)
+
+| Tool | Perfil | Descripcion |
+|------|--------|-------------|
+| `upload_document` | advanced | Subir y procesar documento (PDF, TXT, MD) |
+| `search_knowledge` | core | Busqueda semantica en documentos ingeridos |
+| `list_documents` | core | Listar documentos en la knowledge base |
+| `get_document` | advanced | Obtener detalle y metadata de un documento |
+| `delete_document` | advanced | Eliminar documento y sus chunks |
+| `get_knowledge_stats` | core | Estadisticas: documentos, chunks, almacenamiento |
+
+## Roles y permisos (RBAC)
+
+| Tool | Perfil | Descripcion |
+|------|--------|-------------|
+| `list_roles` | core | Listar roles del tenant |
+| `create_role` | advanced | Crear rol custom con permisos |
+| `assign_role` | advanced | Asignar rol a un usuario |
+| `remove_role` | advanced | Quitar rol de un usuario |
+
+## Metricas y uso
+
+| Tool | Perfil | Descripcion |
+|------|--------|-------------|
+| `get_usage` | core | Uso actual del tenant (entidades, registros, limites) |
+| `get_usage_dashboard` | advanced | Dashboard de uso con latencia y desglose diario |
+
+## Superadmin (solo superadmins)
+
+| Tool | Perfil | Descripcion |
+|------|--------|-------------|
+| `list_all_tenants` | superadmin | Listar todos los tenants de la plataforma |
+| `get_tenant_details` | superadmin | Detalle de un tenant (plan, uso, estado) |
+| `change_tenant_plan` | superadmin | Cambiar plan de un tenant |
+| `suspend_tenant` | superadmin | Suspender tenant |
+| `list_all_admins` | superadmin | Listar todos los administradores |
+| `get_server_health` | superadmin | Estado del servidor y base de datos |
+
 ## Channels y Bots (perfil: all)
 
 | Tool | Descripcion |
@@ -140,3 +178,16 @@ Lista de todas las herramientas MCP disponibles en Fyso, agrupadas por categoria
 | `revoke_bot` | Revocar bot |
 | `generate_invitation_code` | Generar codigo de invitacion |
 | `list_invitation_codes` | Listar codigos |
+
+## Safety Annotations
+
+Todos los tools incluyen safety annotations segun MCP spec 2025-03-26:
+
+| Annotation | Significado | Ejemplo |
+|---|---|---|
+| `readOnlyHint: true` | Solo lee datos | list, get, search, export, query |
+| `destructiveHint: false` | Crea o modifica datos | create, update, publish |
+| `destructiveHint: true` | Elimina datos permanentemente | delete, drop, revoke |
+| `idempotentHint: true` | Se puede ejecutar multiples veces sin efecto adicional | get, list, select |
+
+Estas anotaciones permiten a los agentes tomar decisiones informadas y son requisito para listado en marketplaces MCP.

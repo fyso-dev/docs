@@ -119,6 +119,84 @@ list_users({ tenantSlug: "mi-empresa" })
 
 Las passwords nunca se retornan.
 
+## RBAC: Roles custom (v1.10.0)
+
+Ademas de los 4 roles basicos, puedes crear roles personalizados con permisos granulares.
+
+### MCP Tool: `list_roles`
+
+**Perfil:** core
+
+Lista todos los roles del tenant (sistema + custom).
+
+```
+list_roles()
+```
+
+### MCP Tool: `create_role`
+
+**Perfil:** advanced
+
+Crea un rol custom con permisos especificos por entidad.
+
+### Parametros
+
+| Parametro | Tipo | Requerido | Descripcion |
+|-----------|------|-----------|-------------|
+| `name` | string | Si | Nombre del rol (ej: "vendedor") |
+| `description` | string | No | Descripcion del rol |
+| `permissions` | object | Si | Permisos por entidad |
+
+### Ejemplo
+
+```
+create_role({
+  name: "vendedor",
+  description: "Acceso a clientes y productos, solo lectura en facturas",
+  permissions: {
+    entities: {
+      clientes: ["create", "read", "update"],
+      productos: ["read"],
+      facturas: ["read"]
+    },
+    canManageUsers: false,
+    canManageSettings: false
+  }
+})
+```
+
+### MCP Tool: `assign_role`
+
+**Perfil:** advanced
+
+```
+assign_role({
+  userId: "uuid-del-usuario",
+  roleId: "uuid-del-rol"
+})
+```
+
+### MCP Tool: `remove_role`
+
+**Perfil:** advanced
+
+```
+remove_role({
+  userId: "uuid-del-usuario",
+  roleId: "uuid-del-rol"
+})
+```
+
+### Roles del sistema
+
+| Rol | Editable | Eliminable |
+|-----|----------|------------|
+| `owner` | No | No |
+| `admin` | No | No |
+| `member` | No | No |
+| `viewer` | No | No |
+| Custom | Si | Si |
+
 ## MCP Tool: `tenant_login`
 
 **Perfil:** advanced

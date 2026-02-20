@@ -75,3 +75,34 @@ Fyso expone herramientas MCP en tres niveles:
 | `all` | ~49 tools | Todo, incluyendo channels y bots |
 
 Se configura via la variable de entorno `FYSO_TOOLS` (valores: `core`, `advanced`, `all`). Default: `core`.
+
+## Knowledge Base (RAG)
+
+Fyso permite crear una base de conocimiento a partir de documentos (PDF, TXT, MD). Los documentos se dividen en fragmentos (chunks) y se indexan con embeddings para busqueda semantica.
+
+- Los agentes pueden buscar informacion relevante con `search_knowledge`
+- Util para manuales, procedimientos, FAQs, documentacion tecnica
+- Los embeddings se generan con un proveedor configurable (`EMBEDDING_PROVIDER`: openai, ollama, transformers)
+
+## RBAC (Control de Acceso)
+
+Ademas de los roles basicos (owner, admin, member, viewer), Fyso soporta:
+
+- **Roles custom** con permisos granulares por entidad
+- **Permisos por operacion**: create, read, update, delete por cada entidad
+- **Middleware de autorizacion**: `requirePermission` valida permisos en cada request
+
+## Safety Annotations
+
+Cada herramienta MCP incluye anotaciones de seguridad que indican si es de solo lectura, si modifica datos o si es destructiva. Esto permite a los agentes tomar decisiones informadas sobre que herramientas usar.
+
+## Modos de despliegue
+
+Fyso soporta 4 modos:
+
+| Modo | Descripcion |
+|------|-------------|
+| **SaaS** | Instancia compartida en app.fyso.dev |
+| **Dedicated** | Instancia aislada en Azure/AWS del cliente |
+| **Self-hosted** | Docker compose en servidor propio |
+| **Local** | Desarrollo local con docker compose up |

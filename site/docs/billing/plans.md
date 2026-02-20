@@ -4,12 +4,17 @@ Fyso offers plans with different usage limits.
 
 ## Plan Comparison
 
-| Resource | Free | Pro | Beta |
-|----------|------|-----|------|
+| Resource | Free | Pro (14.99 EUR/month) | Enterprise |
+|----------|------|-----------------------|------------|
+| Tenants | 1 | 5 | By contract |
 | Entities | 3 | Unlimited | Unlimited |
-| Records | 500 | Unlimited | Unlimited |
+| Records | 500 | 50,000 | By contract |
 | Static sites | 1 | Unlimited | Unlimited |
 | Users | 2 | Unlimited | Unlimited |
+| API rate limit | 60 req/min | 300 req/min | Custom |
+| Knowledge Base | No | Yes | Yes |
+| Custom RBAC | No | Yes | Yes |
+| Support | Community | Email | Dedicated + SLA |
 
 ## Free Plan
 
@@ -36,6 +41,28 @@ Full plan with no usage restrictions.
 ## Beta Plan
 
 Full access during the Fyso beta phase. Same limits as Pro.
+
+## Enterprise Plan
+
+For companies that need total isolation, dedicated SLA, or deployment on their own infrastructure.
+
+**Includes:**
+- Dedicated instance on client's Azure/AWS
+- Custom SLA
+- Dedicated support
+- Custom rate limits
+- Managed backup and recovery
+
+Contact: enterprise@fyso.dev
+
+## Usage and Quotas (v1.10.0)
+
+Usage can be checked via API (`GET /api/usage`) or MCP (`get_usage`).
+
+When a limit is exceeded:
+- The operation is rejected with HTTP 402 (Payment Required)
+- The message indicates the limit reached and suggests upgrade
+- MCP agents receive the same message and can inform the user
 
 ## Check Current Usage
 
