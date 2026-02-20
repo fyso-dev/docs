@@ -197,6 +197,53 @@ remove_role({
 | `viewer` | No | No |
 | Custom | Yes | Yes |
 
+## Email Verification (v1.10.1)
+
+When creating an admin user, a verification email is sent. Until the email is verified:
+
+- **Cannot create tenants** (soft-block)
+- **Cannot generate API keys** (soft-block)
+- A **banner is displayed in the dashboard** with an option to resend the email
+
+### Flow
+
+1. User registers → receives email with verification link
+2. Clicks the link → page `/verify-email?token=xxx`
+3. If token is valid → email verified, full access
+4. If token expired → option to resend from dashboard
+
+### States
+
+| State | Can create tenants | Can create API keys | Banner visible |
+|-------|-------------------|-------------------|----------------|
+| Not verified | No | No | Yes |
+| Verified | Yes | Yes | No |
+
+### Resend verification
+
+From the dashboard, the user can click "Resend email" in the banner. Rate limited to 1 resend per minute.
+
+## Event Emails (v1.10.1)
+
+Fyso sends automatic emails when relevant events occur in the tenant.
+
+### Available events
+
+| Event | Description | Recipient |
+|-------|-------------|-----------|
+| `plan_limit_reached` | Entity, record or user limit reached | Tenant owner |
+| `new_user_joined` | A new user was created in the tenant | Tenant admins |
+
+### Rate limiting
+
+Each event type has a **15-minute** rate limit per tenant. If the same event triggers multiple times within that window, only the first email is sent.
+
+### Configuration
+
+Notifications can be configured per tenant in the `tenant_notification_settings` table. All events are enabled by default.
+
+---
+
 ## MCP Tool: `tenant_login`
 
 **Profile:** advanced

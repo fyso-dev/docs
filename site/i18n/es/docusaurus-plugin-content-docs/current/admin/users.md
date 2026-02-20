@@ -197,6 +197,53 @@ remove_role({
 | `viewer` | No | No |
 | Custom | Si | Si |
 
+## Verificacion de email (v1.10.1)
+
+Al crear un usuario administrador, se envia un email de verificacion. Hasta que el email sea verificado:
+
+- **No puede crear tenants** (soft-block)
+- **No puede generar API keys** (soft-block)
+- Se muestra un **banner en el dashboard** con opcion de reenviar el email
+
+### Flujo
+
+1. Usuario se registra → recibe email con link de verificacion
+2. Click en el link → pagina `/verify-email?token=xxx`
+3. Si el token es valido → email verificado, acceso completo
+4. Si el token expiro → opcion de reenviar desde el dashboard
+
+### Estados
+
+| Estado | Puede crear tenants | Puede crear API keys | Banner visible |
+|--------|--------------------|--------------------|----------------|
+| No verificado | No | No | Si |
+| Verificado | Si | Si | No |
+
+### Reenviar verificacion
+
+Desde el dashboard, el usuario puede hacer click en "Reenviar email" en el banner. Tiene rate limit de 1 reenvio por minuto.
+
+## Emails de eventos (v1.10.1)
+
+Fyso envia emails automaticos cuando ocurren eventos relevantes en el tenant.
+
+### Eventos disponibles
+
+| Evento | Descripcion | Destinatario |
+|--------|-------------|-------------|
+| `plan_limit_reached` | Se alcanzo el limite de entidades, registros o usuarios | Owner del tenant |
+| `new_user_joined` | Un nuevo usuario fue creado en el tenant | Admins del tenant |
+
+### Rate limiting
+
+Cada tipo de evento tiene un rate limit de **15 minutos** por tenant. Si el mismo evento se dispara multiples veces dentro de esa ventana, solo se envia el primer email.
+
+### Configuracion
+
+Las notificaciones se pueden configurar por tenant en la tabla `tenant_notification_settings`. Por defecto, todos los eventos estan habilitados.
+
+---
+
 ## MCP Tool: `tenant_login`
 
 **Perfil:** advanced
