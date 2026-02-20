@@ -1,63 +1,38 @@
-# Tool Profiles
+---
+sidebar_position: 3
+---
 
-Los perfiles controlan que herramientas MCP estan disponibles para el agente.
+# Perfiles de herramientas
 
-## Configuracion
+Los perfiles de herramientas controlan qué herramientas MCP se exponen al agente. Usá la variable de entorno `FYSO_TOOLS` para configurar el perfil.
 
-Variable de entorno: `FYSO_TOOLS`
+## Perfiles disponibles
 
-| Valor | Descripcion |
-|-------|-------------|
-| `core` | Default. ~26 tools esenciales para uso diario |
-| `advanced` | ~38 tools. Agrega poder-usuario: delete, test, flows, secrets, logs |
-| `all` | ~49 tools. Todo, incluyendo channels y bots |
+### `core` — Por defecto
 
-## Perfil: core
+El perfil estándar para uso diario. Incluye todas las herramientas necesarias para construir y operar aplicaciones.
 
-Tools para el dia a dia de construccion de apps:
+Incluye: selección de tenant, gestión de entidades, CRUD de registros, reglas de negocio, RBAC, usuarios, archivos, PDF, sitios estáticos, apps, scheduling, Base de conocimiento, spec de API, importación/exportación de metadata.
 
-```
-list_tenants, select_tenant,
-generate_entity, list_entities, get_entity_schema, publish_entity,
-query_records, create_record, update_record, delete_record,
-generate_business_rule, list_business_rules, publish_business_rule,
-create_user, list_users,
-deploy_static_site, list_static_sites,
-export_metadata, import_metadata,
-get_rest_api_spec, generate_api_client,
-publish_app, unpublish_app, update_app,
-get_available_slots, create_booking,
-generate_pdf, upload_file
-```
+**~55 herramientas**
 
-## Perfil: advanced
+### `advanced`
 
-Todo lo de `core` mas:
+Todo lo de `core` más operaciones destructivas, herramientas de testing, flows, secretos, tokens de deploy y logs de ejecución.
 
-```
-delete_entity, list_entity_changes, manage_custom_fields,
-create_business_rule, get_business_rule, test_business_rule,
-delete_business_rule,
-tenant_login,
-delete_static_site,
-set_secret, delete_secret,
-create_flow, list_flows, update_flow, delete_flow, toggle_flow,
-get_rule_logs
-```
+Agrega: `delete_entity`, `delete_record`, `test_business_rule`, `delete_business_rule`, `get_rule_logs`, `delete_static_site`, `generate_deploy_token`, `set_secret`, `delete_secret`, `create_flow`, `list_flows`, `update_flow`, `delete_flow`, `toggle_flow`, `delete_document`, `tenant_login`, `manage_custom_fields`, `list_entity_changes`.
 
-## Perfil: all
+**~73 herramientas**
 
-Todo lo de `advanced` mas channels, bots y codigos de invitacion:
+### `all`
 
-```
-search_channels, get_channel_info, get_my_channel, get_channel_tools,
-publish_channel, update_channel, unpublish_channel, set_channel_permissions,
-define_channel_tool, update_channel_tool, remove_channel_tool, execute_channel_tool,
-register_bot, identify_bot, list_bots, whoami_bot, revoke_bot,
-generate_invitation_code, list_invitation_codes
-```
+Todo lo de `advanced` más herramientas de gestión de canales y bots.
 
-## Ejemplo de configuracion
+**~85 herramientas**
+
+## Configuración
+
+En `claude_desktop_config.json` o el cliente MCP equivalente:
 
 ```json
 {
@@ -66,11 +41,19 @@ generate_invitation_code, list_invitation_codes
       "command": "npx",
       "args": ["-y", "@fyso/mcp-server"],
       "env": {
-        "FYSO_API_KEY": "...",
+        "FYSO_API_KEY": "tu-api-key",
         "FYSO_API_URL": "https://api.fyso.dev/api",
-        "FYSO_TOOLS": "advanced"
+        "FYSO_TOOLS": "core"
       }
     }
   }
 }
 ```
+
+## Elegir un perfil
+
+| Caso de uso | Perfil recomendado |
+|-------------|-------------------|
+| Construir apps, gestionar datos | `core` |
+| CI/CD, flows, debugging avanzado | `advanced` |
+| Gestión de bots/canales | `all` |
