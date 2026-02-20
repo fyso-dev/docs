@@ -8,6 +8,36 @@ Todos los cambios relevantes de Fyso están documentados aquí.
 
 ---
 
+## v1.12.0 — Seguridad y Billing (2026-02-20)
+
+### Seguridad
+- **Protección SSRF**: bloqueo de rangos IPv4/IPv6 privados, DNS rebinding y bypass en forma hex `::ffff:7f00:1` (#437, #438, #427)
+- **Aislamiento de tenant en rules engine**: datos de otros tenants ya no son accesibles via lookup/aggregate (#432)
+- **Prevención de SQL injection**: `validateSchemaName()` protege contra injection en nombres de entidades y campos
+- **Auth boundary**: tests completos de autenticación cubriendo 403 para contexto de tenant inválido (#434)
+- **Rules hardening**: guard contra Infinity/NaN, advertencia de condicional sin default, fuzz tests (#418, #419, #423, #428)
+- **Lookup cross-tenant bloqueado**: lookups de reglas ahora con scope del tenant solicitante (#426)
+
+### Billing
+- **Enforcement de planes**: free (1 tenant / 3 entidades), pro/beta (5 tenants / ilimitado), enterprise (ilimitado) (#405, #406)
+- **HTTP 402** cuando se supera la cuota
+- **Endpoint `GET /api/auth/usage`** para consultar uso del plan actual
+- **`PlanBadge` + hook `useUsage`** en la UI web (#413)
+- Página de Tenants: eliminado auto-redirect que impedía crear un 2° tenant
+
+### Fixes
+- `DELETE entity` ahora usa CASCADE para manejar FK constraints de `record_embeddings` (#398)
+- Unicidad del slug de tenant: sufijo hex de 5 caracteres previene colisiones en nombres similares (#425)
+- Formas de respuesta MCP: fallback cuando la API retorna `{success:true}` sin `.data` (#429)
+- Validación de inputs: `.trim()` + `min(1)` en schemas Zod (#431)
+- Aislamiento de tests: tenant demo-company seleccionado explícitamente en 22 archivos de test
+
+### Interno
+- Migración 0042: campos `plan` + Stripe en `admin_users`, `owned_by` en tenants
+- 2343 líneas de cobertura de tests nuevos en 16 archivos
+
+
+
 ## v1.11.0 — Seguridad (2026-02-20)
 
 Release mayor de seguridad: validación de inputs, protección SSRF, prevención de SQL injection y hardening de API.
@@ -249,3 +279,4 @@ Release mayor de seguridad: validación de inputs, protección SSRF, prevención
 - **CI con GitHub Actions**
 
 Pipeline: Centinela → Cero → Crisol → Lupa → Pulso
+
