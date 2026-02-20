@@ -1,15 +1,14 @@
+---
+sidebar_position: 3
+---
+
 # Configurar MCP
 
-Fyso se conecta a agentes de IA a traves del protocolo MCP (Model Context Protocol).
+Conectá un agente de IA (Claude, Cursor, etc.) a tu espacio de trabajo de Fyso usando el servidor MCP.
 
-## Requisitos
+## Opción 1: Claude Desktop (config manual)
 
-- Node.js 18+
-- API key de Fyso (obtenida desde el panel admin o el script de setup)
-
-## Configuracion en Claude Desktop
-
-Agrega la siguiente configuracion en tu archivo `claude_desktop_config.json`:
+Agregá a `claude_desktop_config.json`:
 
 ```json
 {
@@ -27,33 +26,40 @@ Agrega la siguiente configuracion en tu archivo `claude_desktop_config.json`:
 }
 ```
 
+## Opción 2: Smithery
+
+Instalá directamente desde Smithery.ai:
+
+```bash
+npx @smithery/cli install @fyso/mcp-server --client claude
+```
+
+## Opción 3: Directorio de conectores de Anthropic
+
+Encontrá Fyso en el directorio de conectores MCP de Anthropic e instalá con un clic.
+
 ## Variables de entorno
 
-| Variable | Requerida | Descripcion |
+| Variable | Requerida | Descripción |
 |----------|-----------|-------------|
-| `FYSO_API_KEY` | Si | API key para autenticacion |
-| `FYSO_API_URL` | Si | URL base de la API (ej: `https://api.fyso.dev/api`) |
-| `FYSO_TOOLS` | No | Perfil de herramientas: `core` (default), `advanced`, `all` |
+| `FYSO_API_KEY` | Sí | Tu API key de Fyso |
+| `FYSO_API_URL` | Sí | `https://api.fyso.dev/api` |
+| `FYSO_TOOLS` | No | Perfil de herramientas: `core` (por defecto), `advanced`, `all` |
 
-## Verificar conexion
-
-Una vez configurado, el agente puede verificar la conexion:
+## Flujo típico
 
 ```
 list_tenants()
+→ select_tenant({ tenantSlug: "mi-empresa" })
+→ list_entities()
+→ query_records({ entityName: "clientes", limit: 10 })
 ```
 
-Deberia devolver la lista de tenants accesibles.
+## Clientes compatibles
 
-## Flujo tipico de sesion MCP
-
-1. `list_tenants()` -- ver tenants disponibles
-2. `select_tenant({ tenantSlug: "mi-empresa" })` -- seleccionar contexto
-3. `list_entities()` -- ver entidades existentes
-4. Trabajar con entidades, registros y reglas
-
-Todos los tools posteriores a `select_tenant` operan en el contexto del tenant seleccionado.
-
-## Perfiles de herramientas
-
-Ver [Tool Profiles](../api/tool-profiles.md) para el detalle de que herramientas incluye cada perfil.
+- Claude Desktop
+- Cursor
+- Claude Code (CLI)
+- Codex
+- Gemini
+- Cualquier cliente compatible con MCP
