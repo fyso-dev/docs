@@ -8,6 +8,36 @@ All notable changes to Fyso are documented here.
 
 ---
 
+## v1.12.0 — Security Hardening & Billing (2026-02-20)
+
+### Security
+- **SSRF protection**: Block private IPv4/IPv6 ranges, DNS rebinding, and hex-form bypass `::ffff:7f00:1` (#437, #438, #427)
+- **Tenant isolation in rules engine**: Cross-tenant data no longer accessible via lookup/aggregate (#432)
+- **SQL injection prevention**: `validateSchemaName()` guards against injection in entity/field names
+- **Auth boundary**: Comprehensive auth tests covering 403 handling for invalid tenant context (#434)
+- **Rules hardening**: Infinity/NaN guard, conditional-without-default warning, fuzz tests (#418, #419, #423, #428)
+- **Cross-tenant lookup blocked**: Business rule lookups are now scoped to the requesting tenant (#426)
+
+### Billing
+- **Plan enforcement**: free tier (1 tenant / 3 entities), pro/beta (5 tenants / unlimited entities), enterprise (unlimited) (#405, #406)
+- **HTTP 402** returned when quota is exceeded
+- **`GET /api/auth/usage`** endpoint to query current plan usage
+- **`PlanBadge` + `useUsage` hook** in web UI (#413)
+- Tenants page: removed auto-redirect that blocked creating a 2nd tenant
+
+### Fixes
+- `DELETE entity` now uses CASCADE to handle FK constraints from `record_embeddings` (#398)
+- Tenant slug uniqueness: 5-char hex suffix prevents collisions on similar names (#425)
+- MCP response shapes: fallback when API returns `{success:true}` without `.data` (#429)
+- Input validation: `.trim()` + `min(1)` enforced on Zod schemas (#431)
+- Test isolation: demo-company tenant selected explicitly in 22 test files
+
+### Internal
+- Migration 0042: `plan` + Stripe fields on `admin_users`, `owned_by` on tenants
+- 2343 lines of new test coverage across 16 test files
+
+
+
 ## v1.11.0 — Security Hardening Wave (2026-02-20)
 
 Major security hardening release: input validation, SSRF protection, SQL injection prevention, and API hardening across the platform.
@@ -249,3 +279,4 @@ Major security hardening release: input validation, SSRF protection, SQL injecti
 - **GitHub Actions CI**
 
 Pipeline: Centinela → Cero → Crisol → Lupa → Pulso
+
