@@ -129,6 +129,32 @@ record.data.email     -- CORRECT
 record.email          -- INCORRECT
 ```
 
+## OpenAPI 3.1 Spec
+
+Fyso auto-generates an OpenAPI 3.1 spec from your tenant metadata:
+
+```bash
+curl -H "Authorization: Bearer API_KEY" \
+  "https://api.fyso.dev/api/openapi.json"
+```
+
+The spec includes one CRUD endpoint per published entity, correct field schemas, and authentication schemes.
+
+## Delete a Record
+
+```
+DELETE /api/entities/{entityName}/records/{id}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": { "deleted": true }
+}
+```
+
 ## Error Codes
 
 | Code | HTTP | Description |
@@ -138,6 +164,8 @@ record.email          -- INCORRECT
 | `BUSINESS_RULE_ERROR` | 400 | A business rule prevented the operation |
 | `UNAUTHORIZED` | 401 | Missing or invalid API key |
 | `FORBIDDEN` | 403 | No permissions for the operation |
+| `PLAN_LIMIT_REACHED` | 402 | Plan limit reached |
+| `RATE_LIMIT_EXCEEDED` | 429 | Too many requests |
 | `INTERNAL_ERROR` | 500 | Internal server error |
 
 **Error format:**
@@ -147,9 +175,28 @@ record.email          -- INCORRECT
   "success": false,
   "error": {
     "code": "VALIDATION_ERROR",
-    "message": "El campo 'nombre' es obligatorio"
+    "message": "Field 'name' is required"
   }
 }
+```
+
+## Rate Limiting
+
+Each API key has a rate limit based on plan:
+
+| Plan | Limit |
+|------|-------|
+| Free | 60 req/min |
+| Pro | 300 req/min |
+| Enterprise | 600 req/min |
+
+**Headers:**
+
+```
+X-RateLimit-Limit: 60
+X-RateLimit-Remaining: 45
+X-RateLimit-Reset: 1740000060
+X-RateLimit-Policy: 60;w=60
 ```
 
 ## Related MCP Tools

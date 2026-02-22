@@ -34,6 +34,22 @@ curl -H "X-API-Key: API_KEY" \
   "https://api.fyso.dev/api/entities/clientes/records"
 ```
 
+## Especificacion OpenAPI 3.1
+
+Fyso genera automaticamente una especificacion OpenAPI 3.1 a partir del metadata del tenant:
+
+```bash
+curl -H "Authorization: Bearer API_KEY" \
+  "https://api.fyso.dev/api/openapi.json"
+```
+
+La spec incluye:
+- Un endpoint CRUD por entidad publicada
+- Schemas de campos correctos (text, number, boolean, date, select, location, file, relation, etc.)
+- Esquemas de autenticacion (Bearer JWT y X-API-Key)
+
+Util para generar clientes, usar en Postman/Insomnia, o alimentar herramientas de documentacion.
+
 ## Endpoints CRUD
 
 ### Listar registros
@@ -120,6 +136,15 @@ Soporta actualizaciones parciales.
 DELETE /api/entities/{entityName}/records/{id}
 ```
 
+**Respuesta:**
+
+```json
+{
+  "success": true,
+  "data": { "deleted": true }
+}
+```
+
 ## Estructura del registro
 
 Los campos de la entidad estan dentro de `record.data`:
@@ -138,6 +163,8 @@ record.email          -- INCORRECTO
 | `BUSINESS_RULE_ERROR` | 400 | Una regla de negocio impidio la operacion |
 | `UNAUTHORIZED` | 401 | API key faltante o invalida |
 | `FORBIDDEN` | 403 | Sin permisos para la operacion |
+| `PLAN_LIMIT_REACHED` | 402 | Se alcanzo el limite del plan |
+| `RATE_LIMIT_EXCEEDED` | 429 | Demasiadas peticiones |
 | `INTERNAL_ERROR` | 500 | Error interno del servidor |
 
 **Formato de error:**
@@ -150,6 +177,25 @@ record.email          -- INCORRECTO
     "message": "El campo 'nombre' es obligatorio"
   }
 }
+```
+
+## Rate limiting
+
+Cada API key tiene un rate limit segun el plan:
+
+| Plan | Limite |
+|------|--------|
+| Free | 60 req/min |
+| Pro | 300 req/min |
+| Enterprise | 600 req/min |
+
+**Headers:**
+
+```
+X-RateLimit-Limit: 60
+X-RateLimit-Remaining: 45
+X-RateLimit-Reset: 1740000060
+X-RateLimit-Policy: 60;w=60
 ```
 
 ## MCP Tools relacionados

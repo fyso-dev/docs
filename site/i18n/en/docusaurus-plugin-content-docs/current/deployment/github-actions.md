@@ -1,8 +1,57 @@
 # CI/CD with GitHub Actions
 
-Example configuration for automatically deploying to Fyso Sites from GitHub Actions.
+Fyso has two methods for automated deployments from GitHub Actions.
 
-## Basic Workflow
+## Recommended method: persistent token (via MCP)
+
+Persistent tokens (`fyso_dt_...`) do not expire and are reusable. The `generate_deploy_token` MCP tool generates the token and a ready-to-use GitHub Actions workflow.
+
+### Step 1: Generate the token
+
+```
+generate_deploy_token({ subdomain: "my-site" })
+```
+
+The tool automatically detects the framework from `package.json` (Astro, Vite, Next.js, Nuxt, Gatsby, Hugo) and returns:
+
+```json
+{
+  "token": "fyso_dt_abc123...",
+  "workflow": "# GitHub Actions workflow\nname: Deploy to Fyso..."
+}
+```
+
+### Step 2: Add the secret in GitHub
+
+In your repository: **Settings** > **Secrets and variables** > **Actions** > **New repository secret**
+
+| Secret | Value |
+|--------|-------|
+| `FYSO_DEPLOY_TOKEN` | The `fyso_dt_...` token returned |
+
+### Step 3: Copy the workflow
+
+Copy the returned YAML to `.github/workflows/deploy-fyso.yml`. The workflow already has the detected framework, subdomain, and build commands configured.
+
+### Manage tokens
+
+Tokens can be listed and revoked from the web panel at **Settings** > **Deploy tokens**, or via the API:
+
+```bash
+# List tokens
+curl -H "Authorization: Bearer $FYSO_API_KEY" \
+  "https://api.fyso.dev/api/sites/deploy-tokens"
+
+# Revoke
+curl -X DELETE -H "Authorization: Bearer $FYSO_API_KEY" \
+  "https://api.fyso.dev/api/sites/deploy-tokens/{tokenId}"
+```
+
+---
+
+## Alternative method: direct API key
+
+If MCP is not used, you can deploy using the API key directly.
 
 ```yaml
 name: Deploy to Fyso Sites
@@ -31,14 +80,12 @@ jobs:
         run: |
           cd dist
           zip -qr /tmp/site.zip .
-          curl -X POST "$FYSO_API_URL/sites/mi-portfolio/deploy" \
+          curl -X POST "$FYSO_API_URL/sites/my-portfolio/deploy" \
             -H "Authorization: Bearer $FYSO_API_KEY" \
             -F "file=@/tmp/site.zip"
 ```
 
-## Required Secrets
-
-Configure in Settings > Secrets and variables > Actions:
+### Required Secrets
 
 | Secret | Value |
 |--------|-------|
@@ -47,6 +94,7 @@ Configure in Settings > Secrets and variables > Actions:
 
 ## Notes
 
-- The build directory depends on the framework (`dist/`, `build/`, `out/`)
+- The build directory depends on the framework (`dist/`, `build/`, `out/`, `public/`)
 - The subdomain must exist beforehand (create with `deploy_static_site` the first time)
 - Successive deployments replace the previous content
+- Persistent tokens do not expire; API keys must have deploy permissions

@@ -15,17 +15,18 @@ Lista de todas las herramientas MCP disponibles en Fyso, agrupadas por categoria
 |------|--------|-------------|
 | `generate_entity` | core | Crear entidad con campos desde JSON |
 | `list_entities` | core | Listar entidades (publicadas o con drafts) |
-| `get_entity_schema` | core | Obtener schema completo con structure hints |
+| `get_entity_schema` | core | Obtener schema completo con structure hints y rendering hints |
 | `publish_entity` | core | Publicar entidad draft |
+| `add_field` | core | Agregar un campo a una entidad publicada en un paso |
 | `delete_entity` | advanced | Eliminar entidad y registros |
 | `list_entity_changes` | advanced | Historial de versiones |
-| `manage_custom_fields` | advanced | CRUD de campos custom |
+| `manage_custom_fields` | advanced | CRUD completo de campos custom |
 
 ## Registros
 
 | Tool | Perfil | Descripcion |
 |------|--------|-------------|
-| `query_records` | core | Consultar con filtros, paginacion, busqueda semantica |
+| `query_records` | core | Consultar con filtros (incluyendo AND/OR), paginacion, busqueda semantica, `resolve_depth` |
 | `create_record` | core | Crear registro |
 | `update_record` | core | Actualizar registro (parcial) |
 | `delete_record` | core | Eliminar registro |
@@ -41,7 +42,7 @@ Lista de todas las herramientas MCP disponibles en Fyso, agrupadas por categoria
 | `get_business_rule` | advanced | Ver detalle de una regla |
 | `test_business_rule` | advanced | Probar regla con datos de prueba |
 | `delete_business_rule` | advanced | Eliminar regla |
-| `get_rule_logs` | advanced | Logs de ejecucion |
+| `get_rule_logs` | advanced | Logs de ejecucion con filtros por status, regla, registro y fecha |
 
 ## Usuarios y autenticacion
 
@@ -50,6 +51,34 @@ Lista de todas las herramientas MCP disponibles en Fyso, agrupadas por categoria
 | `create_user` | core | Crear usuario en el tenant |
 | `list_users` | core | Listar usuarios del tenant |
 | `tenant_login` | advanced | Login como usuario (retorna JWT) |
+
+## Roles y permisos (RBAC)
+
+| Tool | Perfil | Descripcion |
+|------|--------|-------------|
+| `list_roles` | advanced | Listar roles del tenant |
+| `create_role` | advanced | Crear rol con permisos custom |
+| `assign_role` | advanced | Asignar rol a un usuario |
+| `revoke_role` | advanced | Revocar rol de un usuario |
+
+## Webhooks
+
+| Tool | Perfil | Descripcion |
+|------|--------|-------------|
+| `create_webhook` | advanced | Crear subscripcion a eventos de una entidad |
+| `list_webhooks` | advanced | Listar subscripciones activas |
+| `delete_webhook` | advanced | Eliminar subscripcion |
+
+## Base de conocimiento (RAG)
+
+| Tool | Perfil | Descripcion |
+|------|--------|-------------|
+| `upload_document` | core | Ingestar documento (texto, URL, PDF, HTML) |
+| `search_knowledge` | core | Busqueda semantica en la base de conocimiento |
+| `list_documents` | core | Listar documentos ingresados |
+| `get_document` | core | Ver detalle de un documento |
+| `delete_document` | core | Eliminar documento |
+| `get_knowledge_stats` | core | Estadisticas (total docs, chunks, storage) |
 
 ## Archivos
 
@@ -61,6 +90,7 @@ Lista de todas las herramientas MCP disponibles en Fyso, agrupadas por categoria
 
 | Tool | Perfil | Descripcion |
 |------|--------|-------------|
+| `create_pdf_template` | core | Generar plantilla PDF automaticamente desde nombres de campo |
 | `generate_pdf` | core | Generar PDF desde plantilla + datos |
 
 ## Sites estaticos
@@ -69,6 +99,7 @@ Lista de todas las herramientas MCP disponibles en Fyso, agrupadas por categoria
 |------|--------|-------------|
 | `deploy_static_site` | core | Desplegar site en sites.fyso.dev |
 | `list_static_sites` | core | Listar deployments activos |
+| `generate_deploy_token` | advanced | Generar token persistente + workflow de GitHub Actions |
 | `delete_static_site` | advanced | Eliminar site |
 
 ## API y cliente

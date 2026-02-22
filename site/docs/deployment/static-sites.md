@@ -12,7 +12,7 @@ Fyso permite desplegar sitios estaticos (Astro, Vite, Next.js export, etc.) en s
 |-----------|------|-----------|-------------|
 | `subdomain` | string | Si | Subdominio (ej: `"mi-portfolio"` -> `mi-portfolio.sites.fyso.dev`) |
 | `path` | string | Condicional | Ruta absoluta al directorio de build (ej: `/home/user/my-site/dist`) |
-| `bundle_base64` | string | Condicional | ZIP en base64 (solo para sites < 5KB) |
+| `bundle_base64` | string | Condicional | ZIP en base64 del sitio a desplegar |
 
 Se debe proporcionar `path` o `bundle_base64`.
 
@@ -34,20 +34,14 @@ deploy_static_site({
 
 ### Modo remoto (MCP no tiene acceso al filesystem)
 
-Si el MCP server no puede acceder a la ruta, retorna un comando `curl` para ejecutar manualmente:
+Si el MCP server no puede acceder al filesystem, usar `bundle_base64`. El agente debe comprimir el directorio a un ZIP en base64 y pasarlo directamente:
 
-```json
-{
-  "success": false,
-  "action_required": "run_command",
-  "message": "The MCP server cannot access your local filesystem...",
-  "command": "cd \"/home/user/my-site/dist\" && zip -qr /tmp/_fyso_deploy.zip . && curl ...",
-  "token_expires_in": 300,
-  "token_note": "The deploy token in this command expires in 5 minutes."
-}
 ```
-
-El agente debe ejecutar el comando retornado con el tool Bash.
+deploy_static_site({
+  subdomain: "mi-portfolio",
+  bundle_base64: "<ZIP en base64>"
+})
+```
 
 ### Respuesta exitosa
 
@@ -86,12 +80,39 @@ Elimina un site desplegado.
 |-----------|------|-----------|-------------|
 | `subdomain` | string | Si | Subdominio del site a eliminar |
 
+## Dominio personalizado (Plan Pro)
+
+Los usuarios del plan Pro pueden apuntar un dominio propio (ej: `app.miempresa.com`) a su subdominio de Fyso.
+
+### Configuracion
+
+1. En el panel web, ir a **Sites** > seleccionar el site > **Dominio personalizado**
+2. Ingresar el dominio deseado
+3. Agregar un registro CNAME en tu DNS: `app.miempresa.com` -> `sites.fyso.dev`
+4. Fyso verifica la propagacion DNS (puede tomar hasta 24h)
+5. Una vez verificado, el site responde en el dominio personalizado
+
+### Alternativa TXT
+
+Si no se puede agregar un CNAME (por conflictos con la raiz del dominio), agregar un registro TXT de verificacion que Fyso proporciona.
+
+### Notas
+
+- Solo disponible en plan Pro
+- El subdominio `*.sites.fyso.dev` sigue funcionando en paralelo
+- HTTPS se provisiona automaticamente
+
+## CI/CD con `generate_deploy_token`
+
+Para deployments desde pipelines de CI/CD sin acceso a MCP, usar tokens persistentes. Ver [GitHub Actions](./github-actions.md).
+
 ## Limites
 
 | Plan | Sites |
 |------|-------|
 | Free | 1 |
 | Pro | Ilimitado |
+| Enterprise | Ilimitado |
 
 ## Frameworks soportados
 
@@ -101,4 +122,7 @@ Cualquier framework que genere output estatico:
 - **Vite** -- `npm run build` -> `dist/`
 - **Next.js** (export) -- `next export` -> `out/`
 - **Create React App** -- `npm run build` -> `build/`
+- **Nuxt** (static) -- `nuxt generate` -> `dist/`
+- **Gatsby** -- `gatsby build` -> `public/`
+- **Hugo** -- `hugo` -> `public/`
 - **HTML/CSS/JS puro** -- directorio con `index.html`

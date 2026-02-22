@@ -10,9 +10,9 @@ Fyso allows deploying static sites (Astro, Vite, Next.js export, etc.) on subdom
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `subdomain` | string | Yes | Subdomain (e.g., `"mi-portfolio"` -> `mi-portfolio.sites.fyso.dev`) |
+| `subdomain` | string | Yes | Subdomain (e.g., `"my-portfolio"` -> `my-portfolio.sites.fyso.dev`) |
 | `path` | string | Conditional | Absolute path to the build directory (e.g., `/home/user/my-site/dist`) |
-| `bundle_base64` | string | Conditional | ZIP in base64 (only for sites < 5KB) |
+| `bundle_base64` | string | Conditional | ZIP in base64 of the site to deploy |
 
 Either `path` or `bundle_base64` must be provided.
 
@@ -27,27 +27,21 @@ The MCP server compresses the directory and uploads it automatically:
 
 ```
 deploy_static_site({
-  subdomain: "mi-portfolio",
+  subdomain: "my-portfolio",
   path: "/home/user/my-site/dist"
 })
 ```
 
 ### Remote Mode (MCP does not have filesystem access)
 
-If the MCP server cannot access the path, it returns a `curl` command to execute manually:
+If the MCP server cannot access the filesystem, use `bundle_base64`. The agent should compress the directory to a base64 ZIP and pass it directly:
 
-```json
-{
-  "success": false,
-  "action_required": "run_command",
-  "message": "The MCP server cannot access your local filesystem...",
-  "command": "cd \"/home/user/my-site/dist\" && zip -qr /tmp/_fyso_deploy.zip . && curl ...",
-  "token_expires_in": 300,
-  "token_note": "The deploy token in this command expires in 5 minutes."
-}
 ```
-
-The agent must execute the returned command using the Bash tool.
+deploy_static_site({
+  subdomain: "my-portfolio",
+  bundle_base64: "<ZIP in base64>"
+})
+```
 
 ### Successful Response
 
@@ -56,8 +50,8 @@ The agent must execute the returned command using the Bash tool.
   "success": true,
   "message": "Site deployed successfully",
   "data": {
-    "url": "https://mi-portfolio.sites.fyso.dev",
-    "subdomain": "mi-portfolio"
+    "url": "https://my-portfolio.sites.fyso.dev",
+    "subdomain": "my-portfolio"
   }
 }
 ```
@@ -86,12 +80,39 @@ Deletes a deployed site.
 |-----------|------|----------|-------------|
 | `subdomain` | string | Yes | Subdomain of the site to delete |
 
+## Custom Domain (Pro Plan)
+
+Pro plan users can point a custom domain (e.g., `app.mycompany.com`) to their Fyso subdomain.
+
+### Setup
+
+1. In the web panel, go to **Sites** > select the site > **Custom domain**
+2. Enter the desired domain
+3. Add a CNAME record in your DNS: `app.mycompany.com` -> `sites.fyso.dev`
+4. Fyso verifies DNS propagation (can take up to 24h)
+5. Once verified, the site responds on the custom domain
+
+### TXT alternative
+
+If a CNAME cannot be added (conflicts at root domain), add the TXT verification record Fyso provides.
+
+### Notes
+
+- Only available on Pro plan
+- The `*.sites.fyso.dev` subdomain continues to work in parallel
+- HTTPS is provisioned automatically
+
+## CI/CD with `generate_deploy_token`
+
+For deployments from CI/CD pipelines without MCP access, use persistent tokens. See [GitHub Actions](./github-actions.md).
+
 ## Limits
 
 | Plan | Sites |
 |------|-------|
 | Free | 1 |
 | Pro | Unlimited |
+| Enterprise | Unlimited |
 
 ## Supported Frameworks
 
@@ -101,4 +122,7 @@ Any framework that generates static output:
 - **Vite** -- `npm run build` -> `dist/`
 - **Next.js** (export) -- `next export` -> `out/`
 - **Create React App** -- `npm run build` -> `build/`
+- **Nuxt** (static) -- `nuxt generate` -> `dist/`
+- **Gatsby** -- `gatsby build` -> `public/`
+- **Hugo** -- `hugo` -> `public/`
 - **Plain HTML/CSS/JS** -- directory with `index.html`

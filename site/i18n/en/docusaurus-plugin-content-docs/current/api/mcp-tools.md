@@ -15,17 +15,18 @@ List of all MCP tools available in Fyso, grouped by category.
 |------|---------|-------------|
 | `generate_entity` | core | Create entity with fields from JSON |
 | `list_entities` | core | List entities (published or with drafts) |
-| `get_entity_schema` | core | Get full schema with structure hints |
+| `get_entity_schema` | core | Get full schema with structure hints and rendering hints |
 | `publish_entity` | core | Publish draft entity |
+| `add_field` | core | Add a field to a published entity in one step |
 | `delete_entity` | advanced | Delete entity and records |
 | `list_entity_changes` | advanced | Version history |
-| `manage_custom_fields` | advanced | Custom fields CRUD |
+| `manage_custom_fields` | advanced | Full CRUD for custom fields |
 
 ## Records
 
 | Tool | Profile | Description |
 |------|---------|-------------|
-| `query_records` | core | Query with filters, pagination, semantic search |
+| `query_records` | core | Query with filters (including AND/OR), pagination, semantic search, `resolve_depth` |
 | `create_record` | core | Create record |
 | `update_record` | core | Update record (partial) |
 | `delete_record` | core | Delete record |
@@ -39,9 +40,9 @@ List of all MCP tools available in Fyso, grouped by category.
 | `publish_business_rule` | core | Publish draft rule |
 | `create_business_rule` | advanced | Create rule with direct DSL |
 | `get_business_rule` | advanced | View rule details |
-| `test_business_rule` | advanced | Test rule with test data |
+| `test_business_rule` | advanced | Test rule with sample data |
 | `delete_business_rule` | advanced | Delete rule |
-| `get_rule_logs` | advanced | Execution logs |
+| `get_rule_logs` | advanced | Execution logs with filters by status, rule, record, and date |
 
 ## Users and Authentication
 
@@ -50,6 +51,34 @@ List of all MCP tools available in Fyso, grouped by category.
 | `create_user` | core | Create user in the tenant |
 | `list_users` | core | List tenant users |
 | `tenant_login` | advanced | Login as user (returns JWT) |
+
+## Roles and Permissions (RBAC)
+
+| Tool | Profile | Description |
+|------|---------|-------------|
+| `list_roles` | advanced | List tenant roles |
+| `create_role` | advanced | Create role with custom permissions |
+| `assign_role` | advanced | Assign role to a user |
+| `revoke_role` | advanced | Revoke role from a user |
+
+## Webhooks
+
+| Tool | Profile | Description |
+|------|---------|-------------|
+| `create_webhook` | advanced | Subscribe to entity events |
+| `list_webhooks` | advanced | List active subscriptions |
+| `delete_webhook` | advanced | Delete subscription |
+
+## Knowledge Base (RAG)
+
+| Tool | Profile | Description |
+|------|---------|-------------|
+| `upload_document` | core | Ingest document (text, URL, PDF, HTML) |
+| `search_knowledge` | core | Semantic search in knowledge base |
+| `list_documents` | core | List ingested documents |
+| `get_document` | core | View document details |
+| `delete_document` | core | Delete document |
+| `get_knowledge_stats` | core | Stats (total docs, chunks, storage) |
 
 ## Files
 
@@ -61,6 +90,7 @@ List of all MCP tools available in Fyso, grouped by category.
 
 | Tool | Profile | Description |
 |------|---------|-------------|
+| `create_pdf_template` | core | Auto-generate PDF template from field names |
 | `generate_pdf` | core | Generate PDF from template + data |
 
 ## Static Sites
@@ -69,6 +99,7 @@ List of all MCP tools available in Fyso, grouped by category.
 |------|---------|-------------|
 | `deploy_static_site` | core | Deploy site on sites.fyso.dev |
 | `list_static_sites` | core | List active deployments |
+| `generate_deploy_token` | advanced | Generate persistent token + GitHub Actions workflow |
 | `delete_static_site` | advanced | Delete site |
 
 ## API and Client
