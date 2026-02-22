@@ -119,6 +119,131 @@ list_users({ tenantSlug: "mi-empresa" })
 
 Passwords are never returned.
 
+---
+
+## Self-Service Flows
+
+Tenant users can register, reset their passwords, and change their passwords without admin involvement. These features are **disabled by default** and must be explicitly enabled per tenant.
+
+### Feature Flags
+
+Enable self-service features via `PUT /api/auth/tenants/:id/settings`:
+
+```bash
+curl -X PUT "https://api.fyso.dev/api/auth/tenants/<tenant-id>/settings" \
+  -H "Authorization: Bearer <admin-token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "selfRegistrationEnabled": true,
+    "passwordResetEnabled": true
+  }'
+```
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `selfRegistrationEnabled` | `false` | Allow users to self-register (creates `viewer` role) |
+| `passwordResetEnabled` | `false` | Allow forgot-password / reset-password flows (requires Resend email) |
+
+All self-service endpoints are anonymous — they don't require admin auth, only the `X-Tenant-ID` header.
+
+---
+
+### Self-registration
+
+```bash
+POST /api/auth/tenant/register
+X-Tenant-ID: <tenant-slug>
+Content-Type: application/json
+
+{
+  "name": "Jane Builder",
+  "email": "jane@example.com",
+  "password": "securepassword"
+}
+```
+
+Creates a user with role `viewer`. Returns `403` if `selfRegistrationEnabled` is `false`, `409` on duplicate email.
+
+**Response (201):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "email": "jane@example.com",
+    "name": "Jane Builder",
+    "role": "viewer"
+  }
+}
+```
+
+---
+
+### Forgot password
+
+```bash
+POST /api/auth/tenant/forgot-password
+X-Tenant-ID: <tenant-slug>
+Content-Type: application/json
+
+{ "email": "jane@example.com" }
+```
+
+Sends a one-time reset link via email. Always returns `200` — the response never reveals whether the email exists. Returns `403` if `passwordResetEnabled` is `false`.
+
+Rate-limited to **3 requests per 15 minutes** per IP + tenant.
+
+---
+
+### Reset password
+
+```bash
+POST /api/auth/tenant/reset-password
+X-Tenant-ID: <tenant-slug>
+Content-Type: application/json
+
+{
+  "token": "<token-from-email>",
+  "new_password": "newsecurepassword"
+}
+```
+
+Applies a new password using the one-time token from the reset email. Tokens expire after **1 hour** and are invalidated on first use. Returns `403` if `passwordResetEnabled` is `false`.
+
+---
+
+### Change password (authenticated)
+
+```bash
+POST /api/auth/tenant/change-password
+Authorization: Bearer <user-token>
+Content-Type: application/json
+
+{
+  "current_password": "oldsecurepassword",
+  "new_password": "newsecurepassword"
+}
+```
+
+Authenticated users can change their own password. Validates the current password before applying the change. Returns `401` if `current_password` is incorrect.
+
+---
+
+### Admin password reset
+
+```bash
+PATCH /api/auth/tenant/users/:id/reset-password
+Authorization: Bearer <admin-token>
+Content-Type: application/json
+
+{ "new_password": "newpassword123" }
+```
+
+Owner or admin can reset any user's password without knowing the current password. Requires `owner` or `admin` role.
+
+---
+
 ## MCP Tool: `tenant_login`
 
 **Profile:** advanced

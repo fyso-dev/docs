@@ -80,6 +80,16 @@ Configure which tools are exposed with the `FYSO_TOOLS` environment variable. Se
 
 ---
 
+## Anonymous API Keys
+
+| Tool | Profile | Description |
+|------|---------|-------------|
+| `create_anonymous_key` | advanced | Create an anonymous API key for public access (TTL required) |
+| `list_anonymous_keys` | advanced | List anonymous keys — metadata only, no key values |
+| `revoke_anonymous_key` | advanced | Immediately revoke an anonymous API key |
+
+---
+
 ## Files
 
 | Tool | Profile | Description |

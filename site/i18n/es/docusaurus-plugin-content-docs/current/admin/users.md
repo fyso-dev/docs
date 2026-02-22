@@ -119,6 +119,131 @@ list_users({ tenantSlug: "mi-empresa" })
 
 Las passwords nunca se retornan.
 
+---
+
+## Flujos de autogestión
+
+Los usuarios del tenant pueden registrarse, recuperar su contraseña y cambiarla sin intervención del administrador. Estas funcionalidades están **deshabilitadas por defecto** y deben habilitarse explícitamente por tenant.
+
+### Feature flags
+
+Habilitá las funcionalidades de autogestión via `PUT /api/auth/tenants/:id/settings`:
+
+```bash
+curl -X PUT "https://api.fyso.dev/api/auth/tenants/<tenant-id>/settings" \
+  -H "Authorization: Bearer <admin-token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "selfRegistrationEnabled": true,
+    "passwordResetEnabled": true
+  }'
+```
+
+| Flag | Default | Descripción |
+|------|---------|-------------|
+| `selfRegistrationEnabled` | `false` | Permite que usuarios se registren solos (crea rol `viewer`) |
+| `passwordResetEnabled` | `false` | Habilita el flujo de forgot-password / reset-password (requiere Resend configurado) |
+
+Todos los endpoints de autogestión son anónimos — no requieren auth de admin, solo el header `X-Tenant-ID`.
+
+---
+
+### Autoregistro
+
+```bash
+POST /api/auth/tenant/register
+X-Tenant-ID: <tenant-slug>
+Content-Type: application/json
+
+{
+  "name": "Jane Builder",
+  "email": "jane@example.com",
+  "password": "contraseñasegura"
+}
+```
+
+Crea un usuario con rol `viewer`. Devuelve `403` si `selfRegistrationEnabled` es `false`, `409` si el email ya existe.
+
+**Respuesta (201):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "email": "jane@example.com",
+    "name": "Jane Builder",
+    "role": "viewer"
+  }
+}
+```
+
+---
+
+### Recuperar contraseña
+
+```bash
+POST /api/auth/tenant/forgot-password
+X-Tenant-ID: <tenant-slug>
+Content-Type: application/json
+
+{ "email": "jane@example.com" }
+```
+
+Envía un link de recuperación por email. Siempre devuelve `200` — la respuesta nunca revela si el email existe o no. Devuelve `403` si `passwordResetEnabled` es `false`.
+
+Rate limit: **3 requests cada 15 minutos** por IP + tenant.
+
+---
+
+### Resetear contraseña
+
+```bash
+POST /api/auth/tenant/reset-password
+X-Tenant-ID: <tenant-slug>
+Content-Type: application/json
+
+{
+  "token": "<token-del-email>",
+  "new_password": "nuevacontraseñasegura"
+}
+```
+
+Aplica la nueva contraseña usando el token de un solo uso del email de recuperación. Los tokens vencen en **1 hora** y se invalidan en el primer uso. Devuelve `403` si `passwordResetEnabled` es `false`.
+
+---
+
+### Cambiar contraseña (autenticado)
+
+```bash
+POST /api/auth/tenant/change-password
+Authorization: Bearer <user-token>
+Content-Type: application/json
+
+{
+  "current_password": "contraseñaactual",
+  "new_password": "nuevacontraseñasegura"
+}
+```
+
+Los usuarios autenticados pueden cambiar su propia contraseña. Valida la contraseña actual antes de aplicar el cambio. Devuelve `401` si `current_password` es incorrecta.
+
+---
+
+### Reset de contraseña por admin
+
+```bash
+PATCH /api/auth/tenant/users/:id/reset-password
+Authorization: Bearer <admin-token>
+Content-Type: application/json
+
+{ "new_password": "nuevacontraseña123" }
+```
+
+Owner o admin puede resetear la contraseña de cualquier usuario sin conocer la contraseña actual. Requiere rol `owner` o `admin`.
+
+---
+
 ## MCP Tool: `tenant_login`
 
 **Perfil:** advanced

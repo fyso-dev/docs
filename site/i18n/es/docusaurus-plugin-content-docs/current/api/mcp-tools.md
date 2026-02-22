@@ -80,6 +80,16 @@ Configurá qué herramientas se exponen con la variable de entorno `FYSO_TOOLS`.
 
 ---
 
+## API Keys anónimas
+
+| Herramienta | Perfil | Descripción |
+|-------------|--------|-------------|
+| `create_anonymous_key` | advanced | Crear una anonymous API key para acceso público (TTL obligatorio) |
+| `list_anonymous_keys` | advanced | Listar anonymous keys — solo metadatos, sin valores de key |
+| `revoke_anonymous_key` | advanced | Revocar inmediatamente una anonymous API key |
+
+---
+
 ## Archivos
 
 | Herramienta | Perfil | Descripción |
