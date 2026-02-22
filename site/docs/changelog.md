@@ -1,3 +1,16 @@
+## Unreleased
+
+### Features
+- **docs.fyso.dev** is now the official documentation URL. **fyso.dev** and **www.fyso.dev** serve the landing page, with a visible link to docs in Navbar and Footer. (#532)
+- **Dedicated instance `/health/detailed`** — returns extended isolation fields: `instance.id`, `instance.uptime_seconds`, `instance.region`, `database.type`, `security.network_isolation`, `security.public_db_access`. Allows verifying isolation status of Enterprise instances. (#524)
+- **Dedicated instance rollback** — `rollback.sh` script to revert to a previous image tag with health verification. (#524)
+- **Docker images on GHCR** — `fyso-api`, `fyso-mcp`, `fyso-migrate` automatically built and pushed to GHCR on pushes to `main` and semver tags. (#524)
+
+### Fixes
+- **Never-published draft entities visible via API** — `getEntityByName` now returns `null` for drafts without a `publishedVersion` when `includeDrafts=false`. Brand-new drafts (never published) no longer pass through the records API guard. (#533)
+
+---
+
 ## v1.14.0 — 2026-02-21
 
 ### Features
