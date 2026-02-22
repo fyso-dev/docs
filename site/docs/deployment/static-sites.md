@@ -86,6 +86,58 @@ Deletes a deployed site.
 |-----------|------|----------|-------------|
 | `subdomain` | string | Yes | Subdomain of the site to delete |
 
+## Custom Domains (Pro)
+
+Point any domain you own to your site. Requires a Pro plan.
+
+### MCP Tool: `set_custom_domain`
+
+**Profile:** advanced
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `subdomain` | string | Yes | Subdomain of the deployed site |
+| `action` | string | Yes | `add`, `verify`, `status`, or `remove` |
+| `domain` | string | Conditional | Custom domain to add (e.g., `app.mycompany.com`). Required for `add`. |
+
+### Setup
+
+**Step 1 — Add the domain:**
+
+```
+set_custom_domain({
+  subdomain: "mi-portfolio",
+  action: "add",
+  domain: "app.mycompany.com"
+})
+```
+
+The response includes DNS instructions. Add a `CNAME` record pointing your domain to the provided target.
+
+**Step 2 — Verify:**
+
+```
+set_custom_domain({
+  subdomain: "mi-portfolio",
+  action: "verify"
+})
+```
+
+Returns `status: "active"` once DNS propagates and SSL is provisioned.
+
+**Step 3 — Done.** Your site is now accessible at both `mi-portfolio.sites.fyso.dev` and `app.mycompany.com`.
+
+### Remove a custom domain
+
+```
+set_custom_domain({
+  subdomain: "mi-portfolio",
+  action: "remove"
+})
+```
+
+---
+
 ## Limits
 
 | Plan | Sites |

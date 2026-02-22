@@ -76,6 +76,7 @@ Configure which tools are exposed with the `FYSO_TOOLS` environment variable. Se
 |------|---------|-------------|
 | `create_user` | core | Create tenant user with role and permissions |
 | `list_users` | core | List users in the tenant |
+| `update_user_password` | core | Reset any user's password (admin operation, no current password required) |
 | `tenant_login` | advanced | Authenticate as tenant user, returns JWT |
 
 ---
@@ -115,6 +116,7 @@ Configure which tools are exposed with the `FYSO_TOOLS` environment variable. Se
 | `list_static_sites` | core | List deployed sites |
 | `delete_static_site` | advanced | Delete a site |
 | `generate_deploy_token` | advanced | Generate one-time deploy token for CI/CD |
+| `set_custom_domain` | advanced | Add, verify, check, or remove a custom domain for a site (Pro) |
 
 ---
 

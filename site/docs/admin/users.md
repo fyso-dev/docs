@@ -164,6 +164,8 @@ Content-Type: application/json
 
 Creates a user with role `viewer`. Returns `403` if `selfRegistrationEnabled` is `false`, `409` on duplicate email.
 
+Rate-limited to **5 requests per hour** per IP + tenant.
+
 **Response (201):**
 
 ```json
@@ -209,7 +211,9 @@ Content-Type: application/json
 }
 ```
 
-Applies a new password using the one-time token from the reset email. Tokens expire after **1 hour** and are invalidated on first use. Returns `403` if `passwordResetEnabled` is `false`.
+Applies a new password using the one-time token from the reset email. Tokens expire after **1 hour** and are invalidated on first use. Issuing a new reset token invalidates any prior outstanding token for that user. Returns `403` if `passwordResetEnabled` is `false`.
+
+All active sessions for the user are invalidated on successful reset.
 
 ---
 
@@ -226,7 +230,7 @@ Content-Type: application/json
 }
 ```
 
-Authenticated users can change their own password. Validates the current password before applying the change. Returns `401` if `current_password` is incorrect.
+Authenticated users can change their own password. Validates the current password before applying the change. Returns `401` if `current_password` is incorrect. All other active sessions are invalidated after a successful change.
 
 ---
 
@@ -240,7 +244,36 @@ Content-Type: application/json
 { "new_password": "newpassword123" }
 ```
 
-Owner or admin can reset any user's password without knowing the current password. Requires `owner` or `admin` role.
+Owner or admin can reset any user's password without knowing the current password. Requires `owner` or `admin` role. All active sessions for the affected user are invalidated.
+
+This endpoint is also exposed as the `update_user_password` MCP tool.
+
+---
+
+## MCP Tool: `update_user_password`
+
+**Profile:** core
+
+Resets a tenant user's password. Owners and admins can set a new password for any user without knowing the current one. Useful for account recovery when the user cannot log in.
+
+### Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `userId` | string | Yes | UUID of the user |
+| `newPassword` | string | Yes | New password (min 8 characters) |
+| `tenantSlug` | string | No | Tenant slug. Default: selected tenant |
+
+### Example
+
+```
+update_user_password({
+  userId: "uuid-of-user",
+  newPassword: "newpassword123"
+})
+```
+
+All active sessions for the user are invalidated when the password is reset. The user can log in immediately with the new password.
 
 ---
 
