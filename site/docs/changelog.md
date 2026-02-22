@@ -1,3 +1,25 @@
+## v1.14.0 — 2026-02-21
+
+### Features
+- **Knowledge/RAG admin page** — Browse and manage knowledge base documents from the admin UI (#496, #497)
+- **Webhook subscriptions admin UI** — Manage webhook subscriptions for entity events from the admin panel (#499)
+- **RAG phase 2: PDF/HTML ingestion + search analytics** — Ingest PDF and HTML documents into knowledge base; track search queries with latency/score metrics (#371, #508)
+- **Landing page: pricing section** — 3-tier pricing (Free/Pro/Enterprise) with monthly/annual toggle (#503)
+- **Landing page: integrations section** — Showcase automation platform integrations (n8n, Make, Zapier) (#504)
+- **Astro Starlight docs site** — New documentation site with ES/EN i18n (#506)
+
+### Fixes
+- Superadmin health page: align field names with API and show PM2 processes (#495)
+- SSRF validation on http_callback rules + rollup/action unit tests (#498)
+- Retry transactions on serialization failure to reduce deadlock errors (#502, #505)
+- MCP: serialize `template_json` to string in `create_pdf_template` tool (#511)
+- MCP: use `'ai'` instead of `'agent'` for `generatedBy` in rule tools (#510)
+
+### Tests
+- State machine lifecycle tests for entity/rule/flow transitions (#500)
+- Concurrency race condition tests for webhooks, rules, entity publish, flows (#501)
+
+
 ---
 sidebar_position: 100
 ---
@@ -279,4 +301,3 @@ Major security hardening release: input validation, SSRF protection, SQL injecti
 - **GitHub Actions CI**
 
 Pipeline: Centinela → Cero → Crisol → Lupa → Pulso
-
