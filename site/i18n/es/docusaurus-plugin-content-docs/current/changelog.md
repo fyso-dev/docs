@@ -1,12 +1,15 @@
 ## Sin publicar
 
 ### Funcionalidades
+- **Admin API keys** — Keys de API a nivel de plataforma (`fyso_adm_*`) con control de scopes granular (`platform:read`, `platform:write`, `tenants:manage`). Crear, listar, revocar y auditar keys vía `GET/POST/DELETE /api/admin/platform/keys`. Log de auditoría completo con cada creación, uso y revocación. Las keys se hashean con bcrypt y se muestran solo una vez al crearlas. (#543)
 - **docs.fyso.dev** es ahora la URL oficial de la documentación. **fyso.dev** y **www.fyso.dev** sirven la landing page, con un link visible a docs en Navbar y Footer. (#532)
 - **Instancia dedicada `/health/detailed`** — devuelve campos extendidos de aislamiento: `instance.id`, `instance.uptime_seconds`, `instance.region`, `database.type`, `security.network_isolation`, `security.public_db_access`. Permite verificar el estado de aislamiento de instancias Enterprise. (#524)
 - **Rollback de instancia dedicada** — script `rollback.sh` para revertir a un tag de imagen anterior con verificación de salud. (#524)
 - **Imágenes Docker en GHCR** — `fyso-api`, `fyso-mcp`, `fyso-migrate` construidas y publicadas automáticamente en GHCR en cada push a `main` y en tags semver. (#524)
 
 ### Correcciones
+- **La respuesta de crear registro ahora refleja campos calculados por after-save** — Cuando una regla de negocio after-save actualiza campos del registro recién creado, la respuesta de create ahora devuelve el estado final en lugar del snapshot previo a la regla. Un GET posterior mostraba los valores correctos; ahora la respuesta de create es consistente. (#544)
+- **Límite de concurrencia en el evaluador de reglas de negocio** — Bajo alta concurrencia de escrituras, la evaluación de reglas podía agotar el pool de conexiones a la base de datos. Un semáforo limita ahora las evaluaciones concurrentes (por defecto: 8, configurable con la variable de entorno `RULE_EVAL_MAX_CONCURRENCY`). Las evaluaciones excedentes se encolan en lugar de generar queries ilimitadas. (#545)
 - **Entidades draft nunca publicadas visibles vía API** — `getEntityByName` ahora retorna `null` para drafts sin `publishedVersion` cuando `includeDrafts=false`. Antes, una entidad recién creada (nunca publicada) pasaba el guard y era accesible por la API de registros. (#533)
 
 ---

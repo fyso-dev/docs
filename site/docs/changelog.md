@@ -1,12 +1,15 @@
 ## Unreleased
 
 ### Features
+- **Admin API keys** — Platform-level API keys (`fyso_adm_*`) with granular scope control (`platform:read`, `platform:write`, `tenants:manage`). Create, list, revoke, and audit keys via `GET/POST/DELETE /api/admin/platform/keys`. Full audit log with every creation, use, and revocation. Keys are bcrypt-hashed and shown only once at creation. (#543)
 - **docs.fyso.dev** is now the official documentation URL. **fyso.dev** and **www.fyso.dev** serve the landing page, with a visible link to docs in Navbar and Footer. (#532)
 - **Dedicated instance `/health/detailed`** — returns extended isolation fields: `instance.id`, `instance.uptime_seconds`, `instance.region`, `database.type`, `security.network_isolation`, `security.public_db_access`. Allows verifying isolation status of Enterprise instances. (#524)
 - **Dedicated instance rollback** — `rollback.sh` script to revert to a previous image tag with health verification. (#524)
 - **Docker images on GHCR** — `fyso-api`, `fyso-mcp`, `fyso-migrate` automatically built and pushed to GHCR on pushes to `main` and semver tags. (#524)
 
 ### Fixes
+- **Create record response now reflects after-save computed fields** — When an after-save business rule updates fields on the newly created record, the create response now returns the final state instead of the pre-rule snapshot. A subsequent GET would have shown the correct values; now the create response is consistent with it. (#544)
+- **Business rule evaluator concurrency limit** — Under heavy concurrent writes, rule evaluation could exhaust the database connection pool. A semaphore now caps concurrent rule evaluations (default: 8, configurable via `RULE_EVAL_MAX_CONCURRENCY` env var). Excess evaluations queue rather than spawning unbounded DB queries. (#545)
 - **Never-published draft entities visible via API** — `getEntityByName` now returns `null` for drafts without a `publishedVersion` when `includeDrafts=false`. Brand-new drafts (never published) no longer pass through the records API guard. (#533)
 
 ---
