@@ -1,3 +1,25 @@
+## v1.14.0 — 2026-02-21
+
+### Funcionalidades
+- **Página de administración Knowledge/RAG** — Navega y gestiona documentos de la base de conocimiento desde el panel de administración (#496, #497)
+- **UI de administración de webhooks** — Gestiona suscripciones de webhooks para eventos de entidades desde el panel de administración (#499)
+- **RAG fase 2: ingesta PDF/HTML + analíticas de búsqueda** — Ingesta documentos PDF y HTML en la base de conocimiento; registra consultas de búsqueda con métricas de latencia y score (#371, #508)
+- **Landing page: sección de precios** — 3 niveles de precios (Free/Pro/Enterprise) con toggle mensual/anual (#503)
+- **Landing page: sección de integraciones** — Muestra integraciones con plataformas de automatización (n8n, Make, Zapier) (#504)
+- **Sitio de documentación Astro Starlight** — Nuevo sitio de documentación con i18n ES/EN (#506)
+
+### Correcciones
+- Panel de salud del superadmin: alinear nombres de campos con la API y mostrar procesos PM2 (#495)
+- Validación SSRF en reglas http_callback + pruebas unitarias rollup/action (#498)
+- Reintentar transacciones en fallo de serialización para reducir errores de deadlock (#502, #505)
+- MCP: serializar `template_json` como string en herramienta `create_pdf_template` (#511)
+- MCP: usar `'ai'` en lugar de `'agent'` para `generatedBy` en herramientas de reglas (#510)
+
+### Pruebas
+- Pruebas de ciclo de vida de máquina de estados para transiciones de entidad/regla/flujo (#500)
+- Pruebas de condición de carrera de concurrencia para webhooks, reglas, publicación de entidades, flujos (#501)
+
+
 ---
 sidebar_position: 100
 ---
@@ -279,4 +301,3 @@ Release mayor de seguridad: validación de inputs, protección SSRF, prevención
 - **CI con GitHub Actions**
 
 Pipeline: Centinela → Cero → Crisol → Lupa → Pulso
-
