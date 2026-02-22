@@ -220,6 +220,45 @@ Devuelve eventos de creación, rotación y revocación de la key. Máximo 500 en
 
 ---
 
+## Uso de anonymous keys
+
+Una vez que tenés la key, incluila en las requests a los endpoints de entidades y canales.
+
+### Autenticación
+
+Enviá la key con el header `X-Anon-Key` o `Authorization: Bearer`:
+
+```bash
+# Opción 1: header X-Anon-Key
+curl -H "X-Anon-Key: anon_..." \
+  https://api.fyso.dev/api/entities/products/records
+
+# Opción 2: header Authorization
+curl -H "Authorization: Bearer anon_..." \
+  https://api.fyso.dev/api/entities/products/records
+```
+
+### Endpoints compatibles
+
+| Endpoint | Scope requerido |
+|----------|----------------|
+| `GET /api/entities/*` | `records:read` |
+| `GET /api/channels/*` | `channels:read` |
+
+Las anonymous keys son de **solo lectura**. Las requests con métodos `POST`, `PUT` o `DELETE` devuelven `401`.
+
+### Errores
+
+Todos los errores de autenticación devuelven `401 Unauthorized` sin detalle adicional. Esto aplica por igual a keys inexistentes, vencidas, revocadas o con valores inválidos — no se filtra información sobre el estado de la key.
+
+Las requests que superan los rate limits de la key devuelven `429 Too Many Requests`.
+
+### HTTPS
+
+Las requests con anonymous keys deben usar HTTPS en producción. Las requests por HTTP son rechazadas.
+
+---
+
 ## Seguridad
 
 - Los valores de las keys se hashean con bcrypt. El plaintext nunca se almacena ni se vuelve a exponer.

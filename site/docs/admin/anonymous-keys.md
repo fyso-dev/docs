@@ -220,6 +220,45 @@ Returns creation, rotation, and revocation events for the key. Maximum 500 entri
 
 ---
 
+## Using Anonymous Keys
+
+Once you have a key, send it with requests to entity and channel endpoints.
+
+### Authentication
+
+Include the key via `X-Anon-Key` header or `Authorization: Bearer`:
+
+```bash
+# Option 1: X-Anon-Key header
+curl -H "X-Anon-Key: anon_..." \
+  https://api.fyso.dev/api/entities/products/records
+
+# Option 2: Authorization header
+curl -H "Authorization: Bearer anon_..." \
+  https://api.fyso.dev/api/entities/products/records
+```
+
+### Supported Endpoints
+
+| Endpoint | Required scope |
+|----------|----------------|
+| `GET /api/entities/*` | `records:read` |
+| `GET /api/channels/*` | `channels:read` |
+
+Anonymous keys are **read-only**. Requests using `POST`, `PUT`, or `DELETE` methods return `401`.
+
+### Errors
+
+All authentication failures return `401 Unauthorized` with no additional detail. This applies to missing keys, expired keys, revoked keys, and invalid values alike — no information is leaked about key existence or revocation status.
+
+Requests that exceed per-key rate limits return `429 Too Many Requests`.
+
+### HTTPS
+
+Anonymous key requests must use HTTPS in production. HTTP requests are rejected.
+
+---
+
 ## Security Notes
 
 - Key values are bcrypt-hashed. The plaintext is never stored or re-exposed after creation.
