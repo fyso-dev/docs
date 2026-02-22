@@ -1,3 +1,16 @@
+## Sin publicar
+
+### Funcionalidades
+- **docs.fyso.dev** es ahora la URL oficial de la documentación. **fyso.dev** y **www.fyso.dev** sirven la landing page, con un link visible a docs en Navbar y Footer. (#532)
+- **Instancia dedicada `/health/detailed`** — devuelve campos extendidos de aislamiento: `instance.id`, `instance.uptime_seconds`, `instance.region`, `database.type`, `security.network_isolation`, `security.public_db_access`. Permite verificar el estado de aislamiento de instancias Enterprise. (#524)
+- **Rollback de instancia dedicada** — script `rollback.sh` para revertir a un tag de imagen anterior con verificación de salud. (#524)
+- **Imágenes Docker en GHCR** — `fyso-api`, `fyso-mcp`, `fyso-migrate` construidas y publicadas automáticamente en GHCR en cada push a `main` y en tags semver. (#524)
+
+### Correcciones
+- **Entidades draft nunca publicadas visibles vía API** — `getEntityByName` ahora retorna `null` para drafts sin `publishedVersion` cuando `includeDrafts=false`. Antes, una entidad recién creada (nunca publicada) pasaba el guard y era accesible por la API de registros. (#533)
+
+---
+
 ## v1.14.0 — 2026-02-21
 
 ### Funcionalidades
