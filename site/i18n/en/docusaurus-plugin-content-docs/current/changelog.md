@@ -4,6 +4,26 @@ Platform change history for Fyso.
 
 ---
 
+## Unreleased
+
+### New features
+
+#### Documentation site at docs.fyso.dev
+- **`docs.fyso.dev`** is now the official documentation URL. (#532)
+- **`fyso.dev`** and **`www.fyso.dev`** serve the landing page. Navbar and Footer include a visible link to `docs.fyso.dev`. (#532)
+
+#### Dedicated instance: isolation info in `/health/detailed`
+- `/health/detailed` now returns extended isolation fields: `instance.id`, `instance.uptime_seconds`, `instance.region`, `database.type`, `security.network_isolation`, `security.public_db_access`. Allows verifying isolation status of Enterprise instances from any HTTP client. (#524)
+- `rollback.sh` script to revert a dedicated instance to a previous image tag with health verification. (#524)
+- Docker images (`fyso-api`, `fyso-mcp`, `fyso-migrate`) automatically published to GHCR on pushes to `main` and semver tags. (#524)
+
+### Bug fixes
+
+#### Entities and records
+- **Never-published draft entities visible via API** — `getEntityByName` now returns `null` for drafts without a `publishedVersion` when `includeDrafts=false`. Previously, a brand-new draft (never published) bypassed the guard and was accessible via the records API. (#533)
+
+---
+
 ## v0.4.0 — 2026-02-21
 
 ### New features
