@@ -11,6 +11,7 @@
 - **Docker images on GHCR** — `fyso-api`, `fyso-mcp`, `fyso-migrate` automatically built and pushed to GHCR on pushes to `main` and semver tags. (#524)
 
 ### Fixes
+- **DB worker SSL reconnections** — Background workers (job queue, embedding service) were failing to reconnect to RDS after idle timeouts due to an SSL negotiation incompatibility in postgres.js. Replaced `ssl: 'require'` string mode with `ssl: { rejectUnauthorized: false }` object form and increased `idle_timeout` from 20 s to 60 s to reduce unnecessary reconnections. (#565)
 - **Anonymous API key management auth** — `GET /api/auth/anonymous-keys` and `POST /api/auth/anonymous-keys` now correctly return `401 Unauthorized` for unauthenticated requests (previously returned `400`). (#562)
 - **Create record response now reflects after-save computed fields** — When an after-save business rule updates fields on the newly created record, the create response now returns the final state instead of the pre-rule snapshot. A subsequent GET would have shown the correct values; now the create response is consistent with it. (#544)
 - **Business rule evaluator concurrency limit** — Under heavy concurrent writes, rule evaluation could exhaust the database connection pool. A semaphore now caps concurrent rule evaluations (default: 8, configurable via `RULE_EVAL_MAX_CONCURRENCY` env var). Excess evaluations queue rather than spawning unbounded DB queries. (#545)
