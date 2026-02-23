@@ -20,6 +20,8 @@
 - **Create record response now reflects after-save computed fields** — When an after-save business rule updates fields on the newly created record, the create response now returns the final state instead of the pre-rule snapshot. A subsequent GET would have shown the correct values; now the create response is consistent with it. (#544)
 - **Business rule evaluator concurrency limit** — Under heavy concurrent writes, rule evaluation could exhaust the database connection pool. A semaphore now caps concurrent rule evaluations (default: 8, configurable via `RULE_EVAL_MAX_CONCURRENCY` env var). Excess evaluations queue rather than spawning unbounded DB queries. (#545)
 - **Never-published draft entities visible via API** — `getEntityByName` now returns `null` for drafts without a `publishedVersion` when `includeDrafts=false`. Brand-new drafts (never published) no longer pass through the records API guard. (#533)
+- **Business rule stability under concurrent load** — DB connection pool default increased from 20 to 40 (`DB_MAX_CONNECTIONS`). A new semaphore in the record service caps simultaneous rule evaluation passes at 8 (`MAX_CONCURRENT_RULES`). After-save `update_related` actions targeting the same parent record are batched into a single DB write per unique record, reducing WAL entries under write-heavy workloads. (#577)
+- **System entities hidden; knowledge `content_text` backfilled** — `_fyso_*` system entities no longer appear in `list_entities` results or the admin entity list. Existing tenants missing the `documents.content_text` column receive it automatically on next DDL run, restoring full-text indexing for knowledge documents. (#606)
 
 ---
 
