@@ -277,3 +277,70 @@ Login como usuario del tenant. Retorna un JWT para usar con la REST API.
   }
 }
 ```
+
+---
+
+## Codigos de invitacion
+
+Los codigos de invitacion controlan quien puede unirse a tu tenant cuando el auto-registro esta deshabilitado. Cada codigo puede ser de uso unico o multiple, con vencimiento opcional y una nota para identificarlo.
+
+Todos los endpoints de invitaciones requieren un token de administrador autenticado en el header `Authorization: Bearer <token>`.
+
+### Generar una invitacion
+
+```bash
+curl -X POST https://api.fyso.dev/api/invitations \
+  -H "Authorization: Bearer <admin-token>" \
+  -H "Content-Type: application/json" \
+  -d '{"note": "equipo contratista", "maxUses": 5, "expiresAt": "2026-03-31T00:00:00Z"}'
+```
+
+**Parametros del cuerpo** (todos opcionales):
+
+| Parametro | Tipo | Descripcion |
+|-----------|------|-------------|
+| `note` | string | Etiqueta interna para identificar el codigo |
+| `maxUses` | number | Maxima cantidad de usos. Por defecto: `1` |
+| `expiresAt` | string | Fecha de vencimiento en formato ISO 8601 |
+
+**Respuesta:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "token": "FYSO-A3B4-C5D6",
+    "inviteUrl": "https://app.example.com/invite/FYSO-A3B4-C5D6"
+  }
+}
+```
+
+Comparte el `inviteUrl` directamente con el invitado, o usa el `token` en un flujo de onboarding personalizado.
+
+### Listar todas las invitaciones
+
+```bash
+curl https://api.fyso.dev/api/invitations \
+  -H "Authorization: Bearer <admin-token>"
+```
+
+Devuelve todos los codigos de invitacion del tenant, incluyendo contadores de uso y estado.
+
+### Invalidar una invitacion
+
+```bash
+curl -X DELETE https://api.fyso.dev/api/invitations/FYSO-A3B4-C5D6 \
+  -H "Authorization: Bearer <admin-token>"
+```
+
+Desactiva el codigo (`is_active = false`). Cualquier intento posterior de uso devuelve un error. Retorna `404` si el token no se encuentra.
+
+### Validar un codigo (publico)
+
+```bash
+curl -X POST https://api.fyso.dev/api/invitations/validate \
+  -H "Content-Type: application/json" \
+  -d '{"code": "FYSO-A3B4-C5D6"}'
+```
+
+No requiere autenticacion. Retorna `{ "valid": true }` si el codigo esta activo, no vencido y tiene usos disponibles.
