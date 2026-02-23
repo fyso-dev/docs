@@ -127,7 +127,7 @@ Los usuarios del tenant pueden registrarse, recuperar su contraseña y cambiarla
 
 ### Feature flags
 
-Habilitá las funcionalidades de autogestión via `PUT /api/auth/tenants/:id/settings`:
+Habilita las funcionalidades de autogestión via `PUT /api/auth/tenants/:id/settings`:
 
 ```bash
 curl -X PUT "https://api.fyso.dev/api/auth/tenants/<tenant-id>/settings" \

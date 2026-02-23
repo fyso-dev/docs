@@ -4,11 +4,11 @@ sidebar_position: 2
 
 # Deployment con GitHub Actions
 
-Automatizá los deployments a Fyso Static Sites en cada push.
+Automatiza los deployments a Fyso Static Sites en cada push.
 
 ## Recomendado: Usando tokens de deploy
 
-Generá un token de deploy de un solo uso desde MCP y guardalo como secreto de GitHub. Los tokens expiran en 5 minutos y son de uso único.
+Genera un token de deploy de un solo uso desde MCP y guárdalo como secreto de GitHub. Los tokens expiran en 5 minutos y son de uso único.
 
 **Generar un token (MCP):**
 ```
@@ -55,7 +55,7 @@ jobs:
 
 ## Alternativa: API Key
 
-Usá tu API key directamente como credencial de deploy:
+Usa tu API key directamente como credencial de deploy:
 
 ```yaml
 - name: Deploy a Fyso

@@ -4,7 +4,7 @@ sidebar_position: 3
 
 # Perfiles de herramientas
 
-Los perfiles de herramientas controlan qué herramientas MCP se exponen al agente. Usá la variable de entorno `FYSO_TOOLS` para configurar el perfil.
+Los perfiles de herramientas controlan qué herramientas MCP se exponen al agente. Usa la variable de entorno `FYSO_TOOLS` para configurar el perfil.
 
 ## Perfiles disponibles
 

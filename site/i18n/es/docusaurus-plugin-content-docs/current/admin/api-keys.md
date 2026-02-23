@@ -2,11 +2,11 @@
 
 Las API keys de administración (`fyso_adm_*`) permiten acceso programático a los endpoints de administración de plataforma. Son independientes de las keys de tenant y de las credenciales de sesión super-admin.
 
-Usá las admin API keys para automatizar el aprovisionamiento de tenants, el monitoreo de plataforma u otras tareas administrativas desde sistemas externos.
+Usa las admin API keys para automatizar el aprovisionamiento de tenants, el monitoreo de plataforma u otras tareas administrativas desde sistemas externos.
 
 ## Formato de las keys
 
-Las keys siguen el formato `fyso_adm_<48-char-hex>`. El valor completo se muestra **una sola vez** al crearla. Guardala de forma segura — no puede recuperarse después.
+Las keys siguen el formato `fyso_adm_<48-char-hex>`. El valor completo se muestra **una sola vez** al crearla. Guárdala de forma segura — no puede recuperarse después.
 
 ## Scopes
 
@@ -20,7 +20,7 @@ Cada key se crea con uno o más scopes que definen a qué puede acceder:
 
 ## Autenticación
 
-Incluí la key de una de estas dos formas:
+Incluye la key de una de estas dos formas:
 
 ```bash
 # Opción 1: header X-Admin-Key

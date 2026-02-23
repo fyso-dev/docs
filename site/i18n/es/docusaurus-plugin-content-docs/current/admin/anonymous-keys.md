@@ -2,11 +2,11 @@
 
 Las API keys anónimas (`anon_*`) permiten que clientes públicos — navegadores, widgets, apps embebidas — accedan a recursos del tenant sin autenticación de usuario.
 
-Usá las anonymous keys para funcionalidades públicas: feeds de datos de solo lectura, changelogs embebidos, búsqueda pública o cualquier endpoint accesible sin login.
+Usa las anonymous keys para funcionalidades públicas: feeds de datos de solo lectura, changelogs embebidos, búsqueda pública o cualquier endpoint accesible sin login.
 
 ## Formato de las keys
 
-Las keys tienen el prefijo `anon_`. El valor completo se muestra **una sola vez** al crearla. Guardala de forma segura en tu build de frontend — no puede recuperarse después.
+Las keys tienen el prefijo `anon_`. El valor completo se muestra **una sola vez** al crearla. Guárdala de forma segura en tu build de frontend — no puede recuperarse después.
 
 ## Scopes
 
@@ -38,7 +38,7 @@ Cada key tiene sus propios rate limits. Las requests que los superen reciben `42
 
 ## CORS
 
-Opcionalmente, restringí qué orígenes pueden enviar requests con esta key. Un array `allowedOrigins` vacío permite todos los orígenes.
+Opcionalmente, restringe qué orígenes pueden enviar requests con esta key. Un array `allowedOrigins` vacío permite todos los orígenes.
 
 ```json
 "allowedOrigins": ["https://miapp.com", "https://preview.miapp.com"]
@@ -222,11 +222,11 @@ Devuelve eventos de creación, rotación y revocación de la key. Máximo 500 en
 
 ## Uso de anonymous keys
 
-Una vez que tenés la key, incluila en las requests a los endpoints de entidades y canales.
+Una vez que tienes la key, inclúyela en las requests a los endpoints de entidades y canales.
 
 ### Autenticación
 
-Enviá la key con el header `X-Anon-Key` o `Authorization: Bearer`:
+Envía la key con el header `X-Anon-Key` o `Authorization: Bearer`:
 
 ```bash
 # Opción 1: header X-Anon-Key
