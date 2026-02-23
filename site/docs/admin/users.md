@@ -310,3 +310,70 @@ Login as a tenant user. Returns a JWT for use with the REST API.
   }
 }
 ```
+
+---
+
+## Invitation Codes
+
+Invitation codes control who can join your tenant when self-registration is disabled. Each code can be single-use or multi-use, optionally time-limited, and can carry a note for tracking.
+
+All invitation endpoints require an authenticated admin token in the `Authorization: Bearer <token>` header.
+
+### Generate an invitation
+
+```bash
+curl -X POST https://api.fyso.dev/api/invitations \
+  -H "Authorization: Bearer <admin-token>" \
+  -H "Content-Type: application/json" \
+  -d '{"note": "for contractor team", "maxUses": 5, "expiresAt": "2026-03-31T00:00:00Z"}'
+```
+
+**Body parameters** (all optional):
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `note` | string | Internal label for tracking |
+| `maxUses` | number | Max times the code can be used. Default: `1` |
+| `expiresAt` | string | ISO 8601 expiry timestamp |
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "token": "FYSO-A3B4-C5D6",
+    "inviteUrl": "https://app.example.com/invite/FYSO-A3B4-C5D6"
+  }
+}
+```
+
+Share the `inviteUrl` directly with the invitee, or pass the `token` to a custom onboarding flow.
+
+### List all invitations
+
+```bash
+curl https://api.fyso.dev/api/invitations \
+  -H "Authorization: Bearer <admin-token>"
+```
+
+Returns all invitation codes for the tenant, including usage counts and status.
+
+### Invalidate an invitation
+
+```bash
+curl -X DELETE https://api.fyso.dev/api/invitations/FYSO-A3B4-C5D6 \
+  -H "Authorization: Bearer <admin-token>"
+```
+
+Soft-deletes the code (`is_active = false`). Any subsequent attempt to use the code returns an error. Returns `404` if the token is not found.
+
+### Validate a code (public)
+
+```bash
+curl -X POST https://api.fyso.dev/api/invitations/validate \
+  -H "Content-Type: application/json" \
+  -d '{"code": "FYSO-A3B4-C5D6"}'
+```
+
+No authentication required. Returns `{ "valid": true }` if the code is active, not expired, and has remaining uses.
