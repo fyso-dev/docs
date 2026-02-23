@@ -18,9 +18,9 @@ Incluye: selección de tenant, gestión de entidades, CRUD de registros, reglas 
 
 ### `advanced`
 
-Todo lo de `core` más operaciones destructivas, herramientas de testing, flows, secretos, tokens de deploy y logs de ejecución.
+Todo lo de `core` más operaciones destructivas, herramientas de testing, flows, secretos, webhooks, tokens de deploy y logs de ejecución.
 
-Agrega: `delete_entity`, `delete_record`, `test_business_rule`, `delete_business_rule`, `get_rule_logs`, `delete_static_site`, `generate_deploy_token`, `set_secret`, `delete_secret`, `create_flow`, `list_flows`, `update_flow`, `delete_flow`, `toggle_flow`, `delete_document`, `tenant_login`, `manage_custom_fields`, `list_entity_changes`.
+Agrega: `delete_entity`, `delete_record`, `test_business_rule`, `delete_business_rule`, `get_rule_logs`, `delete_static_site`, `generate_deploy_token`, `set_custom_domain`, `set_secret`, `delete_secret`, `create_flow`, `list_flows`, `update_flow`, `delete_flow`, `toggle_flow`, `create_webhook`, `list_webhooks`, `delete_webhook`, `delete_document`, `tenant_login`, `manage_custom_fields`, `list_entity_changes`.
 
 **~73 herramientas**
 

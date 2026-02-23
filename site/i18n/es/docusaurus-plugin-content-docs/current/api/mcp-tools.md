@@ -176,16 +176,26 @@ Configurá qué herramientas se exponen con la variable de entorno `FYSO_TOOLS`.
 
 ---
 
+## Webhooks
+
+| Herramienta | Perfil | Descripción |
+|-------------|--------|-------------|
+| `create_webhook` | advanced | Suscribirse a eventos de registros de una entidad (created/updated/deleted) |
+| `list_webhooks` | advanced | Listar suscripciones de webhooks, opcionalmente filtradas por entidad |
+| `delete_webhook` | advanced | Eliminar una suscripción de webhook |
+
+---
+
 ## Base de conocimiento
 
 | Herramienta | Perfil | Descripción |
 |-------------|--------|-------------|
-| `upload_document` | core | Subir documento para indexación RAG (PDF, texto, markdown) |
+| `upload_document` | core | Subir documento para indexación RAG (PDF, HTML, texto, markdown) |
 | `search_knowledge` | core | Búsqueda semántica en documentos indexados |
 | `list_documents` | core | Listar documentos subidos |
 | `get_document` | core | Obtener metadata y contenido de un documento |
 | `delete_document` | advanced | Eliminar un documento de la base de conocimiento |
-| `get_knowledge_stats` | core | Obtener estadísticas de indexación (documentos, chunks, cobertura de embeddings) |
+| `get_knowledge_stats` | core | Obtener estadísticas de indexación y analytics de búsqueda (ventana de 30 días) |
 
 ---
 
