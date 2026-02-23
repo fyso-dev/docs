@@ -178,16 +178,26 @@ Configure which tools are exposed with the `FYSO_TOOLS` environment variable. Se
 
 ---
 
+## Webhooks
+
+| Tool | Profile | Description |
+|------|---------|-------------|
+| `create_webhook` | advanced | Subscribe to entity record events (created/updated/deleted) |
+| `list_webhooks` | advanced | List webhook subscriptions, optionally filtered by entity |
+| `delete_webhook` | advanced | Delete a webhook subscription |
+
+---
+
 ## Knowledge Base
 
 | Tool | Profile | Description |
 |------|---------|-------------|
-| `upload_document` | core | Upload document for RAG indexing (PDF, text, markdown) |
+| `upload_document` | core | Upload document for RAG indexing (PDF, HTML, text, markdown) |
 | `search_knowledge` | core | Semantic search across indexed documents |
 | `list_documents` | core | List uploaded documents |
 | `get_document` | core | Get document metadata and content |
 | `delete_document` | advanced | Delete a document from the knowledge base |
-| `get_knowledge_stats` | core | Get indexing stats (documents, chunks, embedding coverage) |
+| `get_knowledge_stats` | core | Get indexing stats and search analytics (30-day window) |
 
 ---
 
