@@ -64,7 +64,7 @@ Respuesta:
   "data": {
     "results": [
       {
-        "content": "Para resetear, mantené el botón de encendido por 10 segundos...",
+        "content": "Para resetear, mantén el botón de encendido por 10 segundos...",
         "score": 0.92,
         "document": { "id": "...", "title": "Manual de producto 2026", "source_type": "file" },
         "chunk_index": 3
@@ -152,12 +152,12 @@ GET /api/knowledge/stats
 
 ## Panel de administración
 
-Desde el panel de admin, andá a **Conocimiento** en el menú lateral para gestionar tu base de conocimiento visualmente:
+Desde el panel de admin, ve a **Conocimiento** en el menú lateral para gestionar tu base de conocimiento visualmente:
 
 - **Barra de estadísticas** — cantidad de documentos, almacenamiento usado, total de chunks
 - **Lista de documentos** — badge de tipo de fuente, badge de estado (ready/processing/error), fecha de carga, botón de eliminación
 - **Panel para agregar documentos** — tab de texto (título + contenido) o tab de URL (título + URL)
-- **Panel de búsqueda** — ingresá una consulta, mirá resultados con puntajes de relevancia
+- **Panel de búsqueda** — ingresa una consulta, mira resultados con puntajes de relevancia
 
 ## Casos de uso
 

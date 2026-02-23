@@ -4,7 +4,7 @@ sidebar_position: 5
 
 # Webhooks
 
-Los webhooks te permiten recibir notificaciones HTTP en tiempo real cuando se crean, actualizan o eliminan registros en cualquier entidad. Suscribite una vez, recibí notificaciones automáticamente.
+Los webhooks te permiten recibir notificaciones HTTP en tiempo real cuando se crean, actualizan o eliminan registros en cualquier entidad. Suscríbete una vez, recibe notificaciones automáticamente.
 
 ## Tipos de eventos
 
@@ -70,7 +70,7 @@ Tu endpoint debe devolver un status `2xx` en menos de 30 segundos.
 
 ## Verificar firmas
 
-Cuando configurás un `secret`, cada request incluye el header `X-Fyso-Signature` con el digest HMAC-SHA256 en hex del body JSON crudo.
+Cuando configuras un `secret`, cada request incluye el header `X-Fyso-Signature` con el digest HMAC-SHA256 en hex del body JSON crudo.
 
 ```typescript
 import { createHmac } from "crypto";
@@ -81,7 +81,7 @@ function verificarWebhook(body: string, firma: string, secreto: string): boolean
 }
 ```
 
-Siempre verificá las firmas antes de procesar los payloads.
+Siempre verifica las firmas antes de procesar los payloads.
 
 ## Listar suscripciones
 
@@ -108,7 +108,7 @@ curl -X PUT https://api.fyso.dev/api/webhooks/subscriptions/<id> \
   -d '{ "is_active": false }'
 ```
 
-Pasá solo los campos que querés cambiar: `url`, `event_types`, `secret`, `is_active`, `description`.
+Pasa solo los campos que quieres cambiar: `url`, `event_types`, `secret`, `is_active`, `description`.
 
 ## Eliminar una suscripción
 
@@ -126,7 +126,7 @@ DELETE /api/webhooks/subscriptions/<id>
 
 ## Historial de entregas
 
-Consultá el estado de las entregas pasadas de una suscripción:
+Consulta el estado de las entregas pasadas de una suscripción:
 
 ```bash
 GET /api/webhooks/subscriptions/<id>/deliveries?limit=20
@@ -153,7 +153,7 @@ Las entregas fallidas (respuesta no-2xx o timeout) se reintentan hasta **5 veces
 
 ## Panel de administración
 
-Desde el panel de admin, andá a **Configuración → Webhooks** para gestionar suscripciones visualmente:
+Desde el panel de admin, ve a **Configuración → Webhooks** para gestionar suscripciones visualmente:
 
 - Crear suscripciones con selector de entidad, checkboxes de eventos, input de URL y secreto opcional
 - Activar/desactivar cada suscripción
