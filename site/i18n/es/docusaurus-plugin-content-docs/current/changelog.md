@@ -1,4 +1,24 @@
-## Sin publicar
+## v1.17.0 — 2026-02-24
+
+### Funcionalidades
+- **Permisos por entidad y campo en anonymous keys** — Las anonymous API keys ahora soportan control de acceso granular via `entityPermissions`. Permite restringir una key a entidades especificas (las no listadas devuelven `403`) y excluir campos sensibles de todas las respuestas via `excludeFields`. Las keys existentes sin `entityPermissions` mantienen acceso irrestricto (backwards compatible). (#651, closes #643)
+- **Gestion de APIs con control de acceso basado en roles (RBAC)** — Definiciones de API con nombre, roles configurables y una matriz de permisos (`entidad × rol → [read, create, update, delete]`). Se emiten keys `fyso_pkey_*` por rol. El middleware `requirePlatformApiKey` aplica la matriz en cada request. La entidad comodin (`*`) otorga acceso a todas las entidades para un rol. CRUD completo para definiciones de API mas emision y revocacion de keys. Completamente independiente de las keys `fyso_ak_*` existentes. (#656, closes #642)
+- **Invitaciones de plataforma — cuota de 5 invitaciones para cuentas gratuitas** — Los usuarios `platform_admin` pueden invitar hasta 5 personas a crear cuentas en el plan gratuito. Las invitaciones usan tokens hex-64 unicos, expiran en 7 dias y soportan ciclo de vida completo (crear, listar, revocar, validar, aceptar). La cuota trackea invitaciones activas; revocar libera un slot. El email de invitacion se envia via Resend. 5 endpoints bajo `/api/platform/invitations`. (#637, closes #630)
+- **GET /api/usage/storage — desglose de almacenamiento por tenant** — Nuevo endpoint que devuelve un desglose del almacenamiento consumido por categoria: base de datos (`pg_total_relation_size`, cantidad de tablas, filas estimadas), knowledge base (bytes + cantidad de documentos) y bucket (bytes + cantidad de archivos). `total_bytes` es la suma de todas las categorias. El bucket devuelve 0 en la version actual; el conteo completo de S3 esta planificado para una version futura. (#655, closes #650)
+- **i18n para textos del popup PageHelp** — El componente `PageHelp` ahora usa traducciones de `next-intl` en lugar de un mapa `COPY` hardcodeado. Se agregaron las claves de pagina faltantes (`roles`, `mcpConfig`, `webhooks`, `sites`) a ambos archivos de locale. Las 14 claves de pagina se renderizan correctamente en EN y ES. (#634, closes #632)
+- **Cloudflare wildcard DNS para subdominios de tenant** — Se reemplaza Caddy por Cloudflare wildcard DNS (`*.fyso.dev`) + nginx para el routing de subdominios de tenant. El nuevo middleware `resolveHostTenant` extrae el slug del tenant del header `Host` / `x-forwarded-host`, omitiendo subdominios reservados y paths de sitios estaticos. `requireTenantContext` usa `hostTenantSlug` como fallback. nginx reemplaza Caddyfile; Cloudflare maneja la terminacion SSL. (#635, closes #633)
+
+### Refactorizacion
+- **Sistema unificado de tokens y roles** — Nuevo middleware `resolveToken` que clasifica todos los tipos de tokens entrantes en un descriptor normalizado `{tokenType, tokenRole}`. `ROLE_HIERARCHY` extendida con `anonymous` (nivel 0). `requireRole()` lee `tokenRole` primero, habilitando aplicacion consistente de roles en todos los tipos de tokens. Mapeo token-a-rol: sesion admin/JWT y `fyso_ak_*` → `owner`; `anon_*` → `anonymous`; sesion de usuario tenant → rol asignado al usuario. Todo el middleware existente queda sin cambios. (#652, closes #644)
+
+### Correcciones
+- **PDF generation: fallback de entidad desde la plantilla** — `buildInputData` ahora usa `template.entidad_origen` como fallback cuando `entityName` no se pasa en la llamada a la API. Corrige PDFs en blanco cuando se provee `recordId` sin `entityName` (como hace el dialogo del designer). (#653, closes #639)
+- **Plugin de tablas en PDF** — Se agrego el plugin `table` de `@pdfme/schemas` al designer (frontend) y al generator (backend). Los campos tipo tabla reciben input `array[][]` en lugar de ser stringificados. (#653, closes #640, #641)
+- **Upload binario de PDF a la knowledge base** — Nuevo endpoint `POST /api/knowledge/documents/upload` que acepta multipart/form-data con un campo `file` (`application/pdf`, max 20 MB) y un `title` opcional. Convierte el buffer a base64 y delega a `documentService.ingestDocument` para chunking y generacion de embeddings. Tambien agrega el metodo cliente `api.knowledge.upload(file, title?)`. (#654, closes #648)
+
+---
+
+## v1.16.0 — 2026-02-23
 
 ### Funcionalidades
 - **Sistema de chequeo de salud de schemas** — Nuevo `schema-health.service` que detecta gaps de migracion en todos los schemas de tenant al iniciar. Verifica tablas, columnas, extensiones, indices y triggers faltantes. Dos endpoints de superadmin: `GET /health/schema` devuelve un reporte completo con issues por tenant y SQL sugerido para corregir; `POST /health/schema/fix` re-ejecuta DDL en todos los tenants degradados (idempotente). Loguea warnings `[schema-health]` al arrancar si algun tenant esta degradado. (#612)
