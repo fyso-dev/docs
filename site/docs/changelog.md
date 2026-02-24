@@ -1,4 +1,24 @@
-## Unreleased
+## v1.17.0 — 2026-02-24
+
+### Features
+- **Entity & field-level permissions for anonymous keys** — Anonymous API keys now support fine-grained access control via `entityPermissions`. Restrict a key to specific entities (unlisted entities return `403`) and exclude sensitive fields from all responses via `excludeFields`. Existing keys without `entityPermissions` retain unrestricted access (backwards compatible). (#651, closes #643)
+- **Platform API Management with RBAC** — Named API definitions with configurable roles and a permission matrix (`entity × role → [read, create, update, delete]`). Issue `fyso_pkey_*` keys per role. `requirePlatformApiKey` middleware enforces the matrix on every request. Wildcard entity (`*`) grants access to all entities for a role. Full CRUD for API definitions plus key issuance and revocation. Completely independent from existing `fyso_ak_*` keys. (#656, closes #642)
+- **Platform invitations — 5-invite quota for free accounts** — `platform_admin` users can invite up to 5 people to create free-tier accounts. Invitations use unique hex-64 tokens, expire in 7 days, and support full lifecycle management (create, list, revoke, validate, accept). Quota tracks active invitations; revocation frees a slot. Invitation email sent via Resend. 5 endpoints under `/api/platform/invitations`. (#637, closes #630)
+- **GET /api/usage/storage — storage breakdown per tenant** — New endpoint returns a per-category storage breakdown: database (`pg_total_relation_size`, table count, estimated rows), knowledge base (bytes + document count), and bucket (bytes + file count). `total_bytes` is the sum across all categories. Bucket returns 0 in the current version; full S3 accounting is planned. (#655, closes #650)
+- **i18n for PageHelp popup texts** — The `PageHelp` component now uses `next-intl` translations instead of a hardcoded `COPY` map. Added missing page keys (`roles`, `mcpConfig`, `webhooks`, `sites`) to both locale files. All 14 page keys render correctly in EN and ES. (#634, closes #632)
+- **Cloudflare wildcard DNS for tenant subdomains** — Replaced Caddy with Cloudflare wildcard DNS (`*.fyso.dev`) + nginx for tenant subdomain routing. New `resolveHostTenant` middleware extracts tenant slug from the `Host` / `x-forwarded-host` header, skipping reserved subdomains and static-site paths. `requireTenantContext` uses `hostTenantSlug` as a fallback. nginx replaces Caddyfile; Cloudflare handles SSL termination. (#635, closes #633)
+
+### Refactoring
+- **Unified token and role system** — New `resolveToken` middleware classifies all incoming token types into a normalised `{tokenType, tokenRole}` descriptor. `ROLE_HIERARCHY` extended with `anonymous` (level 0). `requireRole()` reads `tokenRole` first, enabling consistent role enforcement across all token types. Token-to-role mapping: admin session/JWT and `fyso_ak_*` → `owner`; `anon_*` → `anonymous`; tenant user session → user's assigned role. All existing middleware remains unchanged. (#652, closes #644)
+
+### Fixes
+- **PDF generation: entity fallback from template** — `buildInputData` now uses `template.entidad_origen` as fallback when `entityName` is not passed in the API call. Fixes blank PDFs when `recordId` is provided without `entityName` (as the designer dialog does). (#653, closes #639)
+- **PDF table plugin** — Added the `table` plugin from `@pdfme/schemas` to both the designer (frontend) and generator (backend). Table fields receive `array[][]` input instead of being stringified. (#653, closes #640, #641)
+- **PDF binary upload to knowledge base** — New `POST /api/knowledge/documents/upload` endpoint accepts multipart/form-data with a `file` field (`application/pdf`, max 20 MB) and an optional `title`. Converts the buffer to base64 and delegates to `documentService.ingestDocument` for chunking and embedding. Also adds `api.knowledge.upload(file, title?)` client method. (#654, closes #648)
+
+---
+
+## v1.16.0 — 2026-02-23
 
 ### Features
 - **Schema health check system** — New `schema-health.service` detects migration gaps across all tenant schemas on startup. Checks for missing tables, columns, extensions, indexes, and triggers. Two superadmin endpoints: `GET /health/schema` returns a full health report with per-tenant issues and suggested fix SQL; `POST /health/schema/fix` re-runs DDL on all degraded tenants (idempotent). Logs `[schema-health]` warnings at boot if any tenant is degraded. (#612)
