@@ -20,7 +20,7 @@ Fyso es una plataforma para construir aplicaciones de negocio usando entidades, 
 | [Deploy](deployment/) | Sites estaticos, GitHub Actions |
 | [API](api/) | REST API, referencia MCP, perfiles de herramientas |
 | [Turnos](scheduling/) | Disponibilidad, reservas, horarios |
-| [Admin](admin/) | Usuarios, roles, apps, import/export |
+| [Admin](admin/) | Usuarios, roles, apps, API management, import/export |
 
 ## Audiencia
 
