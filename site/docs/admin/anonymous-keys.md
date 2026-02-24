@@ -50,6 +50,69 @@ Maximum **20 active anonymous keys** per tenant.
 
 ---
 
+## Entity & Field-Level Permissions
+
+Anonymous keys support fine-grained access control at the entity and field level via the `entityPermissions` configuration.
+
+### Entity-level filtering
+
+By default (empty `entityPermissions`), an anonymous key can access **all published entities** the tenant exposes. To restrict access to specific entities, provide an `entityPermissions` map:
+
+```json
+{
+  "entityPermissions": {
+    "products": {},
+    "blog_posts": {}
+  }
+}
+```
+
+With this configuration, requests to any entity **not listed** (e.g., `customers`, `invoices`) return `403 Forbidden`. Unlisted entities are completely inaccessible.
+
+### Field-level exclusion
+
+Each entry in `entityPermissions` optionally accepts an `excludeFields` array. Fields listed there are stripped from **all responses** before they reach the client — they never appear in list or detail responses.
+
+```json
+{
+  "entityPermissions": {
+    "products": {
+      "excludeFields": ["cost_price", "supplier_id", "internal_notes"]
+    },
+    "blog_posts": {
+      "excludeFields": ["author_email"]
+    }
+  }
+}
+```
+
+Excluded fields are removed server-side. They do not appear even if the client requests them explicitly.
+
+### Backwards compatibility
+
+Keys created before v1.17.0, or created without `entityPermissions`, retain **unrestricted access** to all published entities — existing behavior is unchanged.
+
+### Example: Public product catalog key with restricted fields
+
+```json
+POST /api/auth/anonymous-keys
+{
+  "label": "Public product catalog",
+  "scopes": ["records:read"],
+  "ttlDays": 90,
+  "allowedOrigins": ["https://myshop.com"],
+  "entityPermissions": {
+    "products": {
+      "excludeFields": ["cost_price", "supplier_id"]
+    }
+  }
+}
+```
+
+A request to `/api/entities/customers/records` with this key returns `403`. A request to `/api/entities/products/records` returns all product fields except `cost_price` and `supplier_id`.
+
+---
+
 ## MCP Tools
 
 ### `create_anonymous_key`
@@ -65,7 +128,10 @@ create_anonymous_key({
   ttl_days: 90,
   allowed_origins: ["https://mysite.com"],
   rate_limit_per_min: 30,
-  rate_limit_per_day: 500
+  rate_limit_per_day: 500,
+  entity_permissions: {
+    "posts": { "excludeFields": ["internal_tag"] }
+  }
 })
 ```
 
@@ -77,6 +143,7 @@ create_anonymous_key({
 | `allowed_origins` | string[] | No | CORS allowlist. Empty = all origins |
 | `rate_limit_per_min` | number | No | Requests per minute (default: 60) |
 | `rate_limit_per_day` | number | No | Requests per day (default: 1,000) |
+| `entity_permissions` | object | No | Entity/field access map. Empty = unrestricted |
 
 **Response** (key shown only once):
 
@@ -91,6 +158,9 @@ create_anonymous_key({
   "rateLimitPerMin": 30,
   "rateLimitPerDay": 500,
   "expiresAt": "2026-11-30T00:00:00Z",
+  "entityPermissions": {
+    "posts": { "excludeFields": ["internal_tag"] }
+  },
   "createdAt": "2026-02-22T12:00:00Z"
 }
 ```
@@ -144,12 +214,16 @@ Authorization: Bearer <admin-token>
 Content-Type: application/json
 
 {
-  "label": "Public changelog widget",
+  "label": "Public catalog",
   "scopes": ["records:read"],
   "ttlDays": 90,
   "allowedOrigins": ["https://mysite.com"],
   "rateLimitPerMin": 30,
-  "rateLimitPerDay": 500
+  "rateLimitPerDay": 500,
+  "entityPermissions": {
+    "products": { "excludeFields": ["cost_price"] },
+    "blog_posts": {}
+  }
 }
 ```
 
@@ -161,6 +235,7 @@ Content-Type: application/json
 | `allowedOrigins` | string[] | No | CORS allowlist |
 | `rateLimitPerMin` | number | No | Requests per minute |
 | `rateLimitPerDay` | number | No | Requests per day |
+| `entityPermissions` | object | No | Map of entity slug → `{ excludeFields?: string[] }`. Omit for unrestricted access |
 
 **Response** (key shown only once):
 
@@ -171,12 +246,16 @@ Content-Type: application/json
     "id": "uuid",
     "key": "anon_abc123...",
     "keyPrefix": "anon_abc1",
-    "label": "Public changelog widget",
+    "label": "Public catalog",
     "scopes": ["records:read"],
     "allowedOrigins": ["https://mysite.com"],
     "rateLimitPerMin": 30,
     "rateLimitPerDay": 500,
     "expiresAt": "2026-11-30T00:00:00Z",
+    "entityPermissions": {
+      "products": { "excludeFields": ["cost_price"] },
+      "blog_posts": {}
+    },
     "createdAt": "2026-02-22T12:00:00Z"
   }
 }
@@ -249,9 +328,13 @@ Anonymous keys are **read-only**. Requests using `POST`, `PUT`, or `DELETE` meth
 
 ### Errors
 
-All authentication failures return `401 Unauthorized` with no additional detail. This applies to missing keys, expired keys, revoked keys, and invalid values alike — no information is leaked about key existence or revocation status.
+| Status | Cause |
+|--------|-------|
+| `401` | Missing, expired, or invalid key |
+| `403` | Entity not listed in `entityPermissions` |
+| `429` | Per-key rate limit exceeded |
 
-Requests that exceed per-key rate limits return `429 Too Many Requests`.
+Authentication failures return a generic `401` — no information is leaked about key existence or revocation status.
 
 ### HTTPS
 
@@ -265,3 +348,4 @@ Anonymous key requests must use HTTPS in production. HTTP requests are rejected.
 - TTL is mandatory — no indefinite anonymous keys are possible.
 - Revocation is synchronous (immediate DB update).
 - Every creation and revocation is recorded in the audit log.
+- `entityPermissions` field stripping happens server-side — clients cannot bypass field exclusions.
