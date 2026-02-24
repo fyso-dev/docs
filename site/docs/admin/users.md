@@ -377,3 +377,155 @@ curl -X POST https://api.fyso.dev/api/invitations/validate \
 ```
 
 No authentication required. Returns `{ "valid": true }` if the code is active, not expired, and has remaining uses.
+
+---
+
+## Tenant Member Invitations
+
+Tenant member invitations let you invite specific people to join your tenant via a one-time link. Unlike invitation codes (which gate platform registration), these invitations create a direct onboarding path into an existing tenant.
+
+All invitation endpoints require an authenticated admin token in `Authorization: Bearer <admin-token>` plus the `X-Tenant-Slug: <slug>` header to identify the tenant.
+
+### Create an invitation
+
+```bash
+curl -X POST https://api.fyso.dev/api/invitations \
+  -H "Authorization: Bearer <admin-token>" \
+  -H "X-Tenant-Slug: my-tenant" \
+  -H "Content-Type: application/json" \
+  -d '{"email": "colleague@example.com", "expiresInDays": 7}'
+```
+
+**Body parameters** (all optional):
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `email` | string | Lock the invitation to this email. The invitee must register with this exact address. |
+| `expiresInDays` | number | Days until the invitation expires. Default: `7` |
+
+**Response (201):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "token": "a3f1b2c4...hex64",
+    "inviteUrl": "https://app.fyso.dev/invite/a3f1b2c4...hex64"
+  }
+}
+```
+
+Share the `inviteUrl` with the invitee. The link is valid until accepted or expired. Each invitation is single-use.
+
+### List invitations
+
+```bash
+curl https://api.fyso.dev/api/invitations \
+  -H "Authorization: Bearer <admin-token>" \
+  -H "X-Tenant-Slug: my-tenant"
+```
+
+Returns all invitations for the tenant ordered by creation date. Expired pending invitations are automatically marked as `expired` on retrieval.
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "uuid",
+      "token": "a3f1b2c4...hex64",
+      "email": "colleague@example.com",
+      "status": "pending",
+      "accepted_at": null,
+      "expires_at": "2026-03-02T12:00:00Z",
+      "created_at": "2026-02-23T12:00:00Z",
+      "invited_by_name": "Admin User",
+      "invited_by_email": "admin@my-tenant.com"
+    }
+  ]
+}
+```
+
+**Status values:**
+
+| Status | Description |
+|--------|-------------|
+| `pending` | Invitation sent, not yet accepted |
+| `accepted` | Invitee has registered successfully |
+| `expired` | Past the expiry date without being accepted |
+| `revoked` | Manually cancelled by an admin |
+
+### Revoke an invitation
+
+```bash
+curl -X DELETE https://api.fyso.dev/api/invitations/<token> \
+  -H "Authorization: Bearer <admin-token>" \
+  -H "X-Tenant-Slug: my-tenant"
+```
+
+Sets the invitation status to `revoked`. Only `pending` invitations can be revoked. Returns `404` if the token is not found or already used/expired.
+
+### Preview an invitation (public)
+
+```bash
+curl https://api.fyso.dev/auth/invite/<token>
+```
+
+No authentication required. Returns invitation details so the frontend can render a preview before the user registers.
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "valid": true,
+    "email": "colleague@example.com",
+    "tenantSlug": "my-tenant"
+  }
+}
+```
+
+Returns `400` with an error message if the invitation is invalid, expired, accepted, or revoked.
+
+### Accept an invitation
+
+```bash
+curl -X POST https://api.fyso.dev/auth/invite/accept \
+  -H "Content-Type: application/json" \
+  -d '{
+    "token": "<invite-token>",
+    "email": "colleague@example.com",
+    "name": "Jane Doe",
+    "password": "securepassword"
+  }'
+```
+
+No prior authentication required. The invitation token acts as the gate.
+
+**Body parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `token` | string | Yes | The invitation token from the invite link |
+| `email` | string | Yes | Registrant email. Must match the invitation email if one was set |
+| `name` | string | Yes | Full name (minimum 1 character after trimming) |
+| `password` | string | Yes | Password (minimum 8 characters) |
+
+**Response (201):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "email": "colleague@example.com",
+    "name": "Jane Doe",
+    "role": "member"
+  }
+}
+```
+
+The invitation is claimed atomically — concurrent requests cannot claim the same token twice. Returns `409` if the email already exists in the tenant, `403` if the email does not match the invitation, and `403` if the token is invalid, expired, or revoked.

@@ -344,3 +344,155 @@ curl -X POST https://api.fyso.dev/api/invitations/validate \
 ```
 
 No requiere autenticacion. Retorna `{ "valid": true }` si el codigo esta activo, no vencido y tiene usos disponibles.
+
+---
+
+## Invitaciones de miembros del tenant
+
+Las invitaciones de miembros permiten invitar a personas especificas a unirse a un tenant mediante un link de un solo uso. A diferencia de los codigos de invitacion (que controlan el registro en la plataforma), estas invitaciones crean un camino de onboarding directo a un tenant existente.
+
+Todos los endpoints requieren un token de administrador autenticado en `Authorization: Bearer <admin-token>` y el header `X-Tenant-Slug: <slug>` para identificar el tenant.
+
+### Crear una invitacion
+
+```bash
+curl -X POST https://api.fyso.dev/api/invitations \
+  -H "Authorization: Bearer <admin-token>" \
+  -H "X-Tenant-Slug: mi-tenant" \
+  -H "Content-Type: application/json" \
+  -d '{"email": "colega@empresa.com", "expiresInDays": 7}'
+```
+
+**Parametros del cuerpo** (todos opcionales):
+
+| Parametro | Tipo | Descripcion |
+|-----------|------|-------------|
+| `email` | string | Limita la invitacion a este email. El invitado debe registrarse con esta direccion exacta. |
+| `expiresInDays` | number | Dias hasta que vence la invitacion. Por defecto: `7` |
+
+**Respuesta (201):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "token": "a3f1b2c4...hex64",
+    "inviteUrl": "https://app.fyso.dev/invite/a3f1b2c4...hex64"
+  }
+}
+```
+
+Comparte el `inviteUrl` con el invitado. El link es valido hasta que se acepte o venza. Cada invitacion es de un solo uso.
+
+### Listar invitaciones
+
+```bash
+curl https://api.fyso.dev/api/invitations \
+  -H "Authorization: Bearer <admin-token>" \
+  -H "X-Tenant-Slug: mi-tenant"
+```
+
+Devuelve todas las invitaciones del tenant ordenadas por fecha de creacion. Las invitaciones pendientes con fecha vencida se marcan automaticamente como `expired` al recuperarlas.
+
+**Respuesta:**
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "uuid",
+      "token": "a3f1b2c4...hex64",
+      "email": "colega@empresa.com",
+      "status": "pending",
+      "accepted_at": null,
+      "expires_at": "2026-03-02T12:00:00Z",
+      "created_at": "2026-02-23T12:00:00Z",
+      "invited_by_name": "Admin Principal",
+      "invited_by_email": "admin@mi-tenant.com"
+    }
+  ]
+}
+```
+
+**Valores de estado:**
+
+| Estado | Descripcion |
+|--------|-------------|
+| `pending` | Invitacion enviada, aun no aceptada |
+| `accepted` | El invitado se registro exitosamente |
+| `expired` | Vencio sin ser aceptada |
+| `revoked` | Cancelada manualmente por un admin |
+
+### Revocar una invitacion
+
+```bash
+curl -X DELETE https://api.fyso.dev/api/invitations/<token> \
+  -H "Authorization: Bearer <admin-token>" \
+  -H "X-Tenant-Slug: mi-tenant"
+```
+
+Cambia el estado de la invitacion a `revoked`. Solo se pueden revocar invitaciones en estado `pending`. Retorna `404` si el token no se encuentra o ya fue usado o vencido.
+
+### Previsualizar una invitacion (publico)
+
+```bash
+curl https://api.fyso.dev/auth/invite/<token>
+```
+
+No requiere autenticacion. Devuelve los detalles de la invitacion para que el frontend pueda mostrar una vista previa antes de que el usuario se registre.
+
+**Respuesta:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "valid": true,
+    "email": "colega@empresa.com",
+    "tenantSlug": "mi-tenant"
+  }
+}
+```
+
+Retorna `400` con un mensaje de error si la invitacion es invalida, vencida, aceptada o revocada.
+
+### Aceptar una invitacion
+
+```bash
+curl -X POST https://api.fyso.dev/auth/invite/accept \
+  -H "Content-Type: application/json" \
+  -d '{
+    "token": "<token-de-invitacion>",
+    "email": "colega@empresa.com",
+    "name": "Juan Perez",
+    "password": "contraseñasegura"
+  }'
+```
+
+No requiere autenticacion previa. El token de invitacion actua como acceso.
+
+**Parametros del cuerpo:**
+
+| Parametro | Tipo | Requerido | Descripcion |
+|-----------|------|-----------|-------------|
+| `token` | string | Si | Token de invitacion del link recibido |
+| `email` | string | Si | Email del registro. Debe coincidir con el email de la invitacion si se especifico uno |
+| `name` | string | Si | Nombre completo (minimo 1 caracter sin espacios) |
+| `password` | string | Si | Contrasena (minimo 8 caracteres) |
+
+**Respuesta (201):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "email": "colega@empresa.com",
+    "name": "Juan Perez",
+    "role": "member"
+  }
+}
+```
+
+La invitacion se reclama de forma atomica — solicitudes concurrentes no pueden reclamar el mismo token dos veces. Retorna `409` si el email ya existe en el tenant, `403` si el email no coincide con la invitacion, y `403` si el token es invalido, vencido o revocado.
