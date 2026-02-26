@@ -12,7 +12,7 @@ Generates a PDF by combining a template with data from a record.
 |-----------|------|----------|-------------|
 | `templateId` | string | Yes | ID of the record in `pdf_templates` |
 | `recordId` | string | No | ID of the record with the data |
-| `entityName` | string | No | Entity name. If omitted and `recordId` is provided, the backend resolves the entity from the template's `entidad_origen` field |
+| `entityName` | string | No | Entity name. If omitted when using `recordId`, resolved from the template's `entidad_origen` field. |
 | `data` | object | No | Additional or override data. Keys = template field names |
 | `store` | boolean | No | Save the PDF to storage. Default: true |
 | `updateField` | string | No | Record field where to save the PDF reference. Default: `pdf_documento` |

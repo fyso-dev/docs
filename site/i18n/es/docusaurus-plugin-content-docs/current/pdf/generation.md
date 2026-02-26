@@ -12,7 +12,7 @@ Genera un PDF combinando una plantilla con datos de un registro.
 |-----------|------|-----------|-------------|
 | `templateId` | string | Si | ID del registro en `pdf_templates` |
 | `recordId` | string | No | ID del registro con los datos |
-| `entityName` | string | Condicional | Nombre de la entidad (requerido si se usa `recordId`) |
+| `entityName` | string | No | Nombre de la entidad. Si se omite al usar `recordId`, se resuelve desde el campo `entidad_origen` de la plantilla. |
 | `data` | object | No | Datos adicionales o override. Keys = nombres de campo del template |
 | `store` | boolean | No | Guardar el PDF en storage. Default: true |
 | `updateField` | string | No | Campo del registro donde guardar la referencia al PDF. Default: `pdf_documento` |

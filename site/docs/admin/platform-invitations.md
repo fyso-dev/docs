@@ -1,14 +1,16 @@
+---
+sidebar_position: 8
+---
+
 # Platform Invitations
 
-Platform admins (`platform_admin`) can invite up to **5 users** to create a free-tier account on Fyso. This feature is available to platform administrators and does not require the invitee to have an existing account.
+Platform invitations let tenant admins invite new users to register on the platform. Each invited user creates their own admin account upon accepting.
+
+This is separate from [tenant user invitations](./users.md) — platform invitations create new admin accounts, while tenant invitations add users to an existing tenant.
 
 ## Quota
 
-| Plan | Invitation quota |
-|------|-----------------|
-| Free (platform_admin) | 5 invitations per admin |
-
-Each admin has an independent quota. Quota tracks **active** invitations (pending + accepted). Revoked invitations free up a slot.
+Each admin can send up to **5 active invitations** at a time. Invitations expire after **7 days**.
 
 ## Invitation lifecycle
 
@@ -18,30 +20,19 @@ created (pending) → accepted
                   → expired (after 7 days)
 ```
 
-Invitations expire automatically after **7 days** if not accepted.
+## REST Endpoints
 
-## Endpoints
-
-### Create an invitation
+### Send an invitation
 
 ```bash
 POST /api/platform/invitations
-Authorization: Bearer <platform-admin-token>
+Authorization: Bearer <admin-token>
 Content-Type: application/json
 
 {
   "email": "newuser@example.com"
 }
 ```
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `email` | string | Yes | Email address of the person to invite |
-
-**Validations:**
-- Cannot invite yourself (self-invite guard)
-- Cannot invite an email that already has an account (duplicate guard)
-- Quota must not be exhausted (max 5 active invitations per admin)
 
 **Response:**
 
@@ -50,117 +41,114 @@ Content-Type: application/json
   "success": true,
   "data": {
     "id": "uuid",
-    "email": "newuser@example.com",
-    "status": "pending",
-    "expiresAt": "2026-03-03T00:00:00Z",
-    "createdAt": "2026-02-24T00:00:00Z"
+    "inviteUrl": "https://app.fyso.dev/signup/invited?token=..."
   }
 }
 ```
 
-An invitation email is sent to the provided address automatically.
+An invitation email is sent automatically. The `inviteUrl` can also be shared manually.
 
-**Error responses:**
+**Errors:**
 
-| Status | Cause |
-|--------|-------|
-| `409` | Email already has an account or a pending invitation |
-| `422` | Quota exhausted (5 active invitations reached) |
-| `400` | Self-invite attempt or invalid email |
-| `401` | Not authenticated as platform_admin |
+| Code | Error | Description |
+|------|-------|-------------|
+| `400` | `EMAIL_REQUIRED` | Missing or invalid email |
+| `409` | — | Email already has an active invitation |
+| `422` | — | Quota exceeded (5 active invitations) or other validation error |
 
-### List invitations
+### List my invitations
 
 ```bash
 GET /api/platform/invitations
-Authorization: Bearer <platform-admin-token>
+Authorization: Bearer <admin-token>
 ```
 
-Returns all invitations created by the authenticated admin, with their current status.
-
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "id": "uuid",
-      "email": "newuser@example.com",
-      "status": "pending",
-      "expiresAt": "2026-03-03T00:00:00Z",
-      "createdAt": "2026-02-24T00:00:00Z"
-    }
-  ]
-}
-```
+Returns all active invitations sent by the authenticated admin, along with quota usage.
 
 ### Revoke an invitation
 
 ```bash
 DELETE /api/platform/invitations/:id
-Authorization: Bearer <platform-admin-token>
+Authorization: Bearer <admin-token>
 ```
 
-Immediately invalidates the invitation token. The invitee can no longer use the link. Revoking frees up one quota slot.
-
-Returns `404` if the invitation does not exist or belongs to a different admin.
+Immediately invalidates the invitation token. Revoking frees up one quota slot. Returns `404` if the invitation doesn't exist or belongs to another admin.
 
 ---
 
-## Public endpoints (no authentication required)
+## Accepting an Invitation (Public)
 
-### Validate an invitation token
+### Validate a token
 
 ```bash
-GET /api/platform/invitations/validate/:token
+GET /api/platform/invitations/:token
 ```
 
-Checks whether a token is valid and not yet used or expired. Used by the frontend to display the invitation preview page before the user accepts.
+Returns a preview of the invitation before the user registers. Returns `410 Gone` if the token has expired.
 
 ```json
 {
   "success": true,
   "data": {
     "email": "newuser@example.com",
-    "expiresAt": "2026-03-03T00:00:00Z"
+    "invitedByName": "Alice"
   }
 }
 ```
 
-Returns `410 Gone` for expired or already-used tokens, `404` for invalid tokens.
-
-### Accept an invitation
+### Accept and register
 
 ```bash
-POST /api/platform/invitations/accept/:token
+POST /api/platform/invitations/:token/accept
 Content-Type: application/json
 
 {
-  "name": "Jane Doe",
-  "password": "secure-password"
+  "name": "New User",
+  "password": "securepassword"
 }
 ```
 
-Atomically claims the invitation (TOCTOU-safe) and creates the user account. The token is marked as `accepted` and cannot be reused.
-
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `name` | string | Yes | Display name for the new account |
-| `password` | string | Yes | Password for the new account |
+| `name` | string | Yes | Full name (minimum 2 characters) |
+| `password` | string | Yes | Password (minimum 8 characters) |
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "token": "<session-token>"
+  }
+}
+```
+
+The user is logged in immediately after accepting. The invitation token is marked as `accepted` and cannot be reused.
 
 **Error responses:**
 
 | Status | Cause |
 |--------|-------|
-| `410` | Token expired or already used |
-| `400` | Missing required fields |
+| `410` | Token expired or already accepted |
+| `400` | Missing or invalid fields |
 
 ---
 
 ## Email notification
 
 When an invitation is created, Fyso automatically sends an email to the invited address containing:
-- A personalized greeting
+- A personalized greeting from the inviting admin
 - The invitation link (valid for 7 days)
 - Instructions to create their account
 
-Emails are sent via Resend.
+---
+
+## Admin Panel
+
+Go to **Platform → Invitations** in the admin panel to manage invitations:
+
+- Send new invitations by email
+- View status of all active invitations (pending / accepted / expired)
+- Revoke pending invitations
+- Invite acceptance page at `/signup/invited?token=...`

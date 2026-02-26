@@ -26,6 +26,35 @@ Formatos soportados: **PDF**, **HTML** (.html, .htm), **texto plano** (.txt), **
 
 Después de subir, el documento se procesa en segundo plano. El estado pasa de `processing` → `ready`.
 
+### Carga binaria de PDF (REST API)
+
+Para subir un archivo PDF directamente desde tu backend o pipeline de CI, usa el endpoint multipart:
+
+```bash
+POST /api/knowledge/documents/upload
+Authorization: Bearer <token>
+Content-Type: multipart/form-data
+
+curl -X POST https://api.fyso.dev/api/knowledge/documents/upload \
+  -H "Authorization: Bearer <token>" \
+  -F "file=@/ruta/al/manual.pdf" \
+  -F "title=Manual de producto 2026"
+```
+
+| Campo | Tipo | Requerido | Descripcion |
+|-------|------|-----------|-------------|
+| `file` | binario | Si | Archivo PDF (`application/pdf`, maximo 20 MB) |
+| `title` | string | No | Titulo del documento. Por defecto usa el nombre del archivo. |
+
+Devuelve `201` con los metadatos del documento.
+
+**Errores:**
+
+| Codigo | Descripcion |
+|--------|-------------|
+| `400` | Campo `file` faltante o tipo MIME no soportado (solo PDF) |
+| `403` | Limite de documentos o almacenamiento del plan alcanzado |
+
 ### Límites por plan
 
 | Plan | Documentos | Almacenamiento |

@@ -1,6 +1,6 @@
 # Sites estaticos
 
-Fyso permite desplegar sitios estaticos (Astro, Vite, Next.js export, etc.) en subdominios de `sites.fyso.dev`.
+Fyso permite desplegar sitios estaticos (Astro, Vite, Next.js export, etc.) en subdominios de `fyso.dev`.
 
 ## MCP Tool: `deploy_static_site`
 
@@ -10,7 +10,7 @@ Fyso permite desplegar sitios estaticos (Astro, Vite, Next.js export, etc.) en s
 
 | Parametro | Tipo | Requerido | Descripcion |
 |-----------|------|-----------|-------------|
-| `subdomain` | string | Si | Subdominio (ej: `"mi-portfolio"` -> `mi-portfolio.sites.fyso.dev`) |
+| `subdomain` | string | Si | Subdominio (ej: `"mi-portfolio"` -> `mi-portfolio-sites.fyso.dev`) |
 | `path` | string | Condicional | Ruta absoluta al directorio de build (ej: `/home/user/my-site/dist`) |
 | `bundle_base64` | string | Condicional | ZIP en base64 (solo para sites < 5KB) |
 

@@ -1,6 +1,6 @@
 # Static Sites
 
-Fyso allows deploying static sites (Astro, Vite, Next.js export, etc.) on subdomains of `sites.fyso.dev`.
+Fyso allows deploying static sites (Astro, Vite, Next.js export, etc.) on subdomains of `fyso.dev`.
 
 ## MCP Tool: `deploy_static_site`
 
@@ -10,7 +10,7 @@ Fyso allows deploying static sites (Astro, Vite, Next.js export, etc.) on subdom
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `subdomain` | string | Yes | Subdomain (e.g., `"mi-portfolio"` -> `mi-portfolio.sites.fyso.dev`) |
+| `subdomain` | string | Yes | Subdomain (e.g., `"mi-portfolio"` -> `mi-portfolio-sites.fyso.dev`) |
 | `path` | string | Conditional | Absolute path to the build directory (e.g., `/home/user/my-site/dist`) |
 | `bundle_base64` | string | Conditional | ZIP in base64 (only for sites < 5KB) |
 
@@ -56,7 +56,7 @@ The agent must execute the returned command using the Bash tool.
   "success": true,
   "message": "Site deployed successfully",
   "data": {
-    "url": "https://mi-portfolio.sites.fyso.dev",
+    "url": "https://mi-portfolio-sites.fyso.dev",
     "subdomain": "mi-portfolio"
   }
 }
@@ -125,7 +125,7 @@ set_custom_domain({
 
 Returns `status: "active"` once DNS propagates and SSL is provisioned.
 
-**Step 3 — Done.** Your site is now accessible at both `mi-portfolio.sites.fyso.dev` and `app.mycompany.com`.
+**Step 3 — Done.** Your site is now accessible at both `mi-portfolio-sites.fyso.dev` and `app.mycompany.com`.
 
 ### Remove a custom domain
 
