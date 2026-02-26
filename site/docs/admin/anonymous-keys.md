@@ -1,27 +1,35 @@
-# Anonymous API Keys
+# Public Keys
 
-Anonymous API keys (`anon_*`) allow public clients — browsers, widgets, embedded apps — to access tenant resources without user authentication.
+Public keys (`fyso_pk_*`) allow public clients — browsers, widgets, embedded apps — to access tenant resources without user authentication.
 
-Use anonymous keys to power public-facing features: read-only data feeds, embedded changelogs, public search, or any endpoint that should be accessible without a login.
+Public keys are **role-based**: each key references a role in your tenant, inheriting its entity-level permissions. This means you can fine-tune what data a public key can access by configuring the role.
+
+Use public keys to power public-facing features: read-only data feeds, embedded changelogs, public search, or any endpoint that should be accessible without a login.
 
 ## Key Format
 
-Keys have the prefix `anon_`. The full key is shown **only once** at creation. Store it securely in your frontend build — it cannot be retrieved after creation.
+Keys have the prefix `fyso_pk_`. The full key is shown **only once** at creation. Store it securely in your frontend build — it cannot be retrieved after creation.
+
+## Required: Role
+
+Every public key must reference a role in your tenant. The key inherits the role's entity permissions — which entities are accessible and which fields may be excluded.
+
+Pass a `roleId` when creating a key. You can list available roles via `GET /api/roles`.
 
 ## Scopes
 
-Anonymous keys support read-only public scopes only:
+Public keys support read-only scopes only:
 
 | Scope | Description |
 |-------|-------------|
 | `records:read` | Read records from published entities |
 | `channels:read` | Read channel messages |
 
-Write scopes are not available for anonymous keys.
+Write scopes are not available for public keys.
 
 ## TTL
 
-TTL is **mandatory** — anonymous keys always expire. You cannot create a permanent anonymous key.
+TTL is **mandatory** — public keys always expire. You cannot create a permanent public key.
 
 | Parameter | Default | Max |
 |-----------|---------|-----|
@@ -31,10 +39,10 @@ TTL is **mandatory** — anonymous keys always expire. You cannot create a perma
 
 Each key has independent rate limits. Requests exceeding the limits return `429`.
 
-| Parameter | Default |
-|-----------|---------|
-| `rateLimitPerMin` | 60 req/min |
-| `rateLimitPerDay` | 1,000 req/day |
+| Parameter | Default | Max |
+|-----------|---------|-----|
+| `rateLimitPerMin` | 60 req/min | 10,000 req/min |
+| `rateLimitPerDay` | 1,000 req/day | 1,000,000 req/day |
 
 ## CORS
 
@@ -44,34 +52,19 @@ Optionally restrict which origins can send requests using this key. An empty `al
 "allowedOrigins": ["https://myapp.com", "https://preview.myapp.com"]
 ```
 
-## Quota
-
-Maximum **20 active anonymous keys** per tenant.
-
 ---
 
 ## Entity & Field-Level Permissions
 
-Anonymous keys support fine-grained access control at the entity and field level via the `entityPermissions` configuration.
+Entity access and field exclusions are configured on the **role** the key references. When a role restricts access to specific entities or excludes fields, all public keys using that role inherit those restrictions automatically.
 
 ### Entity-level filtering
 
-By default (empty `entityPermissions`), an anonymous key can access **all published entities** the tenant exposes. To restrict access to specific entities, provide an `entityPermissions` map:
-
-```json
-{
-  "entityPermissions": {
-    "products": {},
-    "blog_posts": {}
-  }
-}
-```
-
-With this configuration, requests to any entity **not listed** (e.g., `customers`, `invoices`) return `403 Forbidden`. Unlisted entities are completely inaccessible.
+Configure entity access at the role level. Requests to entities not permitted by the role return `403 Forbidden`.
 
 ### Field-level exclusion
 
-Each entry in `entityPermissions` optionally accepts an `excludeFields` array. Fields listed there are stripped from **all responses** before they reach the client — they never appear in list or detail responses.
+Roles can exclude sensitive fields from responses. Excluded fields are removed server-side and never appear in list or detail responses, regardless of what the client requests.
 
 ```json
 {
@@ -86,112 +79,85 @@ Each entry in `entityPermissions` optionally accepts an `excludeFields` array. F
 }
 ```
 
-Excluded fields are removed server-side. They do not appear even if the client requests them explicitly.
-
-### Backwards compatibility
-
-Keys created before v1.17.0, or created without `entityPermissions`, retain **unrestricted access** to all published entities — existing behavior is unchanged.
-
-### Example: Public product catalog key with restricted fields
-
-```json
-POST /api/auth/anonymous-keys
-{
-  "label": "Public product catalog",
-  "scopes": ["records:read"],
-  "ttlDays": 90,
-  "allowedOrigins": ["https://myshop.com"],
-  "entityPermissions": {
-    "products": {
-      "excludeFields": ["cost_price", "supplier_id"]
-    }
-  }
-}
-```
-
-A request to `/api/entities/customers/records` with this key returns `403`. A request to `/api/entities/products/records` returns all product fields except `cost_price` and `supplier_id`.
+Changing the role's permissions affects all public keys referencing that role immediately — no key rotation required.
 
 ---
 
 ## MCP Tools
 
-### `create_anonymous_key`
+### `create_public_key`
 
 **Profile:** advanced
 
-Creates an anonymous API key. The key value is only visible in the response — it is not stored and cannot be retrieved again.
+Creates a public API key. The key value is only visible in the response — it is not stored and cannot be retrieved again.
 
 ```
-create_anonymous_key({
+create_public_key({
   label: "Public changelog widget",
+  role_id: "uuid-of-role",
   scopes: ["records:read"],
   ttl_days: 90,
   allowed_origins: ["https://mysite.com"],
   rate_limit_per_min: 30,
-  rate_limit_per_day: 500,
-  entity_permissions: {
-    "posts": { "excludeFields": ["internal_tag"] }
-  }
+  rate_limit_per_day: 500
 })
 ```
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `label` | string | Yes | Human-readable name |
+| `role_id` | string | Yes | Role UUID — key inherits this role's permissions |
 | `scopes` | string[] | Yes | One or more valid scopes |
 | `ttl_days` | number | No | Lifetime in days (1–365, default: 90) |
 | `allowed_origins` | string[] | No | CORS allowlist. Empty = all origins |
 | `rate_limit_per_min` | number | No | Requests per minute (default: 60) |
 | `rate_limit_per_day` | number | No | Requests per day (default: 1,000) |
-| `entity_permissions` | object | No | Entity/field access map. Empty = unrestricted |
 
 **Response** (key shown only once):
 
 ```json
 {
   "id": "uuid",
-  "key": "anon_abc123...",
-  "keyPrefix": "anon_abc1",
+  "key": "fyso_pk_abc123...",
+  "keyPrefix": "fyso_pk_ab",
   "label": "Public changelog widget",
   "scopes": ["records:read"],
+  "roleId": "uuid-of-role",
   "allowedOrigins": ["https://mysite.com"],
   "rateLimitPerMin": 30,
   "rateLimitPerDay": 500,
   "expiresAt": "2026-11-30T00:00:00Z",
-  "entityPermissions": {
-    "posts": { "excludeFields": ["internal_tag"] }
-  },
-  "createdAt": "2026-02-22T12:00:00Z"
+  "createdAt": "2026-02-26T12:00:00Z"
 }
 ```
 
 ---
 
-### `list_anonymous_keys`
+### `list_public_keys`
 
 **Profile:** advanced
 
-Lists all anonymous keys for the current tenant. Key values are never returned — only metadata.
+Lists all public keys for the current tenant. Key values are never returned — only metadata.
 
 ```
-list_anonymous_keys()
+list_public_keys()
 ```
 
 ---
 
-### `revoke_anonymous_key`
+### `revoke_public_key`
 
 **Profile:** advanced
 
-Immediately revokes an anonymous key. Revocation is instant — no grace period. The key cannot be restored.
+Immediately revokes a public key. Revocation is instant — no grace period. The key cannot be restored.
 
 ```
-revoke_anonymous_key({ key_id: "uuid" })
+revoke_public_key({ key_id: "uuid" })
 ```
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `key_id` | string | Yes | UUID of the key (from `list_anonymous_keys`) |
+| `key_id` | string | Yes | UUID of the key (from `list_public_keys`) |
 
 ---
 
@@ -202,40 +168,37 @@ All management endpoints require tenant admin authentication.
 ### List keys
 
 ```bash
-GET /api/auth/anonymous-keys
+GET /api/auth/public-keys
 Authorization: Bearer <admin-token>
 ```
 
 ### Create a key
 
 ```bash
-POST /api/auth/anonymous-keys
+POST /api/auth/public-keys
 Authorization: Bearer <admin-token>
 Content-Type: application/json
 
 {
-  "label": "Public catalog",
+  "label": "Public changelog widget",
+  "roleId": "uuid-of-role",
   "scopes": ["records:read"],
   "ttlDays": 90,
   "allowedOrigins": ["https://mysite.com"],
   "rateLimitPerMin": 30,
-  "rateLimitPerDay": 500,
-  "entityPermissions": {
-    "products": { "excludeFields": ["cost_price"] },
-    "blog_posts": {}
-  }
+  "rateLimitPerDay": 500
 }
 ```
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `label` | string | Yes | Human-readable name |
+| `roleId` | string | Yes | Role UUID |
 | `scopes` | string[] | Yes | Valid scopes (`records:read`, `channels:read`) |
 | `ttlDays` | number | No | Lifetime in days (1–365, default: 90) |
 | `allowedOrigins` | string[] | No | CORS allowlist |
 | `rateLimitPerMin` | number | No | Requests per minute |
 | `rateLimitPerDay` | number | No | Requests per day |
-| `entityPermissions` | object | No | Map of entity slug → `{ excludeFields?: string[] }`. Omit for unrestricted access |
 
 **Response** (key shown only once):
 
@@ -244,19 +207,16 @@ Content-Type: application/json
   "success": true,
   "data": {
     "id": "uuid",
-    "key": "anon_abc123...",
-    "keyPrefix": "anon_abc1",
-    "label": "Public catalog",
+    "key": "fyso_pk_abc123...",
+    "keyPrefix": "fyso_pk_ab",
+    "label": "Public changelog widget",
     "scopes": ["records:read"],
+    "roleId": "uuid-of-role",
     "allowedOrigins": ["https://mysite.com"],
     "rateLimitPerMin": 30,
     "rateLimitPerDay": 500,
     "expiresAt": "2026-11-30T00:00:00Z",
-    "entityPermissions": {
-      "products": { "excludeFields": ["cost_price"] },
-      "blog_posts": {}
-    },
-    "createdAt": "2026-02-22T12:00:00Z"
+    "createdAt": "2026-02-26T12:00:00Z"
   }
 }
 ```
@@ -264,56 +224,31 @@ Content-Type: application/json
 ### Revoke a key
 
 ```bash
-DELETE /api/auth/anonymous-keys/:id
+DELETE /api/auth/public-keys/:id
 Authorization: Bearer <admin-token>
 ```
 
 Immediate revocation. Returns `404` if the key does not exist or belongs to a different tenant.
 
-### Audit log
-
-```bash
-GET /api/auth/anonymous-keys/:id/audit?limit=100
-Authorization: Bearer <admin-token>
-```
-
-Returns creation, rotation, and revocation events for the key. Maximum 500 entries per request.
-
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "action": "created",
-      "actor": "admin:uuid",
-      "createdAt": "2026-02-22T12:00:00Z"
-    },
-    {
-      "action": "revoked",
-      "actor": "admin:uuid",
-      "createdAt": "2026-02-23T09:00:00Z"
-    }
-  ]
-}
-```
-
 ---
 
-## Using Anonymous Keys
-
-Once you have a key, send it with requests to entity and channel endpoints.
+## Using Public Keys
 
 ### Authentication
 
-Include the key via `X-Anon-Key` header or `Authorization: Bearer`:
+Include the key via `X-Public-Key` header, `X-Anon-Key` header (legacy), or `Authorization: Bearer`:
 
 ```bash
-# Option 1: X-Anon-Key header
-curl -H "X-Anon-Key: anon_..." \
+# Option 1: X-Public-Key header (recommended)
+curl -H "X-Public-Key: fyso_pk_..." \
   https://api.fyso.dev/api/entities/products/records
 
 # Option 2: Authorization header
-curl -H "Authorization: Bearer anon_..." \
+curl -H "Authorization: Bearer fyso_pk_..." \
+  https://api.fyso.dev/api/entities/products/records
+
+# Option 3: X-Anon-Key header (legacy, still supported)
+curl -H "X-Anon-Key: fyso_pk_..." \
   https://api.fyso.dev/api/entities/products/records
 ```
 
@@ -324,28 +259,32 @@ curl -H "Authorization: Bearer anon_..." \
 | `GET /api/entities/*` | `records:read` |
 | `GET /api/channels/*` | `channels:read` |
 
-Anonymous keys are **read-only**. Requests using `POST`, `PUT`, or `DELETE` methods return `401`.
+Public keys are **read-only**. Requests using `POST`, `PUT`, or `DELETE` methods return `401`.
 
 ### Errors
 
 | Status | Cause |
 |--------|-------|
 | `401` | Missing, expired, or invalid key |
-| `403` | Entity not listed in `entityPermissions` |
+| `403` | Entity not permitted by the key's role |
 | `429` | Per-key rate limit exceeded |
 
 Authentication failures return a generic `401` — no information is leaked about key existence or revocation status.
-
-### HTTPS
-
-Anonymous key requests must use HTTPS in production. HTTP requests are rejected.
 
 ---
 
 ## Security Notes
 
 - Key values are bcrypt-hashed. The plaintext is never stored or re-exposed after creation.
-- TTL is mandatory — no indefinite anonymous keys are possible.
+- TTL is mandatory — no indefinite public keys are possible.
 - Revocation is synchronous (immediate DB update).
-- Every creation and revocation is recorded in the audit log.
-- `entityPermissions` field stripping happens server-side — clients cannot bypass field exclusions.
+- Role permissions are evaluated live — changing a role's permissions affects all keys referencing that role immediately.
+- Field exclusions happen server-side and cannot be bypassed by clients.
+
+---
+
+## Migration from Anonymous Keys
+
+Previous anonymous keys (`anon_*`) are still accepted for backward compatibility. The management endpoints at `/api/auth/anonymous-keys` also remain available.
+
+New keys should be created via `/api/auth/public-keys` with the `fyso_pk_` prefix and a `roleId`.

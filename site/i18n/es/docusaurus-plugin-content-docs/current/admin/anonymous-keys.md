@@ -1,66 +1,69 @@
-# API Keys anónimas
+# Llaves publicas
 
-Las API keys anónimas (`anon_*`) permiten que clientes públicos — navegadores, widgets, apps embebidas — accedan a recursos del tenant sin autenticación de usuario.
+Las llaves publicas (`fyso_pk_*`) permiten que clientes publicos — navegadores, widgets, apps embebidas — accedan a recursos del tenant sin autenticacion de usuario.
 
-Usa las anonymous keys para funcionalidades públicas: feeds de datos de solo lectura, changelogs embebidos, búsqueda pública o cualquier endpoint accesible sin login.
+Las llaves publicas son **basadas en roles**: cada llave referencia un rol en el tenant y hereda sus permisos por entidad. Esto permite controlar con precision que datos son accesibles configurando el rol.
 
-## Formato de las keys
+## Formato de las llaves
 
-Las keys tienen el prefijo `anon_`. El valor completo se muestra **una sola vez** al crearla. Guárdala de forma segura en tu build de frontend — no puede recuperarse después.
+Las llaves tienen el prefijo `fyso_pk_`. El valor completo se muestra **una sola vez** al crearla. Guardala de forma segura en tu build de frontend — no puede recuperarse despues.
+
+## Requerido: Rol
+
+Cada llave publica debe referenciar un rol del tenant. La llave hereda los permisos del rol — que entidades son accesibles y que campos pueden excluirse.
+
+Pasa un `roleId` al crear la llave. Puedes listar los roles disponibles via `GET /api/roles`.
 
 ## Scopes
 
-Las anonymous keys solo admiten scopes de lectura pública:
+Las llaves publicas solo admiten scopes de lectura:
 
-| Scope | Descripción |
+| Scope | Descripcion |
 |-------|-------------|
 | `records:read` | Leer registros de entidades publicadas |
 | `channels:read` | Leer mensajes de canales |
 
-Los scopes de escritura no están disponibles para anonymous keys.
+Los scopes de escritura no estan disponibles para llaves publicas.
 
 ## TTL
 
-El TTL es **obligatorio** — las anonymous keys siempre vencen. No es posible crear una key permanente.
+El TTL es **obligatorio** — las llaves publicas siempre vencen.
 
-| Parámetro | Default | Máximo |
+| Parametro | Default | Maximo |
 |-----------|---------|--------|
-| `ttlDays` | 90 días | 365 días |
+| `ttlDays` | 90 dias | 365 dias |
 
 ## Rate limits
 
-Cada key tiene sus propios rate limits. Las requests que los superen reciben `429`.
+Cada llave tiene sus propios rate limits. Las requests que los superen reciben `429`.
 
-| Parámetro | Default |
-|-----------|---------|
-| `rateLimitPerMin` | 60 req/min |
-| `rateLimitPerDay` | 1.000 req/día |
+| Parametro | Default | Maximo |
+|-----------|---------|--------|
+| `rateLimitPerMin` | 60 req/min | 10.000 req/min |
+| `rateLimitPerDay` | 1.000 req/dia | 1.000.000 req/dia |
 
 ## CORS
 
-Opcionalmente, restringe qué orígenes pueden enviar requests con esta key. Un array `allowedOrigins` vacío permite todos los orígenes.
+Restringe de manera opcional que origenes pueden enviar requests con esta llave. Un array `allowedOrigins` vacio permite todos los origenes.
 
 ```json
 "allowedOrigins": ["https://miapp.com", "https://preview.miapp.com"]
 ```
 
-## Cuota
-
-Máximo **20 anonymous keys activas** por tenant.
-
 ---
 
 ## Herramientas MCP
 
-### `create_anonymous_key`
+### `create_public_key`
 
 **Perfil:** advanced
 
-Crea una anonymous API key. El valor de la key solo es visible en la respuesta — no se almacena y no puede recuperarse después.
+Crea una llave publica de API. El valor de la llave solo es visible en la respuesta — no se almacena y no puede recuperarse luego.
 
 ```
-create_anonymous_key({
-  label: "Widget changelog público",
+create_public_key({
+  label: "Widget publico de changelog",
+  role_id: "uuid-del-rol",
   scopes: ["records:read"],
   ttl_days: 90,
   allowed_origins: ["https://misitioweb.com"],
@@ -69,82 +72,63 @@ create_anonymous_key({
 })
 ```
 
-| Parámetro | Tipo | Requerido | Descripción |
+| Parametro | Tipo | Requerido | Descripcion |
 |-----------|------|-----------|-------------|
-| `label` | string | Sí | Nombre legible |
-| `scopes` | string[] | Sí | Uno o más scopes válidos |
-| `ttl_days` | number | No | Vida en días (1–365, default: 90) |
-| `allowed_origins` | string[] | No | Lista CORS. Vacío = todos los orígenes |
+| `label` | string | Si | Nombre legible |
+| `role_id` | string | Si | UUID del rol — la llave hereda sus permisos |
+| `scopes` | string[] | Si | Uno o mas scopes validos |
+| `ttl_days` | number | No | Tiempo de vida en dias (1–365, default: 90) |
+| `allowed_origins` | string[] | No | Lista CORS. Vacia = todos los origenes |
 | `rate_limit_per_min` | number | No | Requests por minuto (default: 60) |
-| `rate_limit_per_day` | number | No | Requests por día (default: 1.000) |
+| `rate_limit_per_day` | number | No | Requests por dia (default: 1.000) |
 
-**Respuesta** (key visible solo una vez):
+---
 
-```json
-{
-  "id": "uuid",
-  "key": "anon_abc123...",
-  "keyPrefix": "anon_abc1",
-  "label": "Widget changelog público",
-  "scopes": ["records:read"],
-  "allowedOrigins": ["https://misitioweb.com"],
-  "rateLimitPerMin": 30,
-  "rateLimitPerDay": 500,
-  "expiresAt": "2026-11-30T00:00:00Z",
-  "createdAt": "2026-02-22T12:00:00Z"
-}
+### `list_public_keys`
+
+**Perfil:** advanced
+
+Lista todas las llaves publicas del tenant. Los valores de las llaves nunca se devuelven — solo metadata.
+
+```
+list_public_keys()
 ```
 
 ---
 
-### `list_anonymous_keys`
+### `revoke_public_key`
 
 **Perfil:** advanced
 
-Lista todas las anonymous keys del tenant actual. Los valores de las keys nunca se devuelven — solo metadatos.
+Revoca una llave publica de forma inmediata. La revocacion es instantanea — no hay periodo de gracia.
 
 ```
-list_anonymous_keys()
+revoke_public_key({ key_id: "uuid" })
 ```
-
----
-
-### `revoke_anonymous_key`
-
-**Perfil:** advanced
-
-Revoca una anonymous key de forma inmediata. No hay período de gracia. La key no puede restaurarse.
-
-```
-revoke_anonymous_key({ key_id: "uuid" })
-```
-
-| Parámetro | Tipo | Requerido | Descripción |
-|-----------|------|-----------|-------------|
-| `key_id` | string | Sí | UUID de la key (de `list_anonymous_keys`) |
 
 ---
 
 ## Endpoints REST
 
-Todos los endpoints de gestión requieren autenticación de admin del tenant.
+Todos los endpoints de gestion requieren autenticacion de admin del tenant.
 
-### Listar keys
+### Listar llaves
 
 ```bash
-GET /api/auth/anonymous-keys
-Authorization: Bearer <admin-token>
+GET /api/auth/public-keys
+Authorization: Bearer <token-admin>
 ```
 
-### Crear una key
+### Crear una llave
 
 ```bash
-POST /api/auth/anonymous-keys
-Authorization: Bearer <admin-token>
+POST /api/auth/public-keys
+Authorization: Bearer <token-admin>
 Content-Type: application/json
 
 {
-  "label": "Widget changelog público",
+  "label": "Widget publico de changelog",
+  "roleId": "uuid-del-rol",
   "scopes": ["records:read"],
   "ttlDays": 90,
   "allowedOrigins": ["https://misitioweb.com"],
@@ -153,89 +137,35 @@ Content-Type: application/json
 }
 ```
 
-| Campo | Tipo | Requerido | Descripción |
-|-------|------|-----------|-------------|
-| `label` | string | Sí | Nombre legible |
-| `scopes` | string[] | Sí | Scopes válidos (`records:read`, `channels:read`) |
-| `ttlDays` | number | No | Vida en días (1–365, default: 90) |
-| `allowedOrigins` | string[] | No | Lista CORS |
-| `rateLimitPerMin` | number | No | Requests por minuto |
-| `rateLimitPerDay` | number | No | Requests por día |
-
-**Respuesta** (key visible solo una vez):
-
-```json
-{
-  "success": true,
-  "data": {
-    "id": "uuid",
-    "key": "anon_abc123...",
-    "keyPrefix": "anon_abc1",
-    "label": "Widget changelog público",
-    "scopes": ["records:read"],
-    "allowedOrigins": ["https://misitioweb.com"],
-    "rateLimitPerMin": 30,
-    "rateLimitPerDay": 500,
-    "expiresAt": "2026-11-30T00:00:00Z",
-    "createdAt": "2026-02-22T12:00:00Z"
-  }
-}
-```
-
-### Revocar una key
+### Revocar una llave
 
 ```bash
-DELETE /api/auth/anonymous-keys/:id
-Authorization: Bearer <admin-token>
+DELETE /api/auth/public-keys/:id
+Authorization: Bearer <token-admin>
 ```
 
-Revocación inmediata. Devuelve `404` si la key no existe o pertenece a otro tenant.
-
-### Log de auditoría
-
-```bash
-GET /api/auth/anonymous-keys/:id/audit?limit=100
-Authorization: Bearer <admin-token>
-```
-
-Devuelve eventos de creación, rotación y revocación de la key. Máximo 500 entradas por request.
-
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "action": "created",
-      "actor": "admin:uuid",
-      "createdAt": "2026-02-22T12:00:00Z"
-    },
-    {
-      "action": "revoked",
-      "actor": "admin:uuid",
-      "createdAt": "2026-02-23T09:00:00Z"
-    }
-  ]
-}
-```
+Revocacion inmediata. Devuelve `404` si la llave no existe o pertenece a otro tenant.
 
 ---
 
-## Uso de anonymous keys
+## Usar llaves publicas
 
-Una vez que tienes la key, inclúyela en las requests a los endpoints de entidades y canales.
+### Autenticacion
 
-### Autenticación
-
-Envía la key con el header `X-Anon-Key` o `Authorization: Bearer`:
+Incluye la llave via header `X-Public-Key`, `X-Anon-Key` (legacy) o `Authorization: Bearer`:
 
 ```bash
-# Opción 1: header X-Anon-Key
-curl -H "X-Anon-Key: anon_..." \
-  https://api.fyso.dev/api/entities/products/records
+# Opcion 1: header X-Public-Key (recomendado)
+curl -H "X-Public-Key: fyso_pk_..." \
+  https://api.fyso.dev/api/entities/productos/records
 
-# Opción 2: header Authorization
-curl -H "Authorization: Bearer anon_..." \
-  https://api.fyso.dev/api/entities/products/records
+# Opcion 2: Authorization header
+curl -H "Authorization: Bearer fyso_pk_..." \
+  https://api.fyso.dev/api/entities/productos/records
+
+# Opcion 3: header X-Anon-Key (legacy, sigue siendo compatible)
+curl -H "X-Anon-Key: fyso_pk_..." \
+  https://api.fyso.dev/api/entities/productos/records
 ```
 
 ### Endpoints compatibles
@@ -245,23 +175,21 @@ curl -H "Authorization: Bearer anon_..." \
 | `GET /api/entities/*` | `records:read` |
 | `GET /api/channels/*` | `channels:read` |
 
-Las anonymous keys son de **solo lectura**. Las requests con métodos `POST`, `PUT` o `DELETE` devuelven `401`.
-
-### Errores
-
-Todos los errores de autenticación devuelven `401 Unauthorized` sin detalle adicional. Esto aplica por igual a keys inexistentes, vencidas, revocadas o con valores inválidos — no se filtra información sobre el estado de la key.
-
-Las requests que superan los rate limits de la key devuelven `429 Too Many Requests`.
-
-### HTTPS
-
-Las requests con anonymous keys deben usar HTTPS en producción. Las requests por HTTP son rechazadas.
+Las llaves publicas son **de solo lectura**. Los metodos `POST`, `PUT` y `DELETE` siempre devuelven `401`.
 
 ---
 
-## Seguridad
+## Notas de seguridad
 
-- Los valores de las keys se hashean con bcrypt. El plaintext nunca se almacena ni se vuelve a exponer.
-- El TTL es obligatorio — no es posible crear anonymous keys indefinidas.
-- La revocación es síncrona (UPDATE inmediato en DB).
-- Toda creación y revocación queda registrada en el log de auditoría.
+- Los valores de las llaves se hashean con bcrypt. El texto plano nunca se almacena ni se re-expone.
+- El TTL es obligatorio — no es posible crear llaves publicas permanentes.
+- La revocacion es sincrona (actualizacion inmediata en la base de datos).
+- Los permisos del rol se evaluan en tiempo real — cambiar los permisos del rol afecta de inmediato a todas las llaves que lo referencian.
+
+---
+
+## Migracion desde llaves anonimas
+
+Las llaves anonimas anteriores (`anon_*`) siguen siendo aceptadas por compatibilidad. Los endpoints de gestion en `/api/auth/anonymous-keys` tambien siguen disponibles.
+
+Las nuevas llaves deben crearse via `/api/auth/public-keys` con el prefijo `fyso_pk_` y un `roleId`.

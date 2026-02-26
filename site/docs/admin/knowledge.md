@@ -26,6 +26,35 @@ Supported formats: **PDF**, **HTML** (.html, .htm), **plain text** (.txt), **Mar
 
 After upload, the document is automatically chunked and indexed in the background. Status transitions from `processing` → `ready`.
 
+### Binary PDF Upload (REST API)
+
+To upload a PDF file directly from your backend or CI pipeline, use the multipart endpoint:
+
+```bash
+POST /api/knowledge/documents/upload
+Authorization: Bearer <token>
+Content-Type: multipart/form-data
+
+curl -X POST https://api.fyso.dev/api/knowledge/documents/upload \
+  -H "Authorization: Bearer <token>" \
+  -F "file=@/path/to/manual.pdf" \
+  -F "title=Product Manual 2026"
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `file` | binary | Yes | PDF file (`application/pdf` only, max 20 MB) |
+| `title` | string | No | Document title. Defaults to the filename. |
+
+Returns `201` on success with the document metadata.
+
+**Errors:**
+
+| Code | Description |
+|------|-------------|
+| `400` | Missing `file` field or unsupported MIME type (only PDF accepted) |
+| `403` | Plan document or storage limit reached |
+
 ### Plan limits
 
 | Plan | Documents | Storage |
@@ -150,14 +179,52 @@ GET /api/knowledge/stats
 
 `search` and `top_documents` are present when the events table is available. `zero_result_rate` is the fraction of queries that returned no results. `coverage_score` is the fraction that returned at least one result.
 
+## Storage Usage
+
+To get a breakdown of knowledge base storage for monitoring or billing purposes:
+
+```bash
+GET /api/usage/storage
+Authorization: Bearer <token>
+```
+
+```json
+{
+  "success": true,
+  "data": {
+    "db": {
+      "bytes": 8388608,
+      "table_count": 12,
+      "estimated_rows": 347
+    },
+    "knowledge_base": {
+      "bytes": 512000,
+      "documents": 3
+    },
+    "bucket": {
+      "bytes": 0,
+      "file_count": 0
+    },
+    "total_bytes": 8388608
+  }
+}
+```
+
+- `db.bytes` — total PostgreSQL storage for all tenant tables (exact)
+- `db.estimated_rows` — estimated row count from PostgreSQL statistics (approximate)
+- `knowledge_base.bytes` — sum of original file sizes for all documents
+- `bucket` — file storage used (stub; returns 0 in the current release)
+- `total_bytes` — db + bucket (knowledge_base not included in total)
+
 ## Dashboard
 
 From the admin panel, go to **Knowledge** in the sidebar to manage your knowledge base visually:
 
 - **Stats bar** — document count, storage used, total chunks
-- **Document list** — source type badge, status badge (ready/processing/error), created date, delete button
-- **Add document panel** — text tab (title + content) or URL tab (title + URL)
+- **Document list** — PDF badge for PDF files, status badge (ready/processing/error), file size, delete button
+- **Add document panel** — text tab (title + content), URL tab, or file upload tab (PDF)
 - **Search panel** — enter a query, see results with relevance scores
+- **Usage page** — storage breakdown by file type (PDF, Text, Markdown, HTML)
 
 ## Use Cases
 
