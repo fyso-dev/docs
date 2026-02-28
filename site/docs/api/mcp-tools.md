@@ -192,12 +192,12 @@ Configure which tools are exposed with the `FYSO_TOOLS` environment variable. Se
 
 | Tool | Profile | Description |
 |------|---------|-------------|
-| `upload_document` | core | Upload document for RAG indexing (PDF, HTML, text, markdown) |
-| `search_knowledge` | core | Semantic search across indexed documents |
-| `list_documents` | core | List uploaded documents |
-| `get_document` | core | Get document metadata and content |
-| `delete_document` | advanced | Delete a document from the knowledge base |
-| `get_knowledge_stats` | core | Get indexing stats and search analytics (30-day window) |
+| `upload_document` | core | Upload document for RAG indexing (PDF, HTML, text, markdown, URL) |
+| `search_knowledge` | core | Semantic search across indexed documents. Supports `one_per_document`, `threshold`, `document_ids` |
+| `list_documents` | core | List uploaded documents with status filtering |
+| `get_document` | core | Get document metadata, content, and chunk preview |
+| `delete_document` | advanced | Delete a document and all its chunks (tracked via `knowledge_delete` event) |
+| `get_knowledge_stats` | core | Get indexing stats, search analytics, and embedding token usage (30-day window) |
 
 ---
 

@@ -4,7 +4,7 @@ sidebar_position: 4
 
 # Base de conocimiento
 
-La Base de conocimiento te permite subir documentos y consultarlos via búsqueda semántica usando RAG (Retrieval-Augmented Generation). Los documentos se dividen en chunks, se embeben e indexan para búsqueda por similitud.
+La Base de conocimiento te permite subir documentos y consultarlos via busqueda semantica usando RAG (Retrieval-Augmented Generation). Los documentos se dividen en fragmentos, se generan embeddings y se indexan para busqueda por similitud.
 
 ## Subir documentos
 
@@ -12,23 +12,52 @@ La Base de conocimiento te permite subir documentos y consultarlos via búsqueda
 
 ```
 upload_document({
-  filePath: "/ruta/al/documento.pdf",
+  filePath: "/path/to/document.pdf",
   title: "Manual de producto 2026",
-  description: "Descripción opcional"
+  description: "Descripcion opcional"
 })
 ```
 
 Formatos soportados: **PDF**, **HTML** (.html, .htm), **texto plano** (.txt), **Markdown** (.md).
 
-- PDF: el texto se extrae automáticamente antes de dividirlo en chunks.
-- HTML: se eliminan las etiquetas preservando la estructura de texto; los bloques `<script>`, `<style>` y `<noscript>` se omiten.
-- Texto/Markdown: se divide en chunks e indexa directamente.
+- PDF: el texto se extrae automaticamente antes de fragmentar.
+- HTML: se eliminan los tags, preservando la estructura del texto. Elementos de navegacion (`<nav>`, `<header>`, `<footer>`, `<aside>`, `<svg>`, `<form>`, `<button>`) y bloques script/style se eliminan.
+- Texto/Markdown: se fragmenta e indexa directamente.
 
-Después de subir, el documento se procesa en segundo plano. El estado pasa de `processing` → `ready`.
+Despues de subir, el documento se fragmenta e indexa automaticamente. El estado cambia de `processing` a `ready`.
 
-### Carga binaria de PDF (REST API)
+### Ingesta por URL
 
-Para subir un archivo PDF directamente desde tu backend o pipeline de CI, usa el endpoint multipart:
+Podes ingestar contenido desde una URL. Fyso descarga la pagina, extrae texto limpio (eliminando navegacion/chrome del HTML), y lo indexa:
+
+```
+upload_document({
+  title: "Politica de la empresa",
+  content: "https://example.com/politica",
+  source_type: "url"
+})
+```
+
+**API REST:**
+
+```bash
+curl -X POST https://api.fyso.dev/api/knowledge/documents \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Politica de la empresa",
+    "content": "https://example.com/politica",
+    "source_type": "url"
+  }'
+```
+
+- Solo recursos basados en texto (HTML, texto plano, JSON, XML)
+- Timeout de 15 segundos para la descarga
+- Proteccion SSRF: IPs privadas/internas estan bloqueadas
+
+### Subir PDF binario (API REST)
+
+Para subir un archivo PDF directamente desde tu backend o pipeline CI, usa el endpoint multipart:
 
 ```bash
 POST /api/knowledge/documents/upload
@@ -37,25 +66,18 @@ Content-Type: multipart/form-data
 
 curl -X POST https://api.fyso.dev/api/knowledge/documents/upload \
   -H "Authorization: Bearer <token>" \
-  -F "file=@/ruta/al/manual.pdf" \
+  -F "file=@/path/to/manual.pdf" \
   -F "title=Manual de producto 2026"
 ```
 
 | Campo | Tipo | Requerido | Descripcion |
 |-------|------|-----------|-------------|
-| `file` | binario | Si | Archivo PDF (`application/pdf`, maximo 20 MB) |
+| `file` | binary | Si | Archivo PDF (`application/pdf` unicamente, max 20 MB) |
 | `title` | string | No | Titulo del documento. Por defecto usa el nombre del archivo. |
 
-Devuelve `201` con los metadatos del documento.
+Retorna `201` en caso de exito con los metadatos del documento.
 
-**Errores:**
-
-| Codigo | Descripcion |
-|--------|-------------|
-| `400` | Campo `file` faltante o tipo MIME no soportado (solo PDF) |
-| `403` | Limite de documentos o almacenamiento del plan alcanzado |
-
-### Límites por plan
+### Limites por plan
 
 | Plan | Documentos | Almacenamiento |
 |------|-----------|----------------|
@@ -68,21 +90,41 @@ Devuelve `201` con los metadatos del documento.
 
 ```
 search_knowledge({
-  query: "¿Cómo reseteo el dispositivo?",
+  query: "Como reinicio el dispositivo?",
   limit: 5,
-  minSimilarity: 0.7
+  threshold: 0.3,
+  one_per_document: true
 })
 ```
 
-Retorna chunks coincidentes con documento fuente, puntaje de relevancia y extracto de contenido. Cada búsqueda se registra para analytics (ver [Estadísticas](#estadísticas)).
+Retorna fragmentos coincidentes con documento fuente, puntaje de relevancia y extracto del contenido. Cada busqueda se registra para analiticas (ver [Estadisticas](#estadisticas)).
 
-**REST API:**
+### Parametros
+
+| Parametro | Tipo | Default | Descripcion |
+|-----------|------|---------|-------------|
+| `query` | string | requerido | Consulta en lenguaje natural |
+| `limit` | number | 10 | Maximo de resultados (max 50) |
+| `threshold` | number | 0.3 | Puntaje minimo de similitud 0-1. Menor = mas resultados |
+| `one_per_document` | boolean | false | Retorna solo el mejor fragmento por documento |
+| `document_ids` | string[] | todos | Restringir busqueda a documentos especificos |
+
+:::tip Tips de busqueda
+La busqueda funciona por significado, no por palabras exactas. En vez de buscar una sola palabra como "precio", intenta buscar algo como "cual es el precio del producto" o "informacion sobre precios". Cuanto mas describas lo que buscas, mejores resultados vas a obtener.
+:::
+
+**API REST:**
 
 ```bash
 curl -X POST https://api.fyso.dev/api/knowledge/search \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
-  -d '{ "query": "¿Cómo reseteo el dispositivo?", "limit": 5, "threshold": 0.7 }'
+  -d '{
+    "query": "Como reinicio el dispositivo?",
+    "limit": 5,
+    "threshold": 0.3,
+    "one_per_document": true
+  }'
 ```
 
 Respuesta:
@@ -93,10 +135,11 @@ Respuesta:
   "data": {
     "results": [
       {
-        "content": "Para resetear, mantén el botón de encendido por 10 segundos...",
+        "content": "Para reiniciar, mantene presionado el boton de encendido 10 segundos...",
         "score": 0.92,
         "document": { "id": "...", "title": "Manual de producto 2026", "source_type": "file" },
-        "chunk_index": 3
+        "chunk_index": 3,
+        "token_count": 145
       }
     ],
     "query_time_ms": 45
@@ -108,7 +151,7 @@ Respuesta:
 
 **Herramienta MCP: `list_documents`** (Perfil: core)
 
-Lista todos los documentos del tenant con metadata (título, fecha de carga, cantidad de chunks, estado de indexación).
+Lista todos los documentos del tenant con metadatos (titulo, fecha de subida, cantidad de fragmentos, estado de indexacion).
 
 Filtrar por estado: `GET /api/knowledge/documents?status=ready`
 
@@ -120,7 +163,7 @@ Filtrar por estado: `GET /api/knowledge/documents?status=ready`
 get_document({ documentId: "uuid" })
 ```
 
-Retorna metadata, contenido y un preview de los primeros 5 chunks.
+Retorna metadatos del documento, contenido y una vista previa de los primeros 5 fragmentos.
 
 ## Eliminar documentos
 
@@ -130,13 +173,13 @@ Retorna metadata, contenido y un preview de los primeros 5 chunks.
 delete_document({ documentId: "uuid" })
 ```
 
-Elimina el documento y todos sus chunks indexados.
+Elimina el documento y todos sus fragmentos indexados. Se registra un evento `knowledge_delete` para analiticas.
 
-## Estadísticas
+## Estadisticas
 
 **Herramienta MCP: `get_knowledge_stats`** (Perfil: core)
 
-Retorna estadísticas de indexación y analytics de búsqueda:
+Retorna estadisticas de indexacion, analiticas de busqueda y uso de embeddings:
 
 ```bash
 GET /api/knowledge/stats
@@ -171,25 +214,87 @@ GET /api/knowledge/stats
     "zero_result_rate": 0.06,
     "coverage_score": 0.94
   },
+  "embedding_usage_30d": {
+    "search_tokens": 3200,
+    "ingest_tokens": 45000,
+    "total_tokens": 48200,
+    "total_ingests": 42,
+    "avg_ingest_ms": 1250
+  },
   "top_documents": [
     { "id": "...", "title": "Manual de producto 2026", "hit_count": 48 }
   ]
 }
 ```
 
-`search` y `top_documents` están presentes cuando la tabla de eventos está disponible. `zero_result_rate` es la fracción de búsquedas que no devolvieron resultados. `coverage_score` es la fracción que devolvió al menos un resultado.
+### Campos de estadisticas
 
-## Panel de administración
+| Campo | Descripcion |
+|-------|-------------|
+| `search.total_queries_30d` | Cantidad de busquedas en los ultimos 30 dias |
+| `search.avg_score` | Puntaje promedio de relevancia |
+| `search.zero_result_rate` | Fraccion de busquedas sin resultados |
+| `search.coverage_score` | Fraccion de busquedas con al menos un resultado |
+| `embedding_usage_30d.search_tokens` | Tokens de embedding OpenAI usados en busquedas |
+| `embedding_usage_30d.ingest_tokens` | Tokens de embedding OpenAI usados en ingesta de documentos |
+| `embedding_usage_30d.total_tokens` | Total de tokens de embedding (busqueda + ingesta) |
+| `embedding_usage_30d.avg_ingest_ms` | Tiempo promedio de procesamiento de documentos |
 
-Desde el panel de admin, ve a **Conocimiento** en el menú lateral para gestionar tu base de conocimiento visualmente:
+## Tracking de eventos
 
-- **Barra de estadísticas** — cantidad de documentos, almacenamiento usado, total de chunks
-- **Lista de documentos** — badge de tipo de fuente, badge de estado (ready/processing/error), fecha de carga, botón de eliminación
-- **Panel para agregar documentos** — tab de texto (título + contenido) o tab de URL (título + URL)
-- **Panel de búsqueda** — ingresa una consulta, mira resultados con puntajes de relevancia
+Todas las operaciones de la base de conocimiento se registran como eventos para analiticas y billing:
+
+| Evento | Datos registrados |
+|--------|-------------------|
+| `knowledge_ingest` | document_id, title, source_type, mime_type, original_size_bytes, chunk_count, total_tokens, embedding_tokens_used, processing_ms |
+| `knowledge_search` | query, result_count, top_score, latency_ms, document_ids_hit, embedding_tokens_used |
+| `knowledge_delete` | document_id, title, source_type, chunk_count, total_tokens, original_size_bytes |
+
+## Uso de almacenamiento
+
+Para obtener un desglose del almacenamiento de la base de conocimiento:
+
+```bash
+GET /api/usage/storage
+Authorization: Bearer <token>
+```
+
+```json
+{
+  "success": true,
+  "data": {
+    "db": {
+      "bytes": 8388608,
+      "table_count": 12,
+      "estimated_rows": 347
+    },
+    "knowledge_base": {
+      "bytes": 512000,
+      "documents": 3
+    },
+    "bucket": {
+      "bytes": 0,
+      "file_count": 0
+    },
+    "total_bytes": 8388608
+  }
+}
+```
+
+## Panel de administracion
+
+Desde el panel de admin, anda a **Conocimiento** en la barra lateral para gestionar tu base de conocimiento visualmente:
+
+- **Barra de estadisticas** — cantidad de documentos, almacenamiento usado, fragmentos totales
+- **Lista de documentos** — badge PDF, estado (listo/procesando/error), tamano, vista previa de contenido, boton eliminar
+- **Panel de agregar** — pestana texto (titulo + contenido), pestana URL (descarga e indexa la pagina), o pestana archivo (PDF)
+- **Panel de busqueda** — ingresa una consulta, ajusta el slider de precision, alterna fragmentos/un-por-doc, ve resultados con barra de certeza
+- **Modal de ayuda** — explica las opciones de busqueda y como buscar efectivamente
+- **Pagina de uso** — desglose de almacenamiento por tipo de archivo
 
 ## Casos de uso
 
-- **Chatbots de soporte**: indexar documentos de FAQ, responder preguntas de usuarios con `search_knowledge`
-- **Wikis internas**: subir políticas y procedimientos, que los agentes surfaceen contenido relevante
-- **Documentación de productos**: complementar reglas de negocio con conocimiento externo
+- **Chatbots de soporte**: Indexa documentos de FAQ, responde preguntas con `search_knowledge`
+- **Wikis internas**: Subi politicas y procedimientos, deja que los agentes encuentren contenido relevante
+- **Documentacion de producto**: Complementa reglas de negocio con conocimiento externo
+- **Contenido web**: Ingesta paginas via URL, limpiadas automaticamente de navegacion/chrome

@@ -190,12 +190,12 @@ Configurá qué herramientas se exponen con la variable de entorno `FYSO_TOOLS`.
 
 | Herramienta | Perfil | Descripción |
 |-------------|--------|-------------|
-| `upload_document` | core | Subir documento para indexación RAG (PDF, HTML, texto, markdown) |
-| `search_knowledge` | core | Búsqueda semántica en documentos indexados |
-| `list_documents` | core | Listar documentos subidos |
-| `get_document` | core | Obtener metadata y contenido de un documento |
-| `delete_document` | advanced | Eliminar un documento de la base de conocimiento |
-| `get_knowledge_stats` | core | Obtener estadísticas de indexación y analytics de búsqueda (ventana de 30 días) |
+| `upload_document` | core | Subir documento para indexación RAG (PDF, HTML, texto, markdown, URL) |
+| `search_knowledge` | core | Búsqueda semántica en documentos indexados. Soporta `one_per_document`, `threshold`, `document_ids` |
+| `list_documents` | core | Listar documentos subidos con filtro por estado |
+| `get_document` | core | Obtener metadata, contenido y vista previa de fragmentos |
+| `delete_document` | advanced | Eliminar documento y sus fragmentos (registra evento `knowledge_delete`) |
+| `get_knowledge_stats` | core | Estadísticas de indexación, analytics de búsqueda y uso de tokens de embedding (30 días) |
 
 ---
 
