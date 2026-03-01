@@ -85,6 +85,83 @@ create_record({
 })
 ```
 
+## Relaciones has_many
+
+Un campo `has_many` define una relacion inversa uno-a-muchos. En lugar de almacenar una clave foranea, declara que otra entidad tiene registros que apuntan a esta.
+
+### Definir un campo has_many
+
+```
+generate_entity({
+  definition: {
+    entity: { name: "facturas" },
+    fields: [
+      {
+        name: "Lineas",
+        fieldKey: "lineas",
+        fieldType: "has_many",
+        config: {
+          relatedEntity: "lineas_factura",
+          foreignKey: "factura_id"
+        }
+      }
+    ]
+  }
+})
+```
+
+Esto declara: "cada factura tiene muchas lineas_factura donde `lineas_factura.factura_id` apunta a esta factura."
+
+### Resolver has_many
+
+Al consultar un registro con `resolve=true`, el campo `has_many` se llena con un array de registros relacionados:
+
+```
+GET /api/entities/facturas/records/{id}?resolve=true
+```
+
+```json
+{
+  "id": "uuid-factura",
+  "data": {
+    "numero": "FAC-001",
+    "lineas": [
+      {
+        "id": "uuid-linea-1",
+        "data": { "producto": "Widget A", "cantidad": 3, "precio": 100 }
+      },
+      {
+        "id": "uuid-linea-2",
+        "data": { "producto": "Widget B", "cantidad": 1, "precio": 250 }
+      }
+    ]
+  }
+}
+```
+
+### Resolucion anidada con resolve_depth
+
+Controla la profundidad de resolucion de relaciones anidadas:
+
+```
+GET /api/entities/facturas/records/{id}?resolve=true&resolve_depth=2
+```
+
+Con `resolve_depth=2`, si una `linea_factura` tiene un campo `relation` apuntando a `productos`, esa relacion tambien se resuelve.
+
+### Resolucion con permisos
+
+La resolucion en cascada respeta los permisos RBAC por entidad:
+
+| Permiso | Comportamiento |
+|---------|----------------|
+| Sin permiso `read` en entidad relacionada | El campo se omite por completo de la respuesta |
+| `rowFilter` en entidad relacionada | Solo se devuelven los registros relacionados que cumplen el filtro |
+| `fields` whitelist en entidad relacionada | Solo aparecen los campos permitidos en registros relacionados |
+| `excludeFields` blocklist en entidad relacionada | Se eliminan los campos listados de los registros relacionados |
+
+Esto significa que diferentes usuarios pueden ver distintos datos relacionados segun la configuracion de su rol.
+
 ## Relaciones en reglas de negocio
 
 Las reglas pueden usar lookups para acceder a datos de entidades relacionadas:

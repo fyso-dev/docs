@@ -85,6 +85,83 @@ create_record({
 })
 ```
 
+## Has-Many Relations
+
+A `has_many` field defines a reverse one-to-many relationship. Instead of storing a foreign key, it declares that another entity has records pointing back to this one.
+
+### Define a has_many field
+
+```
+generate_entity({
+  definition: {
+    entity: { name: "facturas" },
+    fields: [
+      {
+        name: "Lineas",
+        fieldKey: "lineas",
+        fieldType: "has_many",
+        config: {
+          relatedEntity: "lineas_factura",
+          foreignKey: "factura_id"
+        }
+      }
+    ]
+  }
+})
+```
+
+This declares: "each factura has many lineas_factura where `lineas_factura.factura_id` points to this factura."
+
+### Resolving has_many
+
+When you query a record with `resolve=true`, the `has_many` field is populated with an array of related records:
+
+```
+GET /api/entities/facturas/records/{id}?resolve=true
+```
+
+```json
+{
+  "id": "uuid-factura",
+  "data": {
+    "numero": "FAC-001",
+    "lineas": [
+      {
+        "id": "uuid-linea-1",
+        "data": { "producto": "Widget A", "cantidad": 3, "precio": 100 }
+      },
+      {
+        "id": "uuid-linea-2",
+        "data": { "producto": "Widget B", "cantidad": 1, "precio": 250 }
+      }
+    ]
+  }
+}
+```
+
+### Nested resolution with resolve_depth
+
+Control how deep nested relations are resolved:
+
+```
+GET /api/entities/facturas/records/{id}?resolve=true&resolve_depth=2
+```
+
+With `resolve_depth=2`, if a `linea_factura` itself has a `relation` field pointing to `productos`, that relation is also resolved.
+
+### Permission-aware resolution
+
+Cascading resolution respects RBAC permissions per entity:
+
+| Permission | Behavior |
+|------------|----------|
+| No `read` permission on related entity | Field is omitted entirely from the response |
+| `rowFilter` on related entity | Only matching related records are returned |
+| `fields` whitelist on related entity | Only whitelisted fields appear in related records |
+| `excludeFields` blocklist on related entity | Listed fields are stripped from related records |
+
+This means different users can see different related data based on their role configuration.
+
 ## Relations in Business Rules
 
 Rules can use lookups to access data from related entities:

@@ -1,6 +1,6 @@
 # Sites estaticos
 
-Fyso permite desplegar sitios estaticos (Astro, Vite, Next.js export, etc.) en subdominios de `fyso.dev`.
+Fyso permite desplegar sitios estaticos (Astro, Vite, Next.js export, etc.) en subdominios de `fyso.dev`. Los assets se almacenan en Cloudflare R2 y se sirven mediante un Cloudflare Worker para entrega global de baja latencia.
 
 ## MCP Tool: `deploy_static_site`
 

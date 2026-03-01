@@ -113,6 +113,38 @@ Referencia a un registro de otra entidad.
 
 Al consultar registros con `resolve=true`, la relacion se expande al registro completo.
 
+## has_many
+
+Relacion inversa uno-a-muchos. Declara que registros en otra entidad referencian a esta entidad via una clave foranea.
+
+- **Almacenamiento:** virtual (no se almacena columna — se resuelve en tiempo de consulta)
+- **Config:**
+
+| Config | Tipo | Descripcion |
+|--------|------|-------------|
+| `relatedEntity` | string | Nombre de la entidad que contiene los registros relacionados |
+| `foreignKey` | string | Campo en la entidad relacionada que referencia el ID de esta entidad |
+
+- **Ejemplo de config:**
+
+```json
+{
+  "relatedEntity": "lineas_factura",
+  "foreignKey": "factura_id"
+}
+```
+
+- **Valor resuelto (con `resolve=true`):**
+
+```json
+[
+  { "id": "uuid-1", "data": { "producto": "Widget A", "cantidad": 3 } },
+  { "id": "uuid-2", "data": { "producto": "Widget B", "cantidad": 1 } }
+]
+```
+
+Sin `resolve=true`, los campos `has_many` no se incluyen en la respuesta. Ver [Relaciones](/records/relations) para detalles sobre resolucion anidada y filtrado con permisos.
+
 ## file
 
 Archivo adjunto. Se sube usando el tool `upload_file`.
@@ -195,5 +227,6 @@ Ubicacion geografica con coordenadas y datos de direccion opcionales.
 | `boolean` | boolean | - |
 | `select` | string | `options` |
 | `relation` | string (UUID) | `relatedEntity` |
+| `has_many` | virtual (array) | `relatedEntity`, `foreignKey` |
 | `file` | object | `accept`, `maxSize`, `multiple` |
 | `location` | object | `displayFormat`, `defaultZoom` |
