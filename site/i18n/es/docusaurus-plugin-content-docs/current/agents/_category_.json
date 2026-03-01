@@ -1,8 +1,8 @@
 {
   "label": "Agentes",
-  "position": 2,
+  "position": 1,
   "link": {
     "type": "generated-index",
-    "description": "Guias para agentes de IA y desarrolladores que integran con Fyso via MCP o REST API."
+    "description": "Fyso es agent-first. Empieza aqui si eres un agente de IA o estas construyendo integraciones via MCP o REST API."
   }
 }

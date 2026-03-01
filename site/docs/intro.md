@@ -1,36 +1,45 @@
 ---
-sidebar_position: 1
+sidebar_position: 2
 slug: /
 ---
 
 # Fyso Documentation
 
-Fyso is a platform for building business applications using entities, business rules, and automations. It can be operated from a web panel or through MCP (Model Context Protocol) tools for AI agents.
+Fyso is an agent-first platform for building business applications. Define entities, write rules, manage users — all through MCP tools or REST API. AI agents are first-class citizens.
 
-## Quick Start
+## For AI Agents
 
-1. [Getting Started](getting-started/quick-start.md) — Your first app in 5 minutes
+Start here. These guides are designed for agents integrating with Fyso.
+
+| Guide | What you get |
+|-------|-------------|
+| [Agents Overview](agents/overview.md) | Capabilities, integration paths, auth methods |
+| [Authentication](agents/authentication.md) | API keys, platform keys, bot identity, tenant login |
+| [MCP Quickstart](agents/mcp-quickstart.md) | Connect → create entity → records → rules → deploy |
+| [Building a Complete App](agents/building-a-site.md) | End-to-end: data model, RBAC, views, API, deploy |
+| [Users & RBAC](agents/users-and-rbac.md) | Roles, permissions, row-level filtering, invitations |
+| [Channel Tools](agents/channel-tools.md) | Custom MCP tools, Tool DSL, cross-tenant execution |
+
+## For Humans
+
+You don't need to read this documentation. Tell your AI agent what you want to build — it already knows how to use Fyso. Just say: *"connect to Fyso and create a CRM with contacts, deals, and tasks"*.
+
+If you prefer the web panel or want to understand how things work:
+
+1. [Quick Start](getting-started/quick-start.md) — Your first app in 5 minutes
 2. [Key Concepts](getting-started/concepts.md) — Tenants, entities, fields, records, rules
 3. [Configure MCP](getting-started/mcp-setup.md) — Connect AI agents to Fyso
 
-## Sections
+## Reference
 
 | Section | Description |
 |---------|-------------|
-| [Entities](entities/) | Create, configure, and publish entities |
-| [Records](records/) | CRUD, filters, relations, and semantic search |
-| [Business Rules](business-rules/) | Compute, validate, action — full DSL |
-| [PDF](pdf/) | pdfme templates and document generation |
-| [Billing](billing/) | Free vs Pro plans, limits, Stripe |
-| [Deployment](deployment/) | Static sites, GitHub Actions, deploy tokens |
-| [API](api/) | REST API, MCP reference, tool profiles |
-| [Scheduling](scheduling/) | Availability, bookings, schedules |
-| [Admin](admin/) | Users, roles, apps, import/export |
-| [Knowledge Base](admin/knowledge.md) | Document ingestion and RAG search |
-
-## Audience
-
-This documentation serves two audiences:
-
-- **AI agents using MCP** — Exact tool names, parameters, types, expected responses
-- **Humans using the web panel** — Clear guides with examples and workflows
+| [Entities](entities/create-entity.md) | Create, configure, and publish entities |
+| [Records](records/crud.md) | CRUD, filters, relations, semantic search |
+| [Business Rules](business-rules/overview.md) | Compute, validate, action — full DSL |
+| [API](api/mcp-tools.md) | MCP tools reference, REST API, tool profiles |
+| [Admin](admin/users.md) | Users, roles, webhooks, knowledge base, flows, secrets |
+| [Deployment](deployment/static-sites.md) | Static sites, GitHub Actions, custom domains |
+| [PDF](pdf/generation.md) | Templates and document generation |
+| [Scheduling](scheduling/availability.md) | Availability, bookings, schedules |
+| [Billing](billing/plans.md) | Plans, limits, storage usage |
