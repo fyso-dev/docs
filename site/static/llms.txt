@@ -1,0 +1,99 @@
+# Fyso
+
+> Fyso is a platform for building business applications using entities, records, business rules, and automations. Integrate via MCP (Model Context Protocol) or REST API.
+
+## Instructions
+
+- Always use `select_tenant` before any tenant-specific operation.
+- Use MCP tools (not REST) when building from an AI agent — MCP handles auth and tenant context automatically.
+- Never create entities with fields that duplicate system fields (id, createdAt, updatedAt).
+- Use `generate_entity` with `auto_publish: true` for quick prototyping. Use the draft/publish cycle for production.
+- Use `generate_business_rule` with a natural language prompt instead of writing DSL manually — the server generates and validates the DSL.
+- For REST API access, prefer platform keys (`fyso_pkey_*`) over admin keys (`fyso_ak_*`) — platform keys enforce RBAC per entity and operation.
+- Default tool profile is `core` (~60 tools). Set `FYSO_TOOLS=advanced` for flows, webhooks, secrets, and destructive operations.
+- Filter syntax for `query_records`: `"field operator value"` (e.g., `"status = open"`, `"price > 100"`). Compound: `"status = open AND priority = high"`.
+- Relations store UUIDs. Use `resolve_depth` (1-3) in `query_records` to auto-resolve nested relations.
+- Static sites deploy to `{subdomain}-sites.fyso.dev`. Use `generate_deploy_token` for CI/CD (persistent, reusable).
+
+## Agents Guide (start here if you are an AI agent)
+
+- [Agents Overview](https://docs.fyso.dev/docs/agents/overview): What agents can do, integration paths, auth methods summary
+- [Authentication](https://docs.fyso.dev/docs/agents/authentication): API keys, platform keys, public keys, bot identity, tenant login
+- [MCP Quickstart](https://docs.fyso.dev/docs/agents/mcp-quickstart): Step-by-step: connect, create entity, records, rules, users, deploy
+- [Building a Complete App](https://docs.fyso.dev/docs/agents/building-a-site): End-to-end ticket system — data model, rules, RBAC, views, API, deploy, knowledge base
+- [Users & RBAC](https://docs.fyso.dev/docs/agents/users-and-rbac): Roles, custom roles, entity permissions, row-level filtering, invitations
+- [Channel Tools](https://docs.fyso.dev/docs/agents/channel-tools): Custom MCP tools, Tool DSL, bot identity, cross-tenant tool execution
+
+## Getting Started
+
+- [Quick Start](https://docs.fyso.dev/docs/getting-started/quick-start): 5-minute intro — tenant, entity, records, rules
+- [Key Concepts](https://docs.fyso.dev/docs/getting-started/concepts): Tenants, entities, fields, records, rules, RBAC, tool profiles
+- [Configure MCP](https://docs.fyso.dev/docs/getting-started/mcp-setup): Claude Desktop, Smithery, env vars, compatible clients
+
+## Entities
+
+- [Create Entities](https://docs.fyso.dev/docs/entities/create-entity): generate_entity tool, field properties, response format
+- [Field Types](https://docs.fyso.dev/docs/entities/field-types): text, number, email, date, boolean, select, relation, has_many, file, location
+- [Add Fields](https://docs.fyso.dev/docs/entities/add-fields): manage_custom_fields tool
+- [Publish Entities](https://docs.fyso.dev/docs/entities/publish): Draft/published lifecycle, versioning
+- [Entity Views](https://docs.fyso.dev/docs/entities/views): Filtered projections with independent RBAC
+
+## Records
+
+- [Record CRUD](https://docs.fyso.dev/docs/records/crud): create, query, update, delete — filters, pagination, semantic search
+- [Filters](https://docs.fyso.dev/docs/records/filtering): Operators, compound filters (AND/OR), REST field filters, full-text search
+- [Relations](https://docs.fyso.dev/docs/records/relations): Relation fields, resolve_depth, has_many, nested resolution
+
+## Business Rules
+
+- [Overview](https://docs.fyso.dev/docs/business-rules/overview): Rule types (compute, validate, action, on_query), triggers, lifecycle
+- [DSL Reference](https://docs.fyso.dev/docs/business-rules/dsl-reference): Formula, conditional, lookup, aggregate, validate, transform, actions
+- [Examples](https://docs.fyso.dev/docs/business-rules/examples): Invoice calc, stock validation, volume discount, price lookup, text normalization
+- [Execution Logs](https://docs.fyso.dev/docs/business-rules/execution-logs): get_rule_logs, test_business_rule
+
+## API Reference
+
+- [MCP Tools Reference](https://docs.fyso.dev/docs/api/mcp-tools): All 88 MCP tools by category and profile
+- [REST API](https://docs.fyso.dev/docs/api/rest-api): CRUD endpoints, auth, views API, error codes, curl examples
+- [Tool Profiles](https://docs.fyso.dev/docs/api/tool-profiles): core (~60), advanced (~76), all (~91), per-user override
+
+## Admin
+
+- [Users and Roles](https://docs.fyso.dev/docs/admin/users): User management, RBAC, self-service flows, invitations
+- [Public Keys](https://docs.fyso.dev/docs/admin/anonymous-keys): fyso_pk_* keys with role, TTL, rate limits, CORS, field-level permissions
+- [API Management](https://docs.fyso.dev/docs/admin/api-management): Platform keys (fyso_pkey_*), permission matrices, role-based REST access
+- [Admin API Keys](https://docs.fyso.dev/docs/admin/api-keys): fyso_adm_* keys with scopes and audit log
+- [Webhooks](https://docs.fyso.dev/docs/admin/webhooks): Subscribe to record events, HMAC-SHA256 signatures, retries
+- [Knowledge Base](https://docs.fyso.dev/docs/admin/knowledge): Document upload (PDF, HTML, URL), semantic search (RAG), stats
+- [Flows](https://docs.fyso.dev/docs/admin/flows): Automation workflows — triggers, step types, interpolation
+- [Secrets](https://docs.fyso.dev/docs/admin/secrets): Encrypted storage for use in flows
+- [File Storage](https://docs.fyso.dev/docs/admin/files): Upload, download, field config, MIME validation
+- [Apps Catalog](https://docs.fyso.dev/docs/admin/apps): Publish tenant as installable app
+- [Import / Export](https://docs.fyso.dev/docs/admin/import-export): Metadata export and import as JSON
+- [Platform Invitations](https://docs.fyso.dev/docs/admin/platform-invitations): Invite new platform users
+- [n8n Integration](https://docs.fyso.dev/docs/admin/n8n-integration): Community node for n8n workflows
+
+## Deployment
+
+- [Static Sites](https://docs.fyso.dev/docs/deployment/static-sites): Deploy to {subdomain}-sites.fyso.dev, custom domains (Pro)
+- [GitHub Actions](https://docs.fyso.dev/docs/deployment/github-actions): CI/CD with deploy tokens
+
+## PDF
+
+- [Generate PDFs](https://docs.fyso.dev/docs/pdf/generation): Template-based PDF generation from record data
+- [PDF Templates](https://docs.fyso.dev/docs/pdf/templates): pdfme template format, layout, field mapping
+
+## Scheduling
+
+- [Availability](https://docs.fyso.dev/docs/scheduling/availability): Schedules, exceptions, slot calculation
+- [Bookings](https://docs.fyso.dev/docs/scheduling/bookings): Create and manage appointments
+
+## Billing
+
+- [Plans and Limits](https://docs.fyso.dev/docs/billing/plans): Free, Pro, Beta, Enterprise — limits, rate limits, quotas
+- [Storage Usage](https://docs.fyso.dev/docs/billing/storage-usage): DB, knowledge base, bucket breakdown
+- [Stripe](https://docs.fyso.dev/docs/billing/stripe): Subscription flow, customer portal, webhooks
+
+## Optional
+
+- [Changelog](https://docs.fyso.dev/docs/changelog): Platform release notes (v1.16.0 — v1.21.0)
