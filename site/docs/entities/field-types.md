@@ -113,6 +113,38 @@ Reference to a record in another entity.
 
 When querying records with `resolve=true`, the relation is expanded to the full record.
 
+## has_many
+
+Reverse one-to-many relationship. Declares that records in another entity reference this entity via a foreign key.
+
+- **Storage:** virtual (no column stored — resolved at query time)
+- **Config:**
+
+| Config | Type | Description |
+|--------|------|-------------|
+| `relatedEntity` | string | Name of the entity containing the related records |
+| `foreignKey` | string | Field in the related entity that references this entity's ID |
+
+- **Config example:**
+
+```json
+{
+  "relatedEntity": "lineas_factura",
+  "foreignKey": "factura_id"
+}
+```
+
+- **Resolved value (with `resolve=true`):**
+
+```json
+[
+  { "id": "uuid-1", "data": { "producto": "Widget A", "cantidad": 3 } },
+  { "id": "uuid-2", "data": { "producto": "Widget B", "cantidad": 1 } }
+]
+```
+
+Without `resolve=true`, `has_many` fields are not included in the response. See [Relations](/records/relations) for details on nested resolution and permission-aware filtering.
+
 ## file
 
 File attachment. Uploaded using the `upload_file` tool.
@@ -195,5 +227,6 @@ Geographic location with coordinates and optional address data.
 | `boolean` | boolean | - |
 | `select` | string | `options` |
 | `relation` | string (UUID) | `relatedEntity` |
+| `has_many` | virtual (array) | `relatedEntity`, `foreignKey` |
 | `file` | object | `accept`, `maxSize`, `multiple` |
 | `location` | object | `displayFormat`, `defaultZoom` |

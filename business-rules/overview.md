@@ -61,6 +61,29 @@ Ejecuta efectos secundarios despues de guardar (ej: actualizar registros relacio
 }
 ```
 
+### on_query
+
+Filtra registros en tiempo de consulta compilando condiciones DSL a clausulas SQL `WHERE`. Se usa para seguridad a nivel de fila: solo los registros que cumplan la condicion son devueltos al usuario.
+
+```json
+{
+  "type": "on_query",
+  "triggerType": "on_query",
+  "conditions": "createdBy == $userId AND status != 'deleted'"
+}
+```
+
+La regla se vincula a un rol via el campo `rowFilter` en el `EntityPermissionConfig` del rol. Cuando un usuario con ese rol consulta la entidad, la condicion se compila a una clausula SQL `WHERE` con Drizzle y se agrega a la query.
+
+**Sintaxis de expresiones:**
+- Operadores de comparacion: `==`, `!=`, `>`, `>=`, `<`, `<=`
+- Operadores logicos: `AND`, `OR`
+- Variables: `$userId`, `$tenantId` (resueltas por request)
+- Strings literales: `'value'`
+- `!=` usa `IS DISTINCT FROM` para manejo correcto de NULL
+
+**Semantica de union:** Si un usuario tiene multiples roles y alguno otorga acceso de lectura sin restricciones (sin `rowFilter`), no se aplica ningun filtro.
+
 ## Ciclo de vida
 
 Las reglas tienen el mismo ciclo draft/published que las entidades:
@@ -77,6 +100,8 @@ Las reglas tienen el mismo ciclo draft/published que las entidades:
 | `before_save` | Antes de guardar el registro |
 | `after_save` | Despues de guardar el registro |
 | `on_load` | Al cargar el registro |
+| `on_query` | En tiempo de consulta — se compila a clausula SQL WHERE para filtrado a nivel de fila |
+| `scheduled` | Programado (basado en cron) |
 
 ## Tools MCP relacionados
 

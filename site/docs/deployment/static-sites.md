@@ -1,6 +1,6 @@
 # Static Sites
 
-Fyso allows deploying static sites (Astro, Vite, Next.js export, etc.) on subdomains of `fyso.dev`.
+Fyso allows deploying static sites (Astro, Vite, Next.js export, etc.) on subdomains of `fyso.dev`. Site assets are stored on Cloudflare R2 and served by a Cloudflare Worker for low-latency global delivery.
 
 ## MCP Tool: `deploy_static_site`
 

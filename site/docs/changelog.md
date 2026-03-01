@@ -1,3 +1,24 @@
+## v1.18.0 — 2026-03-01
+
+### Features
+- **Row-level filtering via `on_query` business rules** — New `on_query` trigger type for business rules compiles DSL conditions into SQL `WHERE` clauses at query time. Assign a `rowFilter` in a role's `EntityPermissionConfig` to link it to an `on_query` rule. Union semantics: if any of the user's roles grants unrestricted read access, no filter is applied. Custom expression parser (tokenizer + recursive-descent) generates type-safe Drizzle SQL. `!=` uses `IS DISTINCT FROM` for correct NULL handling. (#692, closes #676)
+- **`has_many` relations with permission-aware cascading resolution** — New `has_many` field type for reverse one-to-many lookups (e.g., `factura` → `lineas` via `foreignKey`). `findById` now supports `?resolve=true&resolve_depth=N` query params for nested resolution. Cascading resolution respects per-entity RBAC: `rowFilter` (row-level), `fields` (whitelist), `excludeFields` (blocklist). If a user lacks `read` permission on a related entity, the field is omitted entirely. (#694, closes #677)
+- **Knowledge base search enhancements, URL ingestion & tracking** — Search UI gains a precision slider, certainty progress bar (color-coded), fragments toggle, one-per-document filter, and a help modal. URL ingestion now fetches page content instead of storing the URL string, with HTML cleaning (strips nav, header, footer, aside, scripts). New events: `knowledge_ingest` (tokens, processing time), `knowledge_delete`, improved `knowledge_search` (embedding tokens). New `embedding_usage_30d` stats block. `one_per_document` filtering moved from client-side to SQL `DISTINCT ON`. MCP `search_knowledge` now supports `one_per_document` param with threshold default fixed to 0.3. (#701, closes #702)
+- **Roles permission visibility** — Roles UI now displays the effective permissions for each role, including entity-level CRUD access, field visibility (whitelist/blocklist), and row-level filters. Admins can see at a glance what each role can access without inspecting raw JSON. (#705)
+- **Migrate Next.js to Vite + React Router PWA** — Replaced Next.js 16 with Vite 6 + React Router v7 + `vite-plugin-pwa`. 90% of pages were `'use client'` making SSR unnecessary. Build time reduced from ~45s to ~15s. 56 lazy-loaded routes. `next-intl` replaced by `react-i18next` (compat wrapper, zero call-site changes). `@sentry/nextjs` replaced by `@sentry/react`. All 11 Next.js API routes removed (frontend calls Hono backend directly). PWA with service worker for offline support and app install. (#719, closes #716)
+- **Migrate static sites to Cloudflare R2 + Worker** — Static site hosting now uses Cloudflare R2 object storage + a Cloudflare Worker for serving, replacing the previous filesystem-based approach. Site assets are uploaded to R2 buckets; the Worker handles request routing. The `validate-domain` endpoint has been removed (CF Worker handles domain validation). Caddy sites block removed. (#731, closes #730)
+- **MCP agent E2E tests** — End-to-end test suite for MCP agent interactions, validating tool invocations against the live API. (#707, #724)
+
+### Fixes
+- **Rate limit on invitation sends** — Invitations send endpoint is now rate-limited to prevent abuse. (#693)
+- **XSS test update** — Updated XSS security tests to match current sanitization behavior. (#696)
+- **CI migrated to `ubuntu-latest`** — GitHub Actions runners updated from pinned Ubuntu versions to `ubuntu-latest`. (#697)
+- **Professional UI upgrade** — Visual polish and consistency improvements across the admin panel. (#700)
+- **Docker cleanup in CI** — Added Docker image and layer pruning to CI pipelines to prevent runner disk exhaustion. (#726)
+- **CI test improvements** — Improved test reliability and reduced flaky test failures in CI. (#728, #729)
+
+---
+
 ## v1.17.0 — 2026-02-24
 
 ### Features
