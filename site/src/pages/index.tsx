@@ -81,7 +81,7 @@ function HomepageHeader() {
           <Link
             className="button button--secondary button--outline button--lg"
             to="/docs/getting-started/mcp-setup"
-            style={{borderColor: 'rgba(255,255,255,0.4)', color: '#fff'}}>
+>
             <Translate id="home.hero.mcp">Configure MCP</Translate>
           </Link>
         </div>
