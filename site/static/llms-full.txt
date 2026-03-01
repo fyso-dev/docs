@@ -4,7 +4,6 @@
 
 ---
 
-
 # Agents Overview
 
 Fyso is a backend-as-a-service that AI agents can operate directly. An agent can create data models, store and query records, enforce business logic, manage users, and deploy sites — all through tool calls or HTTP requests. No manual setup required: connect, select a tenant, and start building.
@@ -85,8 +84,9 @@ list_entities()
 query_records({ entityName: "contacts", limit: 5 })
 ```
 
----
 
+
+---
 
 # Authentication
 
@@ -401,8 +401,9 @@ select_tenant({ tenantSlug: "my-workspace" })
 
 If you're using an API key (`fyso_ak_*`), the tenant is already bound to the key — no header needed. Platform keys (`fyso_pkey_*`) also carry their tenant binding. For tenant user tokens and public keys, include the tenant header explicitly.
 
----
 
+
+---
 
 # MCP Quickstart
 
@@ -853,8 +854,9 @@ You now know the core workflow: connect, model data, query it, add rules, create
 
 Next: See [Building a Complete App](./building-a-site.md) for a full end-to-end example that puts all of these pieces together.
 
----
 
+
+---
 
 # Building a Complete App
 
@@ -1425,8 +1427,9 @@ Here's everything you built:
 
 All of this was done through MCP tool calls. No code deployment, no infrastructure setup. The REST API and views are ready for your frontend to consume.
 
----
 
+
+---
 
 # Users & RBAC
 
@@ -1991,8 +1994,9 @@ Views support the same query parameters as entity records:
 
 Additional query filters compose with the view's base filter using AND logic.
 
----
 
+
+---
 
 # Channel Tools
 
@@ -2424,6 +2428,8 @@ Cross-tenant tool CRUD is enforced at every level:
 - Creating a tool that references another tenant's entity fails validation
 - Tools with the same slug can coexist in different channels without conflict
 
+
+
 ---
 
 # Quick Start
@@ -2513,8 +2519,9 @@ generate_business_rule({
 
 Read [Concepts](concepts.md) to understand the Fyso architecture.
 
----
 
+
+---
 
 # Key Concepts
 
@@ -2567,8 +2574,9 @@ Controls which MCP tools are exposed to the agent:
 
 Configure with `FYSO_TOOLS` env var. See [Tool Profiles](../api/tool-profiles.md).
 
----
 
+
+---
 
 # Configure MCP
 
@@ -2631,6 +2639,8 @@ list_tenants()
 - Codex
 - Gemini
 - Any MCP-compatible client
+
+
 
 ---
 
@@ -2842,6 +2852,8 @@ Deletes an entity and all its records. This action cannot be undone.
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `entityName` | string | Yes | Name of the entity to delete |
+
+
 
 ---
 
@@ -3078,6 +3090,8 @@ Geographic location with coordinates and optional address data.
 | `file` | object | `accept`, `maxSize`, `multiple` |
 | `location` | object | `displayFormat`, `defaultZoom` |
 
+
+
 ---
 
 # Add and Manage Fields
@@ -3207,6 +3221,8 @@ Only custom fields (`isSystem=false`) can be deleted. System fields are protecte
 | System | `generate_entity` / metadata import | No | Yes |
 | Custom | `manage_custom_fields` | Yes | No |
 
+
+
 ---
 
 # Publish Entities
@@ -3275,8 +3291,9 @@ generate_entity({
 })
 ```
 
----
 
+
+---
 
 # Entity Views
 
@@ -3427,6 +3444,8 @@ All management operations require admin access (API key or admin role).
 
 Deactivated views (`isActive: false`) are excluded from list results and return `404` on record queries.
 
+
+
 ---
 
 # Record CRUD
@@ -3454,6 +3473,54 @@ Entity fields are stored inside `data`:
 
 **Important:** Access fields via `record.data.email`, NOT `record.email`.
 
+---
+
+## create_record
+
+**Profile:** core
+
+Creates a new record in an entity.
+
+### Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `entityName` | string | Yes | Entity name |
+| `data` | object | Yes | Record data (entity fields) |
+
+### Example
+
+```
+create_record({
+  entityName: "clientes",
+  data: {
+    nombre: "Maria Lopez",
+    email: "maria@example.com",
+    telefono: "+54 11 9876-5432",
+    estado: "activo"
+  }
+})
+```
+
+### Response
+
+```json
+{
+  "success": true,
+  "message": "Record created in clientes",
+  "record": {
+    "id": "uuid-del-registro",
+    "nombre": "Maria Lopez",
+    "email": "maria@example.com",
+    "telefono": "+54 11 9876-5432",
+    "estado": "activo"
+  }
+}
+```
+
+Use `get_entity_schema` first to know the required fields.
+
+---
 
 ## query_records
 
@@ -3603,6 +3670,8 @@ delete_record({
 }
 ```
 
+
+
 ---
 
 # Filters
@@ -3671,6 +3740,8 @@ query_records({
 ```
 
 When using `semantic`, the simple filter can be combined to post-filter the results.
+
+
 
 ---
 
@@ -3858,6 +3929,8 @@ Rules can use lookups to access data from related entities:
 }
 ```
 
+
+
 ---
 
 # Business Rules
@@ -3977,6 +4050,8 @@ Rules have the same draft/published lifecycle as entities:
 | `publish_business_rule` | core | Publish a draft rule |
 | `delete_business_rule` | advanced | Delete a rule |
 | `get_rule_logs` | advanced | View execution logs |
+
+
 
 ---
 
@@ -4208,6 +4283,8 @@ Side effects that execute after saving:
 | `now()` | Current date and time | `now()` |
 | `today()` | Current date | `today()` |
 
+
+
 ---
 
 # Business Rule Examples
@@ -4393,6 +4470,8 @@ generate_business_rule({
 })
 ```
 
+
+
 ---
 
 # Execution Logs
@@ -4463,8 +4542,9 @@ test_business_rule({
 
 The result shows the calculated values without saving anything to the database.
 
----
 
+
+---
 
 # MCP Tools Reference
 
@@ -4734,6 +4814,8 @@ Identidades persistentes para agentes que operan de forma autonoma.
 | `generate_invitation_code` | all | Generar un codigo de invitacion para acceso beta. Formato FYSO-XXXX-XXXX con limite de usos configurable |
 | `list_invitation_codes` | all | Listar todos los codigos de invitacion con estadisticas de uso |
 
+
+
 ---
 
 # REST API
@@ -4923,9 +5005,254 @@ GET /api/views/{viewSlug}/records/{id}
 
 Returns `404` if the record does not match the view's filter.
 
-
 ---
 
+## Record Structure
+
+Entity fields are inside `record.data`:
+
+```
+record.data.email     -- CORRECT
+record.email          -- INCORRECT
+```
+
+## Error Codes
+
+| Code | HTTP | Description |
+|------|------|-------------|
+| `NOT_FOUND` | 404 | Entity or record not found |
+| `VALIDATION_ERROR` | 400 | Invalid data |
+| `BUSINESS_RULE_ERROR` | 400 | A business rule prevented the operation |
+| `UNAUTHORIZED` | 401 | Missing or invalid API key |
+| `FORBIDDEN` | 403 | No permissions for the operation |
+| `INTERNAL_ERROR` | 500 | Internal server error |
+
+**Error format:**
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "El campo 'nombre' es obligatorio"
+  }
+}
+```
+
+## Schema Health Check (Superadmin)
+
+Detect and fix migration gaps across tenant schemas. Requires superadmin authentication.
+
+### Get Schema Health Report
+
+```
+GET /health/schema
+```
+
+Returns a full report with per-tenant issues and suggested fix SQL.
+
+```bash
+curl -H "X-Admin-Secret: ADMIN_SECRET" \
+  "https://api.fyso.dev/health/schema"
+```
+
+**Response:**
+
+```json
+{
+  "status": "degraded",
+  "checked_at": "2026-02-23T12:00:00.000Z",
+  "tenants_checked": 5,
+  "tenants_healthy": 4,
+  "tenants_degraded": 1,
+  "issues": [
+    {
+      "tenant": "tenant_acme",
+      "check": "column_exists",
+      "table": "documents",
+      "column": "content_text",
+      "severity": "critical",
+      "fix": "ALTER TABLE \"tenant_acme\".documents ADD COLUMN IF NOT EXISTS content_text TEXT"
+    }
+  ]
+}
+```
+
+Checks performed per tenant (6 total):
+
+| Check | Severity | What it detects |
+|-------|----------|----------------|
+| `extension_exists` | critical | pgvector extension missing |
+| `table_exists` | critical | Required tables missing (`entity_definitions`, `field_definitions`, `entity_records`, `business_rules`, `documents`, `chunks`, `roles`, `users`) |
+| `column_exists` | critical | Required columns missing (e.g. `documents.content_text`, `field_definitions.is_system`) |
+| `system_entity_flag` | warning | `_fyso_*` entities with `is_system = false` |
+| `trigger_exists` | warning | `trg_enforce_fyso_system` trigger missing |
+| `hnsw_index_exists` | warning | HNSW index on `chunks.embedding` missing |
+
+### Fix Degraded Tenants
+
+```
+POST /health/schema/fix
+```
+
+Re-runs `getTenantDDL()` on all degraded tenants. Idempotent.
+
+```bash
+curl -X POST -H "X-Admin-Secret: ADMIN_SECRET" \
+  "https://api.fyso.dev/health/schema/fix"
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "fixed": 1,
+    "errors": []
+  }
+}
+```
+
+## Tenant Invitations
+
+Manage member invitations for a tenant. Requires tenant user authentication and tenant context (`X-Tenant-Slug` header).
+
+### List Invitations
+
+```
+GET /api/invitations
+```
+
+```bash
+curl -H "Authorization: Bearer JWT_TOKEN" \
+  -H "X-Tenant-Slug: my-company" \
+  "https://api.fyso.dev/api/invitations"
+```
+
+### Create Invitation
+
+```
+POST /api/invitations
+```
+
+With tenant context, creates a tenant member invitation. Without tenant context, creates a platform registration code (legacy flow).
+
+```bash
+# Tenant member invitation (optional email lock)
+curl -X POST -H "Authorization: Bearer JWT_TOKEN" \
+  -H "X-Tenant-Slug: my-company" \
+  -H "Content-Type: application/json" \
+  -d '{"email": "newuser@example.com", "expiresInDays": 7}' \
+  "https://api.fyso.dev/api/invitations"
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "token": "a1b2c3...",
+    "inviteUrl": "https://app.fyso.dev/invite/a1b2c3..."
+  }
+}
+```
+
+### Revoke Invitation
+
+```
+DELETE /api/invitations/{token}
+```
+
+```bash
+curl -X DELETE -H "Authorization: Bearer JWT_TOKEN" \
+  -H "X-Tenant-Slug: my-company" \
+  "https://api.fyso.dev/api/invitations/a1b2c3..."
+```
+
+### Preview Invitation (Public)
+
+```
+GET /auth/invite/{token}
+```
+
+No authentication required. Used by the frontend to show invitation details before accepting.
+
+```bash
+curl "https://api.fyso.dev/auth/invite/a1b2c3..."
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "valid": true,
+    "email": "newuser@example.com",
+    "tenantSlug": "my-company"
+  }
+}
+```
+
+### Accept Invitation (Public)
+
+```
+POST /auth/invite/accept
+```
+
+Accepts a tenant invitation and creates a tenant user account. No prior authentication needed — the invitation token acts as the gate.
+
+```bash
+curl -X POST -H "Content-Type: application/json" \
+  -d '{"token": "a1b2c3...", "email": "newuser@example.com", "name": "New User", "password": "securepass123"}' \
+  "https://api.fyso.dev/auth/invite/accept"
+```
+
+**Response (201):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "email": "newuser@example.com",
+    "name": "New User",
+    "role": "member"
+  }
+}
+```
+
+### Superadmin: List All Invitations
+
+```
+GET /api/admin/platform/invitations
+```
+
+Cross-tenant view of all invitations. Supports filtering and pagination.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `status` | string | Filter by status: `pending`, `accepted`, `expired`, `revoked` |
+| `tenantId` | string | Filter by tenant ID |
+| `page` | number | Page number (default: 1) |
+| `limit` | number | Items per page (default: 50) |
+
+```bash
+curl -H "X-Admin-Secret: ADMIN_SECRET" \
+  "https://api.fyso.dev/api/admin/platform/invitations?status=pending&page=1&limit=20"
+```
+
+## Related MCP Tools
+
+- `get_rest_api_spec` -- Generates the full specification with example curl commands
+- `generate_api_client` -- Generates a complete TypeScript client with types
+- `tenant_login` -- Login as a tenant user (returns JWT)
+
+
+
+---
 
 # Tool Profiles
 
@@ -4996,6 +5323,8 @@ In `claude_desktop_config.json` or equivalent MCP client config:
 | Building apps, managing data | `core` |
 | CI/CD, flows, advanced debugging | `advanced` |
 | Bot/channel management | `all` |
+
+
 
 ---
 
@@ -5120,6 +5449,34 @@ list_users({ tenantSlug: "mi-empresa" })
 
 Passwords are never returned.
 
+---
+
+## Self-Service Flows
+
+Tenant users can register, reset their passwords, and change their passwords without admin involvement. These features are **disabled by default** and must be explicitly enabled per tenant.
+
+### Feature Flags
+
+Enable self-service features via `PUT /api/auth/tenants/:id/settings`:
+
+```bash
+curl -X PUT "https://api.fyso.dev/api/auth/tenants/<tenant-id>/settings" \
+  -H "Authorization: Bearer <admin-token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "selfRegistrationEnabled": true,
+    "passwordResetEnabled": true
+  }'
+```
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `selfRegistrationEnabled` | `false` | Allow users to self-register (creates `viewer` role) |
+| `passwordResetEnabled` | `false` | Allow forgot-password / reset-password flows (requires Resend email) |
+
+All self-service endpoints are anonymous — they don't require admin auth, only the `X-Tenant-ID` header.
+
+---
 
 ### Self-registration
 
@@ -5503,6 +5860,8 @@ No prior authentication required. The invitation token acts as the gate.
 
 The invitation is claimed atomically — concurrent requests cannot claim the same token twice. Returns `409` if the email already exists in the tenant, `403` if the email does not match the invitation, and `403` if the token is invalid, expired, or revoked.
 
+
+
 ---
 
 # Public Keys
@@ -5559,6 +5918,36 @@ Optionally restrict which origins can send requests using this key. An empty `al
 "allowedOrigins": ["https://myapp.com", "https://preview.myapp.com"]
 ```
 
+---
+
+## Entity & Field-Level Permissions
+
+Entity access and field exclusions are configured on the **role** the key references. When a role restricts access to specific entities or excludes fields, all public keys using that role inherit those restrictions automatically.
+
+### Entity-level filtering
+
+Configure entity access at the role level. Requests to entities not permitted by the role return `403 Forbidden`.
+
+### Field-level exclusion
+
+Roles can exclude sensitive fields from responses. Excluded fields are removed server-side and never appear in list or detail responses, regardless of what the client requests.
+
+```json
+{
+  "entityPermissions": {
+    "products": {
+      "excludeFields": ["cost_price", "supplier_id", "internal_notes"]
+    },
+    "blog_posts": {
+      "excludeFields": ["author_email"]
+    }
+  }
+}
+```
+
+Changing the role's permissions affects all public keys referencing that role immediately — no key rotation required.
+
+---
 
 ## MCP Tools
 
@@ -5766,8 +6155,9 @@ Previous anonymous keys (`anon_*`) are still accepted for backward compatibility
 
 New keys should be created via `/api/auth/public-keys` with the `fyso_pk_` prefix and a `roleId`.
 
----
 
+
+---
 
 # API Management
 
@@ -5959,6 +6349,8 @@ Go to **Settings → API Management** in the admin panel to manage API definitio
 - Revoke individual keys inline
 - Wildcard entity `*` support in the matrix editor
 
+
+
 ---
 
 # Admin API Keys
@@ -6113,8 +6505,9 @@ Returns the usage history for a specific key: creation, every API call, and revo
 - Every creation, usage, and revocation is recorded in the audit log.
 - Prefix-based lookup (`fyso_adm_` + first 9 chars) narrows candidates before hash verification.
 
----
 
+
+---
 
 # Webhooks
 
@@ -6274,8 +6667,9 @@ From the admin panel, go to **Settings → Webhooks** to manage subscriptions vi
 - View delivery history per subscription
 - Delete subscriptions with confirmation
 
----
 
+
+---
 
 # Knowledge Base
 
@@ -6587,8 +6981,9 @@ From the admin panel, go to **Knowledge** in the sidebar to manage your knowledg
 - **Product documentation**: Augment business rules with external knowledge
 - **Web content**: Ingest pages via URL, automatically cleaned of navigation/chrome
 
----
 
+
+---
 
 # Flows
 
@@ -6753,8 +7148,9 @@ create_flow({
 })
 ```
 
----
 
+
+---
 
 # Secrets
 
@@ -6852,8 +7248,9 @@ The secret value is resolved at execution time. If the secret doesn't exist, the
 - **Immediate deletion** — no soft delete, no recovery
 - **Audit-safe** — secret names appear in flow configs and logs, values do not
 
----
 
+
+---
 
 # File Storage
 
@@ -6977,6 +7374,8 @@ curl -X POST https://api.fyso.dev/api/files/contacts/rec_123/avatar \
 curl https://api.fyso.dev/api/files/my-app/contacts/rec_123/avatar/a1b2c3.jpg
 ```
 
+
+
 ---
 
 # Apps (Catalog)
@@ -7052,6 +7451,8 @@ Deactivates the app from the catalog. This is a soft delete -- it can be publish
 ```
 unpublish_app({ slug: "sistema-turnos" })
 ```
+
+
 
 ---
 
@@ -7131,8 +7532,9 @@ import_metadata({
 - **Templates** -- create a model tenant and export to replicate
 - **Publish as app** -- `publish_app` uses export_metadata internally
 
----
 
+
+---
 
 # Platform Invitations
 
@@ -7285,8 +7687,9 @@ Go to **Platform → Invitations** in the admin panel to manage invitations:
 - Revoke pending invitations
 - Invite acceptance page at `/signup/invited?token=...`
 
----
 
+
+---
 
 # n8n Integration
 
@@ -7368,6 +7771,8 @@ When activated, n8n calls `POST /api/webhooks/subscriptions` to register the web
 - The Fyso Trigger node requires your Fyso tenant to support webhooks (available on all plans)
 - Use an admin API key (`fyso_adm_*`) for management operations, or a tenant user token for tenant-scoped operations
 - For public read-only access, use a [public key](./anonymous-keys.md) with `records:read` scope
+
+
 
 ---
 
@@ -7509,9 +7914,28 @@ set_custom_domain({
 })
 ```
 
-
 ---
 
+## Limits
+
+| Plan | Sites |
+|------|-------|
+| Free | 1 |
+| Pro | Unlimited |
+
+## Supported Frameworks
+
+Any framework that generates static output:
+
+- **Astro** -- `npm run build` -> `dist/`
+- **Vite** -- `npm run build` -> `dist/`
+- **Next.js** (export) -- `next export` -> `out/`
+- **Create React App** -- `npm run build` -> `build/`
+- **Plain HTML/CSS/JS** -- directory with `index.html`
+
+
+
+---
 
 # GitHub Actions Deployment
 
@@ -7594,6 +8018,8 @@ Use your API key directly as the deploy credential:
 - The subdomain must already exist (deploy creates a new version, not the site)
 - Successive deploys replace previous content
 - Supported frameworks: Astro, Vite, Next.js (static export), Create React App, plain HTML/CSS/JS
+
+
 
 ---
 
@@ -7687,6 +8113,33 @@ Returns the metadata of the generated file (URL, size, etc.) or the PDF in base6
 - For calculated fields or fixed text not in the record, use the `data` parameter
 - **Table fields** receive `array[][]` input. Each inner array is a row; each element is a cell value
 
+---
+
+## Table plugin
+
+The PDF designer (frontend) and generator (backend) support the `table` plugin from `@pdfme/schemas`.
+
+### In the designer
+
+Drag a **Table** element from the sidebar onto the canvas. Configure columns, header row, and column widths in the properties panel.
+
+### In the generator
+
+A field of type `table` expects its input as an array of arrays:
+
+```json
+{
+  "items_table": [
+    ["Description", "Qty", "Unit Price", "Total"],
+    ["Widget A", "2", "$10.00", "$20.00"],
+    ["Widget B", "1", "$50.00", "$50.00"]
+  ]
+}
+```
+
+The first row is typically the header. pdfme renders borders, column widths, and row styling based on the template configuration.
+
+---
 
 ## Upload PDFs to Knowledge Base
 
@@ -7744,6 +8197,8 @@ curl -X POST \
 - The endpoint converts the binary buffer to base64 and delegates to `documentService.ingestDocument`, which handles text extraction, chunking, and embedding generation
 - After upload, the document is immediately searchable via `POST /api/knowledge/search`
 - JSON-based ingestion (`POST /api/knowledge/documents`) remains unchanged — this endpoint adds multipart support without affecting the existing flow
+
+
 
 ---
 
@@ -7865,6 +8320,8 @@ create_record({
 
 Or ask the agent: "Create a PDF template for invoices with fields: company, customer, items, total".
 
+
+
 ---
 
 # Availability and Schedules
@@ -7970,6 +8427,8 @@ get_available_slots({
 4. Excludes blocked dates and adjusts special schedules
 5. Excludes slots that already have a confirmed appointment
 
+
+
 ---
 
 # Bookings
@@ -8060,6 +8519,8 @@ GET /api/scheduling/available-slots?profesional_id=uuid&fecha=2026-02-20
 
 Headers: `Authorization: Bearer TOKEN`
 
+
+
 ---
 
 # Plans and Limits
@@ -8127,6 +8588,8 @@ Authorization: Bearer <admin-api-key>
 **Response:**
 
 Returns current usage counts and plan limits for all metered resources (entities, records, sites, users, storage, emails, PDFs, API requests, MCP calls, geocode calls).
+
+
 
 ---
 
@@ -8240,6 +8703,8 @@ curl -H "Authorization: Bearer <token>" \
 |--------|-------|
 | `401` | Missing or invalid authentication token |
 
+
+
 ---
 
 # Stripe and Payments
@@ -8281,6 +8746,8 @@ Required environment variables:
 | `STRIPE_WEBHOOK_SECRET` | Secret for verifying webhooks |
 | `STRIPE_PRICE_ID` | Price ID for the Pro plan |
 
+
+
 ---
 
 ## v1.21.0 — 2026-03-01
@@ -8294,6 +8761,20 @@ Required environment variables:
 ### Chores
 - **Remove PM2 and Caddy references** — Deleted legacy PM2 deploy workflow, `ecosystem.config.js`, health monitoring endpoints, and Caddy-related Makefile targets. Deployment docs updated for current Lightsail + Cloudflare architecture. (#736)
 
+---
+
+## v1.20.0 — 2026-03-01
+
+### Features
+- **Migrate Next.js to Vite + React Router PWA** — Replaced Next.js 16 with Vite 6 + React Router v7 + `vite-plugin-pwa`. 90% of pages were `'use client'` making SSR unnecessary. Build time reduced from ~45s to ~15s. 56 lazy-loaded routes. `next-intl` replaced by `react-i18next` (compat wrapper, zero call-site changes). `@sentry/nextjs` replaced by `@sentry/react`. All 11 Next.js API routes removed (frontend calls Hono backend directly). PWA with service worker for offline support and app install. (#719, closes #716)
+- **Migrate static sites to Cloudflare R2 + Worker** — Static site hosting now uses Cloudflare R2 object storage + a Cloudflare Worker for serving, replacing the previous filesystem-based approach. Site assets are uploaded to R2 buckets; the Worker handles request routing. The `validate-domain` endpoint has been removed (CF Worker handles domain validation). Caddy sites block removed. (#731, closes #730)
+- **MCP agent E2E improvements** — Extended E2E test suite for MCP agent interactions with improved reliability. (#724)
+
+### Fixes
+- **Docker cleanup in CI** — Added Docker image and layer pruning to CI pipelines to prevent runner disk exhaustion. (#726)
+- **CI test improvements** — Improved test reliability and reduced flaky test failures in CI. (#728, #729)
+
+---
 
 ## v1.19.0 — 2026-02-28
 
@@ -8694,8 +9175,9 @@ Major security hardening release: input validation, SSRF protection, SQL injecti
 
 Pipeline: Centinela → Cero → Crisol → Lupa → Pulso
 
----
 
+
+---
 
 # Fyso Documentation
 
@@ -8728,4 +9210,5 @@ This documentation serves two audiences:
 
 - **AI agents using MCP** — Exact tool names, parameters, types, expected responses
 - **Humans using the web panel** — Clear guides with examples and workflows
+
 
