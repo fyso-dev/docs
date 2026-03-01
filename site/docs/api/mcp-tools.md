@@ -44,6 +44,17 @@ Configure which tools are exposed with the `FYSO_TOOLS` environment variable. Se
 
 ---
 
+## Views
+
+| Tool | Profile | Description |
+|------|---------|-------------|
+| `create_view` | core | Create a filtered entity view with independent RBAC permissions |
+| `list_views` | core | List all entity views in the current tenant |
+| `update_view` | core | Update a view's name, description, filter, or active status |
+| `delete_view` | core | Delete an entity view |
+
+---
+
 ## Business Rules
 
 | Tool | Profile | Description |

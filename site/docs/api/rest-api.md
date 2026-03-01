@@ -120,6 +120,73 @@ Supports partial updates.
 DELETE /api/entities/{entityName}/records/{id}
 ```
 
+## Views
+
+Views are filtered projections of entities with independent RBAC permissions. See [Entity Views](/entities/views) for the full guide.
+
+### List Views
+
+```
+GET /api/views
+```
+
+Returns all views. Admin sees all; tenant users see only views they have `view:<slug>` read permission on.
+
+### Create View
+
+```
+POST /api/views
+Content-Type: application/json
+
+{
+  "entitySlug": "tickets",
+  "slug": "my-tickets",
+  "name": "My Tickets",
+  "description": "Tickets reported by the current user",
+  "filterDsl": {
+    "validate": [{ "condition": "reporter == $currentUser" }]
+  }
+}
+```
+
+Requires admin access.
+
+### Update View
+
+```
+PUT /api/views/{slug}
+Content-Type: application/json
+
+{
+  "name": "Updated Name",
+  "filterDsl": { "validate": [{ "condition": "status == 'open'" }] }
+}
+```
+
+### Delete View
+
+```
+DELETE /api/views/{slug}
+```
+
+### List Records Through View
+
+```
+GET /api/views/{viewSlug}/records
+```
+
+Same query parameters as entity record listing (`page`, `limit`, `sort`, `order`, `search`, `resolve`, `filter.*`). The view's base filter is applied automatically and composes with any additional query filters.
+
+### Get Single Record Through View
+
+```
+GET /api/views/{viewSlug}/records/{id}
+```
+
+Returns `404` if the record does not match the view's filter.
+
+---
+
 ## Record Structure
 
 Entity fields are inside `record.data`:

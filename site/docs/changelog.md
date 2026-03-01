@@ -1,3 +1,16 @@
+## v1.21.0 — 2026-03-01
+
+### Features
+- **Entity views — filtered projections with RBAC permissions** — Create named views on entities with filter DSL conditions (e.g., `reporter == $currentUser`). Each view has independent RBAC permissions using `view:<slug>` as the entity key. REST API: full CRUD at `/api/views` plus record access at `/api/views/:slug/records`. MCP tools: `create_view`, `list_views`, `update_view`, `delete_view`. View filters compose with query-string filters. Admin access bypasses user-scoped filters. 32 tests (10 integration + 22 E2E cross-validation). (#735, closes #746)
+
+### Infrastructure
+- **Static sites: Cloudflare R2 + Worker** — Static site hosting migrated from filesystem-based storage to Cloudflare R2 object storage served by a Cloudflare Worker. The `validate-domain` endpoint has been removed. (#731, closes #730)
+
+### Chores
+- **Remove PM2 and Caddy references** — Deleted legacy PM2 deploy workflow, `ecosystem.config.js`, health monitoring endpoints, and Caddy-related Makefile targets. Deployment docs updated for current Lightsail + Cloudflare architecture. (#736)
+
+---
+
 ## v1.20.0 — 2026-03-01
 
 ### Features
