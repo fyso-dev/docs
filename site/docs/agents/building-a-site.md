@@ -408,7 +408,7 @@ Returns a complete TypeScript client with types for your entities.
 
 ### Public key access
 
-For external integrations that need limited access (e.g., a customer-facing form that creates tickets), use public keys. Public keys are scoped to specific entities and operations. See [Public Keys](/admin/anonymous-keys) for setup.
+For external integrations that need limited access (e.g., a customer-facing form that creates tickets), use public keys. Public keys are scoped to specific entities and operations. See [Public Keys](/docs/admin/anonymous-keys) for setup.
 
 ## Phase 6: Deploy
 
@@ -446,7 +446,7 @@ Generate a deploy token for automated deployments:
 generate_deploy_token({ subdomain: "support-app" })
 ```
 
-Use this token in your GitHub Actions workflow. See [GitHub Actions Deployment](/deployment/github-actions) for the full setup.
+Use this token in your GitHub Actions workflow. See [GitHub Actions Deployment](/docs/deployment/github-actions) for the full setup.
 
 ### Custom domain (Pro)
 

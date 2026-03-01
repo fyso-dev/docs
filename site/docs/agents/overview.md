@@ -73,7 +73,7 @@ Each method has different permissions and use cases. See [Authentication](./auth
 ## Quick Start
 
 1. Get an API key from the Fyso admin panel
-2. [Configure MCP](../getting-started/mcp-setup.md) or use the REST API directly
+2. [Configure MCP](/docs/getting-started/mcp-setup) or use the REST API directly
 3. Select a tenant and start building:
 
 ```

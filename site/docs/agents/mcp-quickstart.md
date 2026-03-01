@@ -26,7 +26,7 @@ Add Fyso to your MCP client config (`claude_desktop_config.json` or equivalent):
 }
 ```
 
-`FYSO_TOOLS` controls which tools are available. `core` is the default and covers everything in this guide. See [Tool Profiles](/api/tool-profiles) for the full breakdown.
+`FYSO_TOOLS` controls which tools are available. `core` is the default and covers everything in this guide. See [Tool Profiles](/docs/api/tool-profiles) for the full breakdown.
 
 ## 2. Select a Tenant
 
@@ -441,7 +441,7 @@ list_static_sites()
 generate_deploy_token({ subdomain: "my-app" })
 ```
 
-Returns a one-time token (expires in 5 minutes) for use in GitHub Actions or other CI pipelines. See [GitHub Actions Deployment](/deployment/github-actions) for a full workflow.
+Returns a one-time token (expires in 5 minutes) for use in GitHub Actions or other CI pipelines. See [GitHub Actions Deployment](/docs/deployment/github-actions) for a full workflow.
 
 ---
 
