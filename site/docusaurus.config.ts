@@ -11,7 +11,7 @@ const config: Config = {
     v4: true,
   },
 
-  url: 'https://docs.sites.fyso.dev',
+  url: 'https://docs.fyso.dev',
   baseUrl: '/',
 
   onBrokenLinks: 'warn',
