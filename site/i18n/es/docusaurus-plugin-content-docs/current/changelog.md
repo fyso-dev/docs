@@ -1,21 +1,47 @@
-## v1.18.0 — 2026-03-01
+## v1.20.0 — 2026-03-01
 
 ### Funcionalidades
-- **Filtrado a nivel de fila via reglas de negocio `on_query`** — Nuevo tipo de trigger `on_query` para reglas de negocio que compila condiciones DSL a clausulas SQL `WHERE` en tiempo de consulta. Se asigna un `rowFilter` en el `EntityPermissionConfig` de un rol para vincularlo a una regla `on_query`. Semantica de union: si algun rol del usuario otorga acceso de lectura sin restricciones, no se aplica ningun filtro. Parser de expresiones personalizado (tokenizer + recursive-descent) genera SQL type-safe con Drizzle. `!=` usa `IS DISTINCT FROM` para manejo correcto de NULL. (#692, closes #676)
-- **Relaciones `has_many` con resolucion en cascada y permisos** — Nuevo tipo de campo `has_many` para lookups inversos uno-a-muchos (ej: `factura` → `lineas` via `foreignKey`). `findById` ahora soporta los query params `?resolve=true&resolve_depth=N` para resolucion anidada. La resolucion en cascada respeta RBAC por entidad: `rowFilter` (nivel de fila), `fields` (whitelist), `excludeFields` (blocklist). Si el usuario no tiene permiso `read` en una entidad relacionada, el campo se omite por completo. (#694, closes #677)
-- **Mejoras en busqueda de knowledge base, ingestion por URL y tracking** — La UI de busqueda incorpora slider de precision, barra de certeza con colores, toggle de fragmentos, filtro de uno-por-documento y un modal de ayuda. La ingestion por URL ahora descarga el contenido de la pagina en lugar de guardar la URL, con limpieza de HTML (elimina nav, header, footer, aside, scripts). Nuevos eventos: `knowledge_ingest` (tokens, tiempo de procesamiento), `knowledge_delete`, `knowledge_search` mejorado (tokens de embedding). Nuevo bloque de stats `embedding_usage_30d`. El filtro `one_per_document` se movio de cliente a SQL `DISTINCT ON`. La herramienta MCP `search_knowledge` ahora soporta el parametro `one_per_document` con threshold por defecto corregido a 0.3. (#701, closes #702)
-- **Visibilidad de permisos en roles** — La UI de roles ahora muestra los permisos efectivos de cada rol, incluyendo acceso CRUD por entidad, visibilidad de campos (whitelist/blocklist) y filtros a nivel de fila. Los admins pueden ver de un vistazo lo que cada rol puede acceder sin inspeccionar JSON crudo. (#705)
 - **Migracion de Next.js a Vite + React Router PWA** — Se reemplazo Next.js 16 por Vite 6 + React Router v7 + `vite-plugin-pwa`. El 90% de las paginas eran `'use client'` haciendo SSR innecesario. Tiempo de build reducido de ~45s a ~15s. 56 rutas con lazy loading. `next-intl` reemplazado por `react-i18next` (wrapper de compatibilidad, sin cambios en call-sites). `@sentry/nextjs` reemplazado por `@sentry/react`. Los 11 API routes de Next.js eliminados (el frontend llama directamente al backend Hono). PWA con service worker para soporte offline e instalacion como app. (#719, closes #716)
 - **Migracion de sitios estaticos a Cloudflare R2 + Worker** — El hosting de sitios estaticos ahora usa Cloudflare R2 como almacenamiento de objetos + un Cloudflare Worker para servir los archivos, reemplazando el enfoque basado en filesystem. Los assets se suben a buckets R2; el Worker maneja el routing de requests. Se elimino el endpoint `validate-domain` (el CF Worker maneja la validacion de dominios). Se elimino el bloque de sites en Caddy. (#731, closes #730)
-- **Tests E2E de agente MCP** — Suite de tests end-to-end para interacciones de agentes MCP, validando invocaciones de herramientas contra la API en vivo. (#707, #724)
+- **Mejoras en tests E2E de agente MCP** — Suite de tests E2E extendida para interacciones de agentes MCP con mayor confiabilidad. (#724)
 
 ### Correcciones
-- **Rate limit en envio de invitaciones** — El endpoint de envio de invitaciones ahora tiene rate limit para prevenir abuso. (#693)
+- **Limpieza de Docker en CI** — Se agrego poda de imagenes y capas Docker en los pipelines de CI para prevenir agotamiento de disco en runners. (#726)
+- **Mejoras en tests de CI** — Se mejoro la confiabilidad de tests y se redujeron fallas intermitentes en CI. (#728, #729)
+
+---
+
+## v1.19.0 — 2026-02-28
+
+### Funcionalidades
+- **Mejoras en busqueda de knowledge base, ingestion por URL y tracking** — La UI de busqueda incorpora slider de precision, barra de certeza con colores, toggle de fragmentos, filtro de uno-por-documento y un modal de ayuda. La ingestion por URL ahora descarga el contenido de la pagina en lugar de guardar la URL, con limpieza de HTML (elimina nav, header, footer, aside, scripts). Nuevos eventos: `knowledge_ingest` (tokens, tiempo de procesamiento), `knowledge_delete`, `knowledge_search` mejorado (tokens de embedding). Nuevo bloque de stats `embedding_usage_30d`. El filtro `one_per_document` se movio de cliente a SQL `DISTINCT ON`. La herramienta MCP `search_knowledge` ahora soporta el parametro `one_per_document` con threshold por defecto corregido a 0.3. (#701, closes #702)
+- **Visibilidad de permisos en roles** — La UI de roles ahora muestra los permisos efectivos de cada rol, incluyendo acceso CRUD por entidad, visibilidad de campos (whitelist/blocklist) y filtros a nivel de fila. Los admins pueden ver de un vistazo lo que cada rol puede acceder sin inspeccionar JSON crudo. (#705)
+- **Tests E2E de agente MCP** — Suite de tests end-to-end para interacciones de agentes MCP, validando invocaciones de herramientas contra la API en vivo. (#707)
+
+### Correcciones
 - **Actualizacion de test XSS** — Se actualizaron los tests de seguridad XSS para coincidir con el comportamiento actual de sanitizacion. (#696)
 - **CI migrado a `ubuntu-latest`** — Los runners de GitHub Actions actualizados de versiones fijas de Ubuntu a `ubuntu-latest`. (#697)
 - **Mejora visual profesional de la UI** — Mejoras de consistencia visual en todo el panel de administracion. (#700)
-- **Limpieza de Docker en CI** — Se agrego poda de imagenes y capas Docker en los pipelines de CI para prevenir agotamiento de disco en runners. (#726)
-- **Mejoras en tests de CI** — Se mejoro la confiabilidad de tests y se redujeron fallas intermitentes en CI. (#728, #729)
+
+---
+
+## v1.18.0 — 2026-02-28
+
+### Funcionalidades
+- **CRUD de usuarios — modal de edicion, asignacion de roles, reset de password** — El panel de administracion ahora incluye una interfaz de gestion de usuarios con edicion inline, dropdown de asignacion de roles y boton de reset de password. (#683)
+- **Autoservicio de perfil de usuario** — Los usuarios pueden editar su nombre, cambiar su password y ver sus roles asignados desde una pagina de perfil. (#684)
+- **Envio de email de invitacion** — Las invitaciones ahora incluyen un campo de email y un boton de envio que despacha el link de invitacion via Resend. (#685)
+- **Observabilidad de knowledge base — dashboard de indexacion y busqueda unificada** — Nuevo dashboard mostrando estado de indexacion de documentos, conteo de chunks y progreso de embeddings. Busqueda unificada en todos los documentos de la knowledge base. (#686)
+- **Log de auditoria RBAC** — Los eventos de asignacion y revocacion de roles ahora se registran con timestamp, actor y usuario objetivo. Visible en el panel de administracion. (#687)
+- **API keys autenticadas — scopes expandidos, rotacion y auth callout** — Las API keys incorporan nuevos scopes, soporte de rotacion de keys y un mecanismo de callout de autenticacion para validacion externa. (#688, closes #662)
+- **Filtrado a nivel de fila via reglas de negocio `on_query`** — Nuevo tipo de trigger `on_query` para reglas de negocio que compila condiciones DSL a clausulas SQL `WHERE` en tiempo de consulta. Se asigna un `rowFilter` en el `EntityPermissionConfig` de un rol para vincularlo a una regla `on_query`. Semantica de union: si algun rol del usuario otorga acceso de lectura sin restricciones, no se aplica ningun filtro. Parser de expresiones personalizado (tokenizer + recursive-descent) genera SQL type-safe con Drizzle. `!=` usa `IS DISTINCT FROM` para manejo correcto de NULL. (#692, closes #676)
+- **Relaciones `has_many` con resolucion en cascada y permisos** — Nuevo tipo de campo `has_many` para lookups inversos uno-a-muchos (ej: `factura` → `lineas` via `foreignKey`). `findById` ahora soporta los query params `?resolve=true&resolve_depth=N` para resolucion anidada. La resolucion en cascada respeta RBAC por entidad: `rowFilter` (nivel de fila), `fields` (whitelist), `excludeFields` (blocklist). Si el usuario no tiene permiso `read` en una entidad relacionada, el campo se omite por completo. (#694, closes #677)
+
+### Correcciones
+- **Rutas proxy de API de Next.js faltantes** — Se corrigieron las rutas de auth flows y reset password que no se proxeaban correctamente. (#682)
+- **Validacion de asignacion de roles via MCP** — La asignacion de roles a traves de herramientas MCP ahora pasa por la misma validacion a nivel de servicio que la API REST. (#690, closes #675)
+- **Rate limit en envio de invitaciones** — El endpoint de envio de invitaciones ahora tiene rate limit para prevenir abuso. (#693)
+- **Correcciones de integracion del nodo n8n** — Se resolvieron problemas de compatibilidad con el nodo comunitario de n8n. (#691, closes #638)
 
 ---
 
