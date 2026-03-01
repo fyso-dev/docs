@@ -45,6 +45,20 @@
   flex-wrap: wrap;
 }
 
+.humanBanner {
+  padding: 1rem 0;
+  text-align: center;
+  background: var(--ifm-color-primary);
+}
+
+.humanBannerText {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #FFFFFF;
+  letter-spacing: -0.01em;
+}
+
 .sections {
   padding: 3rem 0 4rem;
 }
@@ -86,6 +100,16 @@
   box-shadow: 0 4px 12px rgba(108, 92, 231, 0.08);
 }
 
+.card:first-child {
+  border-color: var(--ifm-color-primary);
+  background: rgba(108, 92, 231, 0.04);
+  grid-column: 1 / -1;
+}
+
+[data-theme='dark'] .card:first-child {
+  background: rgba(138, 126, 242, 0.06);
+}
+
 .cardIcon {
   font-size: 1.75rem;
   margin-bottom: 0.75rem;
@@ -104,6 +128,67 @@
   color: var(--ifm-font-color-secondary);
   line-height: 1.5;
   flex: 1;
+}
+
+/* ---------- "You don't need to know" section ---------- */
+.dontNeed {
+  padding: 3rem 0 4rem;
+  text-align: center;
+}
+
+.dontNeedTitle {
+  font-size: 1.75rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.5rem;
+}
+
+.dontNeedSubtitle {
+  font-size: 1.05rem;
+  color: var(--ifm-font-color-secondary);
+  margin-bottom: 2rem;
+}
+
+.dontNeedGrid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+  max-width: 720px;
+  margin: 0 auto 2rem;
+}
+
+.dontNeedItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.75rem 1.25rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--ifm-toc-border-color);
+  background: var(--ifm-background-surface-color);
+  opacity: 0.5;
+}
+
+.dontNeedStrike {
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: line-through;
+  color: var(--ifm-font-color-secondary);
+}
+
+.dontNeedDetail {
+  font-size: 0.75rem;
+  color: var(--ifm-font-color-secondary);
+  margin-top: 0.125rem;
+}
+
+.dontNeedCta {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--ifm-font-color-base);
+  font-style: italic;
+  max-width: 600px;
+  margin: 0 auto;
 }
 
 .install {

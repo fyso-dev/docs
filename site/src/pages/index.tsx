@@ -10,6 +10,14 @@ import styles from './index.module.css';
 
 const sections = [
   {
+    icon: '🤖',
+    titleId: 'home.section.agents',
+    titleDefault: 'Agents',
+    descId: 'home.section.agents.desc',
+    descDefault: 'Agent-first platform. MCP tools, authentication, RBAC, and end-to-end guides for AI agents.',
+    link: '/docs/agents/overview',
+  },
+  {
     icon: '🧩',
     titleId: 'home.section.entities',
     titleDefault: 'Entities',
@@ -28,34 +36,26 @@ const sections = [
   {
     icon: '🔌',
     titleId: 'home.section.api',
-    titleDefault: 'REST API',
+    titleDefault: 'API Reference',
     descId: 'home.section.api.desc',
-    descDefault: 'Auto-generated API for every entity. Auth via API key.',
-    link: '/docs/api/rest-api',
-  },
-  {
-    icon: '📅',
-    titleId: 'home.section.scheduling',
-    titleDefault: 'Scheduling',
-    descId: 'home.section.scheduling.desc',
-    descDefault: 'Availability slots, bookings, and calendar management.',
-    link: '/docs/scheduling/availability',
+    descDefault: '88 MCP tools and full REST API. Auto-generated per entity.',
+    link: '/docs/api/mcp-tools',
   },
   {
     icon: '🚀',
     titleId: 'home.section.deploy',
     titleDefault: 'Deployment',
     descId: 'home.section.deploy.desc',
-    descDefault: 'Deploy static sites to Fyso with GitHub Actions.',
+    descDefault: 'Static sites, GitHub Actions, custom domains, deploy tokens.',
     link: '/docs/deployment/static-sites',
   },
   {
-    icon: '📄',
-    titleId: 'home.section.pdf',
-    titleDefault: 'PDF Generation',
-    descId: 'home.section.pdf.desc',
-    descDefault: 'Create templates with pdfme and generate documents from records.',
-    link: '/docs/pdf/templates',
+    icon: '🔐',
+    titleId: 'home.section.admin',
+    titleDefault: 'Admin',
+    descId: 'home.section.admin.desc',
+    descDefault: 'Users, roles, webhooks, flows, secrets, knowledge base.',
+    link: '/docs/admin/users',
   },
 ];
 
@@ -69,20 +69,19 @@ function HomepageHeader() {
         </Heading>
         <p className={styles.heroSubtitle}>
           <Translate id="home.hero.subtitle">
-            Build business apps with entities, rules, and AI. Operate from the web panel or MCP tools.
+            Agent-first platform for building business apps. Entities, rules, RBAC, and automations — all through MCP tools or REST API.
           </Translate>
         </p>
         <div className={styles.buttons}>
           <Link
             className="button button--secondary button--lg"
-            to="/docs/getting-started/quick-start">
-            <Translate id="home.hero.cta">Get Started</Translate>
+            to="/docs/agents/overview">
+            <Translate id="home.hero.cta">Agent Guide</Translate>
           </Link>
           <Link
             className="button button--secondary button--outline button--lg"
-            to="/docs/getting-started/mcp-setup"
->
-            <Translate id="home.hero.mcp">Configure MCP</Translate>
+            to="/docs/getting-started/quick-start">
+            <Translate id="home.hero.quickstart">Quick Start</Translate>
           </Link>
         </div>
       </div>
@@ -110,6 +109,63 @@ function SectionCards() {
   );
 }
 
+function HumanBanner() {
+  return (
+    <section className={styles.humanBanner}>
+      <div className="container">
+        <p className={styles.humanBannerText}>
+          <Translate id="home.human.banner">
+            You don't need to read these docs. Tell your AI agent what you want to build — it already knows how to use Fyso.
+          </Translate>
+        </p>
+      </div>
+    </section>
+  );
+}
+
+const youDontNeed = [
+  {label: 'Cloudflare', detail: 'CDN, DNS, SSL'},
+  {label: 'S3 / R2', detail: 'Object storage'},
+  {label: 'Containers', detail: 'Docker, Kubernetes'},
+  {label: 'Auto-scaling', detail: 'Load balancers'},
+  {label: 'Auth systems', detail: 'OAuth, JWT, sessions'},
+  {label: 'Database admin', detail: 'Postgres, migrations'},
+  {label: 'CI/CD pipelines', detail: 'Build, test, deploy'},
+  {label: 'Security', detail: 'SSRF, XSS, RBAC'},
+];
+
+function YouDontNeedThis() {
+  return (
+    <section className={styles.dontNeed}>
+      <div className="container">
+        <Heading as="h2" className={styles.dontNeedTitle}>
+          <Translate id="home.dontneed.title">
+            You don't need to know any of this
+          </Translate>
+        </Heading>
+        <p className={styles.dontNeedSubtitle}>
+          <Translate id="home.dontneed.subtitle">
+            Fyso handles the infrastructure. You just define your business rules.
+          </Translate>
+        </p>
+        <div className={styles.dontNeedGrid}>
+          {youDontNeed.map((item) => (
+            <div key={item.label} className={styles.dontNeedItem}>
+              <span className={styles.dontNeedStrike}>{item.label}</span>
+              <span className={styles.dontNeedDetail}>{item.detail}</span>
+            </div>
+          ))}
+        </div>
+        <p className={styles.dontNeedCta}>
+          <Translate id="home.dontneed.cta">
+            Just tell your agent: "create an entity called invoices with client, amount, and status" — done.
+          </Translate>
+        </p>
+      </div>
+    </section>
+  );
+}
+
 function InstallSnippet() {
   return (
     <section className={styles.install}>
@@ -124,8 +180,7 @@ function InstallSnippet() {
         </p>
         <div className={styles.codeBlock}>
           <code>
-            claude mcp add fyso https://mcp.fyso.dev/mcp \{'\n'}
-            {'  '}--header &quot;x-api-key: YOUR_API_KEY&quot;
+            claude mcp add fyso https://mcp.fyso.dev/mcp
           </code>
         </div>
       </div>
@@ -146,16 +201,16 @@ function ResourceLinks() {
           GitHub
         </a>
         <Link to="/docs/api/mcp-tools" className={styles.linkItem}>
-          <span className={styles.linkIcon}>🤖</span>
-          <Translate id="home.link.mcp">MCP Reference</Translate>
+          <span className={styles.linkIcon}>🔧</span>
+          <Translate id="home.link.mcp">88 MCP Tools</Translate>
         </Link>
-        <Link to="/docs/billing/plans" className={styles.linkItem}>
-          <span className={styles.linkIcon}>💳</span>
-          <Translate id="home.link.billing">Plans & Limits</Translate>
+        <Link to="/docs/agents/authentication" className={styles.linkItem}>
+          <span className={styles.linkIcon}>🔑</span>
+          <Translate id="home.link.auth">Authentication</Translate>
         </Link>
-        <Link to="/docs/admin/users" className={styles.linkItem}>
-          <span className={styles.linkIcon}>👤</span>
-          <Translate id="home.link.admin">Users & Roles</Translate>
+        <Link to="/docs/api/rest-api" className={styles.linkItem}>
+          <span className={styles.linkIcon}>🔌</span>
+          <Translate id="home.link.rest">REST API</Translate>
         </Link>
       </div>
     </section>
@@ -169,7 +224,9 @@ export default function Home(): ReactNode {
       description="Fyso documentation - Build business apps with AI">
       <HomepageHeader />
       <main>
+        <HumanBanner />
         <SectionCards />
+        <YouDontNeedThis />
         <InstallSnippet />
         <ResourceLinks />
       </main>
