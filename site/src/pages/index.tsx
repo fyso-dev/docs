@@ -180,8 +180,7 @@ function InstallSnippet() {
         </p>
         <div className={styles.codeBlock}>
           <code>
-            claude mcp add fyso https://mcp.fyso.dev/mcp \{'\n'}
-            {'  '}--header &quot;x-api-key: YOUR_API_KEY&quot;
+            claude mcp add fyso https://mcp.fyso.dev/mcp
           </code>
         </div>
       </div>
