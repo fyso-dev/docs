@@ -26,6 +26,6 @@ jobs:
       - name: Deploy to docs.sites.fyso.dev
         run: |
           cd site/build && zip -r ../../build.zip . && cd ../..
-          curl -sf -X POST https://app.fyso.dev/api/sites/docs/deploy \
+          curl -sf -X POST https://api.fyso.dev/api/sites/docs/deploy \
             -H "Authorization: Bearer ${{ secrets.FYSO_DEPLOY_TOKEN }}" \
             -F "file=@build.zip"
