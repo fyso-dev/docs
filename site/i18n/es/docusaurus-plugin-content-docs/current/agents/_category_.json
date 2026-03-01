@@ -1,0 +1,8 @@
+{
+  "label": "Agentes",
+  "position": 2,
+  "link": {
+    "type": "generated-index",
+    "description": "Guias para agentes de IA y desarrolladores que integran con Fyso via MCP o REST API."
+  }
+}
