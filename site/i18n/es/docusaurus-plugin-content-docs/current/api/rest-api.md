@@ -120,6 +120,73 @@ Soporta actualizaciones parciales.
 DELETE /api/entities/{entityName}/records/{id}
 ```
 
+## Vistas
+
+Las vistas son proyecciones filtradas de entidades con permisos RBAC independientes. Ver [Vistas de entidades](/entities/views) para la guia completa.
+
+### Listar vistas
+
+```
+GET /api/views
+```
+
+Retorna todas las vistas. Admin ve todas; los usuarios de tenant solo ven las vistas en las que tienen permiso `view:<slug>` de lectura.
+
+### Crear vista
+
+```
+POST /api/views
+Content-Type: application/json
+
+{
+  "entitySlug": "tickets",
+  "slug": "mis-tickets",
+  "name": "Mis Tickets",
+  "description": "Tickets reportados por el usuario actual",
+  "filterDsl": {
+    "validate": [{ "condition": "reporter == $currentUser" }]
+  }
+}
+```
+
+Requiere acceso admin.
+
+### Actualizar vista
+
+```
+PUT /api/views/{slug}
+Content-Type: application/json
+
+{
+  "name": "Nombre actualizado",
+  "filterDsl": { "validate": [{ "condition": "status == 'open'" }] }
+}
+```
+
+### Eliminar vista
+
+```
+DELETE /api/views/{slug}
+```
+
+### Listar registros a traves de una vista
+
+```
+GET /api/views/{viewSlug}/records
+```
+
+Mismos parametros de query que el listado de registros de entidad (`page`, `limit`, `sort`, `order`, `search`, `resolve`, `filter.*`). El filtro base de la vista se aplica automaticamente y se compone con cualquier filtro adicional del query string.
+
+### Obtener un registro a traves de una vista
+
+```
+GET /api/views/{viewSlug}/records/{id}
+```
+
+Retorna `404` si el registro no coincide con el filtro de la vista.
+
+---
+
 ## Estructura del registro
 
 Los campos de la entidad estan dentro de `record.data`:

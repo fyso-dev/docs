@@ -59,6 +59,17 @@ Configurá qué herramientas se exponen con la variable de entorno `FYSO_TOOLS`.
 
 ---
 
+## Vistas
+
+| Herramienta | Perfil | Descripcion |
+|-------------|--------|-------------|
+| `create_view` | core | Crear una vista filtrada de entidad con permisos RBAC independientes |
+| `list_views` | core | Listar todas las vistas de entidades en el tenant |
+| `update_view` | core | Actualizar nombre, descripcion, filtro o estado activo de una vista |
+| `delete_view` | core | Eliminar una vista de entidad |
+
+---
+
 ## RBAC (Roles y permisos)
 
 | Herramienta | Perfil | Descripción |

@@ -1,3 +1,16 @@
+## v1.21.0 — 2026-03-01
+
+### Funcionalidades
+- **Vistas de entidades — proyecciones filtradas con permisos RBAC** — Crea vistas con nombre sobre entidades usando condiciones en Filter DSL (ej: `reporter == $currentUser`). Cada vista tiene permisos RBAC independientes usando `view:<slug>` como clave de entidad. REST API: CRUD completo en `/api/views` mas acceso a registros en `/api/views/:slug/records`. Herramientas MCP: `create_view`, `list_views`, `update_view`, `delete_view`. Los filtros de vista se componen con los filtros del query string. El acceso admin omite filtros de usuario. 32 tests (10 integracion + 22 E2E cross-validation). (#735, closes #746)
+
+### Infraestructura
+- **Sitios estaticos: Cloudflare R2 + Worker** — El hosting de sitios estaticos migro de almacenamiento en filesystem a Cloudflare R2 servido por un Cloudflare Worker. Se elimino el endpoint `validate-domain`. (#731, closes #730)
+
+### Mantenimiento
+- **Eliminar referencias a PM2 y Caddy** — Se elimino el workflow de deploy con PM2, `ecosystem.config.js`, endpoints de health monitoring y targets de Caddy en el Makefile. Documentacion de deploy actualizada para la arquitectura actual de Lightsail + Cloudflare. (#736)
+
+---
+
 ## v1.20.0 — 2026-03-01
 
 ### Funcionalidades
