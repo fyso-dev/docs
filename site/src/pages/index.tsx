@@ -123,6 +123,49 @@ function HumanBanner() {
   );
 }
 
+const youDontNeed = [
+  {label: 'Cloudflare', detail: 'CDN, DNS, SSL'},
+  {label: 'S3 / R2', detail: 'Object storage'},
+  {label: 'Containers', detail: 'Docker, Kubernetes'},
+  {label: 'Auto-scaling', detail: 'Load balancers'},
+  {label: 'Auth systems', detail: 'OAuth, JWT, sessions'},
+  {label: 'Database admin', detail: 'Postgres, migrations'},
+  {label: 'CI/CD pipelines', detail: 'Build, test, deploy'},
+  {label: 'Security', detail: 'SSRF, XSS, RBAC'},
+];
+
+function YouDontNeedThis() {
+  return (
+    <section className={styles.dontNeed}>
+      <div className="container">
+        <Heading as="h2" className={styles.dontNeedTitle}>
+          <Translate id="home.dontneed.title">
+            You don't need to know any of this
+          </Translate>
+        </Heading>
+        <p className={styles.dontNeedSubtitle}>
+          <Translate id="home.dontneed.subtitle">
+            Fyso handles the infrastructure. You just define your business rules.
+          </Translate>
+        </p>
+        <div className={styles.dontNeedGrid}>
+          {youDontNeed.map((item) => (
+            <div key={item.label} className={styles.dontNeedItem}>
+              <span className={styles.dontNeedStrike}>{item.label}</span>
+              <span className={styles.dontNeedDetail}>{item.detail}</span>
+            </div>
+          ))}
+        </div>
+        <p className={styles.dontNeedCta}>
+          <Translate id="home.dontneed.cta">
+            Just tell your agent: "create an entity called invoices with client, amount, and status" — done.
+          </Translate>
+        </p>
+      </div>
+    </section>
+  );
+}
+
 function InstallSnippet() {
   return (
     <section className={styles.install}>
@@ -184,6 +227,7 @@ export default function Home(): ReactNode {
       <main>
         <HumanBanner />
         <SectionCards />
+        <YouDontNeedThis />
         <InstallSnippet />
         <ResourceLinks />
       </main>

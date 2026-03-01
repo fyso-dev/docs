@@ -24,6 +24,8 @@ Start here. These guides are designed for agents integrating with Fyso.
 
 You don't need to read this documentation. Tell your AI agent what you want to build — it already knows how to use Fyso. Just say: *"connect to Fyso and create a CRM with contacts, deals, and tasks"*.
 
+Things you don't need to learn: ~~Cloudflare~~ ~~S3~~ ~~R2~~ ~~Docker~~ ~~Kubernetes~~ ~~auto-scaling~~ ~~load balancers~~ ~~OAuth~~ ~~JWT~~ ~~Postgres~~ ~~migrations~~ ~~CI/CD~~ ~~SSRF protection~~. Fyso handles all of that. You only define the rules of your business.
+
 If you prefer the web panel or want to understand how things work:
 
 1. [Quick Start](getting-started/quick-start.md) — Your first app in 5 minutes
