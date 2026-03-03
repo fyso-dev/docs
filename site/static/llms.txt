@@ -23,6 +23,7 @@
 - [Building a Complete App](https://docs.fyso.dev/docs/agents/building-a-site): End-to-end ticket system — data model, rules, RBAC, views, API, deploy, knowledge base
 - [Users & RBAC](https://docs.fyso.dev/docs/agents/users-and-rbac): Roles, custom roles, entity permissions, row-level filtering, invitations
 - [Channel Tools](https://docs.fyso.dev/docs/agents/channel-tools): Custom MCP tools, Tool DSL, bot identity, cross-tenant tool execution
+- [Embeddings & Semantic Search](https://docs.fyso.dev/docs/agents/embeddings): Record embeddings (field-level vectors), grouped embeddings, TTL, Knowledge Base RAG, semantic search via MCP and REST, DSL semantic_search operation, admin stats and reindex
 
 ## Getting Started
 
