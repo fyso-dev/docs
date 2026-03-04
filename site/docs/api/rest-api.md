@@ -2,6 +2,16 @@
 
 Fyso exposes a REST API for external access to tenant data.
 
+## Base URL
+
+All API requests use a single centralized host:
+
+```
+https://api.fyso.dev/api
+```
+
+> **Important:** Do NOT use tenant subdomains (e.g., `my-tenant.fyso.dev`) for API calls. The API is centralized — tenant isolation is handled via the `X-Tenant-ID` header.
+
 ## Authentication
 
 Two available methods:
@@ -20,6 +30,7 @@ curl -X POST "https://api.fyso.dev/api/auth/tenant/login" \
 
 # 2. Use the token
 curl -H "Authorization: Bearer JWT_TOKEN" \
+  -H "X-Tenant-ID: mi-empresa" \
   "https://api.fyso.dev/api/entities/clientes/records"
 ```
 
@@ -27,12 +38,22 @@ curl -H "Authorization: Bearer JWT_TOKEN" \
 
 ```bash
 curl -H "Authorization: Bearer API_KEY" \
+  -H "X-Tenant-ID: my-company-abc123" \
   "https://api.fyso.dev/api/entities/clientes/records"
 
 # Or alternative:
 curl -H "X-API-Key: API_KEY" \
+  -H "X-Tenant-ID: my-company-abc123" \
   "https://api.fyso.dev/api/entities/clientes/records"
 ```
+
+### Required Headers
+
+| Header | Required | Description |
+|--------|----------|-------------|
+| Authorization | Yes | `Bearer {JWT}` or `Bearer {API_KEY}` or `Bearer {fyso_pk_*}` |
+| X-Tenant-ID | Yes | Tenant slug (e.g., `my-company-abc123`) |
+| Content-Type | Yes (POST/PUT) | `application/json` |
 
 ## CRUD Endpoints
 
@@ -40,6 +61,12 @@ curl -H "X-API-Key: API_KEY" \
 
 ```
 GET /api/entities/{entityName}/records
+```
+
+```bash
+curl -H "Authorization: Bearer JWT_TOKEN" \
+  -H "X-Tenant-ID: my-company-abc123" \
+  "https://api.fyso.dev/api/entities/clientes/records?page=1&limit=20"
 ```
 
 **Query params:**
@@ -60,15 +87,12 @@ GET /api/entities/{entityName}/records
 {
   "success": true,
   "data": {
-    "data": [
+    "items": [
       {
         "id": "uuid",
         "entityId": "uuid",
-        "name": "Juan Perez",
-        "data": {
-          "nombre": "Juan Perez",
-          "email": "juan@example.com"
-        },
+        "nombre": "Juan Perez",
+        "email": "juan@example.com",
         "createdAt": "2026-02-03T12:51:15.352Z",
         "updatedAt": "2026-02-03T12:51:15.352Z"
       }
@@ -87,29 +111,40 @@ GET /api/entities/{entityName}/records
 GET /api/entities/{entityName}/records/{id}
 ```
 
+```bash
+curl -H "Authorization: Bearer JWT_TOKEN" \
+  -H "X-Tenant-ID: my-company-abc123" \
+  "https://api.fyso.dev/api/entities/clientes/records/{id}"
+```
+
 **Query params:** `resolve` (boolean)
 
 ### Create a Record
 
 ```
 POST /api/entities/{entityName}/records
-Content-Type: application/json
+```
 
-{
-  "nombre": "Juan Perez",
-  "email": "juan@example.com"
-}
+```bash
+curl -X POST -H "Authorization: Bearer JWT_TOKEN" \
+  -H "X-Tenant-ID: my-company-abc123" \
+  -H "Content-Type: application/json" \
+  -d '{"nombre": "Juan Perez", "email": "juan@example.com"}' \
+  "https://api.fyso.dev/api/entities/clientes/records"
 ```
 
 ### Update a Record
 
 ```
 PUT /api/entities/{entityName}/records/{id}
-Content-Type: application/json
+```
 
-{
-  "email": "juan.nuevo@example.com"
-}
+```bash
+curl -X PUT -H "Authorization: Bearer JWT_TOKEN" \
+  -H "X-Tenant-ID: my-company-abc123" \
+  -H "Content-Type: application/json" \
+  -d '{"email": "juan.nuevo@example.com"}' \
+  "https://api.fyso.dev/api/entities/clientes/records/{id}"
 ```
 
 Supports partial updates.
@@ -118,6 +153,12 @@ Supports partial updates.
 
 ```
 DELETE /api/entities/{entityName}/records/{id}
+```
+
+```bash
+curl -X DELETE -H "Authorization: Bearer JWT_TOKEN" \
+  -H "X-Tenant-ID: my-company-abc123" \
+  "https://api.fyso.dev/api/entities/clientes/records/{id}"
 ```
 
 ## Views
@@ -189,11 +230,11 @@ Returns `404` if the record does not match the view's filter.
 
 ## Record Structure
 
-Entity fields are inside `record.data`:
+Entity fields are at the top level of the record object:
 
 ```
-record.data.email     -- CORRECT
-record.email          -- INCORRECT
+record.email          -- CORRECT
+record.nombre         -- CORRECT
 ```
 
 ## Error Codes
