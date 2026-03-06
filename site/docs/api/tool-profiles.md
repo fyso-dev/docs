@@ -12,23 +12,21 @@ Tool profiles control which MCP tools are exposed to the agent. Fyso uses a 3-ti
 
 The standard profile for everyday use. Includes all tools needed to build and operate applications.
 
-Includes: tenant selection, entity management, records CRUD, business rules, RBAC, users, files, PDF, static sites, apps, scheduling, Knowledge Base, API spec, metadata import/export.
+Includes: `fyso_data` (records CRUD, scheduling), `fyso_schema` (entity management), `fyso_rules` (business rules), `fyso_auth` (users, roles, tenants), `fyso_views` (entity views), `fyso_knowledge` (search), `fyso_deploy` (static sites), `fyso_meta` (API spec, metadata, secrets, usage).
 
-**~60 tools**
+**8 grouped tools** (each with multiple actions)
 
 ### `advanced`
 
-Everything in `core` plus destructive operations, testing tools, flows, secrets, webhooks, deploy tokens, and execution logs.
+Everything in `core` plus all actions within the grouped tools. The `core` and `advanced` distinction now applies to which _actions_ within grouped tools are available, rather than separate tool names. Destructive actions (delete entity, delete record) and testing/debugging actions (test rule, rule logs, manage custom fields, entity change history) are gated behind `advanced`.
 
-Adds: `delete_entity`, `delete_record`, `test_business_rule`, `delete_business_rule`, `get_rule_logs`, `delete_static_site`, `generate_deploy_token`, `set_custom_domain`, `set_secret`, `delete_secret`, `create_flow`, `list_flows`, `update_flow`, `delete_flow`, `toggle_flow`, `create_webhook`, `list_webhooks`, `delete_webhook`, `delete_document`, `tenant_login`, `manage_custom_fields`, `list_entity_changes`.
-
-**~76 tools**
+**8 grouped tools** (full action set)
 
 ### `all`
 
-Everything in `advanced` plus channel and bot management tools.
+Everything in `advanced` plus channel management, bot identity, and invitation tools as individual tools.
 
-**~91 tools**
+**8 grouped + ~24 individual tools**
 
 ## Profile Resolution Order
 
@@ -69,5 +67,5 @@ In `claude_desktop_config.json` or equivalent MCP client config:
 | Use case | Recommended profile |
 |----------|-------------------|
 | Building apps, managing data | `core` |
-| CI/CD, flows, advanced debugging | `advanced` |
+| CI/CD, advanced debugging, destructive ops | `advanced` |
 | Bot/channel management | `all` |

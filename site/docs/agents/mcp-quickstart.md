@@ -35,7 +35,7 @@ Every operation in Fyso happens inside a tenant. Start by listing your tenants, 
 **List tenants:**
 
 ```
-list_tenants()
+fyso_auth({ action: "list_tenants" })
 ```
 
 Response:
@@ -53,7 +53,7 @@ Response:
 **Select a tenant:**
 
 ```
-select_tenant({ tenantSlug: "my-app" })
+fyso_auth({ action: "select_tenant", tenantSlug: "my-app" })
 ```
 
 Response:
@@ -70,18 +70,21 @@ From this point on, all operations target `my-app`.
 
 ## 3. Create an Entity
 
-Entities are your data tables. Use `generate_entity` to create one from a JSON definition.
+Entities are your data tables. Use `fyso_schema` with the `generate` action to create one from a JSON definition.
 
 ```
-generate_entity({
-  name: "tasks",
-  fields: [
-    { "name": "title", "type": "text", "required": true },
-    { "name": "description", "type": "long_text" },
-    { "name": "status", "type": "select", "options": ["open", "in_progress", "done"] },
-    { "name": "priority", "type": "select", "options": ["low", "medium", "high", "critical"] },
-    { "name": "assignee", "type": "text" }
-  ]
+fyso_schema({
+  action: "generate",
+  definition: {
+    entity: { name: "tasks" },
+    fields: [
+      { "name": "title", "fieldKey": "title", "fieldType": "text" },
+      { "name": "description", "fieldKey": "description", "fieldType": "textarea" },
+      { "name": "status", "fieldKey": "status", "fieldType": "select", "config": { "options": ["open", "in_progress", "done"] } },
+      { "name": "priority", "fieldKey": "priority", "fieldType": "select", "config": { "options": ["low", "medium", "high", "critical"] } },
+      { "name": "assignee", "fieldKey": "assignee", "fieldType": "text" }
+    ]
+  }
 })
 ```
 
@@ -97,7 +100,7 @@ Response:
     "slug": "tasks",
     "fields": [
       { "key": "title", "type": "text", "required": true },
-      { "key": "description", "type": "long_text", "required": false },
+      { "key": "description", "type": "textarea", "required": false },
       { "key": "status", "type": "select", "options": ["open", "in_progress", "done"] },
       { "key": "priority", "type": "select", "options": ["low", "medium", "high", "critical"] },
       { "key": "assignee", "type": "text", "required": false }
@@ -109,19 +112,21 @@ Response:
 The entity is created as a draft. To make it live:
 
 ```
-publish_entity({
+fyso_schema({
+  action: "publish",
   entityName: "tasks",
-  message: "Initial version"
+  version_message: "Initial version"
 })
 ```
 
 ## 4. Create Records
 
-Add data to your entity with `create_record`.
+Add data to your entity with `fyso_data`.
 
 ```
-create_record({
-  entityName: "tasks",
+fyso_data({
+  action: "create",
+  entity: "tasks",
   data: {
     "title": "Fix login bug",
     "description": "Users get 500 error on login with special characters in password",
@@ -157,8 +162,9 @@ Response:
 Create a few more:
 
 ```
-create_record({
-  entityName: "tasks",
+fyso_data({
+  action: "create",
+  entity: "tasks",
   data: {
     "title": "Add dark mode",
     "description": "Support system-level dark mode preference",
@@ -168,8 +174,9 @@ create_record({
   }
 })
 
-create_record({
-  entityName: "tasks",
+fyso_data({
+  action: "create",
+  entity: "tasks",
   data: {
     "title": "Update dependencies",
     "description": "Run npm audit fix and update major versions",
@@ -182,23 +189,25 @@ create_record({
 
 ## 5. Query Records
 
-`query_records` supports filters, pagination, sorting, and semantic search.
+`fyso_data` with the `query` action supports filters, pagination, sorting, and semantic search.
 
 ### Simple filter
 
 ```
-query_records({
-  entityName: "tasks",
-  filter: "status = open"
+fyso_data({
+  action: "query",
+  entity: "tasks",
+  filters: "status = open"
 })
 ```
 
 ### Compound filter
 
 ```
-query_records({
-  entityName: "tasks",
-  filter: "status = open AND priority = high"
+fyso_data({
+  action: "query",
+  entity: "tasks",
+  filters: "status = open AND priority = high"
 })
 ```
 
@@ -219,8 +228,9 @@ String values don't need quotes, but you can use them: `assignee = "alice@team.c
 ### Pagination
 
 ```
-query_records({
-  entityName: "tasks",
+fyso_data({
+  action: "query",
+  entity: "tasks",
   limit: 10,
   offset: 0
 })
@@ -229,10 +239,11 @@ query_records({
 ### Sorting
 
 ```
-query_records({
-  entityName: "tasks",
-  orderBy: "priority",
-  orderDir: "desc"
+fyso_data({
+  action: "query",
+  entity: "tasks",
+  sort: "priority",
+  order_dir: "desc"
 })
 ```
 
@@ -241,10 +252,11 @@ query_records({
 Find records by meaning, not exact text match:
 
 ```
-query_records({
-  entityName: "tasks",
+fyso_data({
+  action: "query",
+  entity: "tasks",
   semantic: "authentication issues",
-  minSimilarity: 0.6,
+  min_similarity: 0.6,
   limit: 5
 })
 ```
@@ -253,13 +265,14 @@ This would match "Fix login bug" even though the query doesn't contain the word 
 
 ### Combining filters
 
-You can combine `filter` with `semantic` -- the filter is applied as a post-filter on semantic results:
+You can combine `filters` with `semantic` -- the filter is applied as a post-filter on semantic results:
 
 ```
-query_records({
-  entityName: "tasks",
+fyso_data({
+  action: "query",
+  entity: "tasks",
   semantic: "UI improvements",
-  filter: "status = open",
+  filters: "status = open",
   limit: 10
 })
 ```
@@ -289,12 +302,13 @@ query_records({
 
 ## 6. Add a Business Rule
 
-Business rules run automatically when records are created, updated, or queried. Use `generate_business_rule` with a natural language prompt.
+Business rules run automatically when records are created, updated, or queried. Use `fyso_rules` with the `generate` action and a natural language prompt.
 
 ```
-generate_business_rule({
+fyso_rules({
+  action: "generate",
   entityName: "tasks",
-  prompt: "When a task is created, if no priority is set, default it to 'medium'"
+  description: "When a task is created, if no priority is set, default it to 'medium'"
 })
 ```
 
@@ -326,7 +340,9 @@ Response:
 The rule is created as a draft. Publish it to make it active:
 
 ```
-publish_business_rule({
+fyso_rules({
+  action: "publish",
+  entityName: "tasks",
   ruleId: "rule-uuid"
 })
 ```
@@ -334,7 +350,9 @@ publish_business_rule({
 Only published rules execute. You can test before publishing:
 
 ```
-test_business_rule({
+fyso_rules({
+  action: "test",
+  entityName: "tasks",
   ruleId: "rule-uuid",
   testData: {
     "title": "New task without priority",
@@ -348,7 +366,8 @@ test_business_rule({
 Create tenant users with specific roles and per-entity permissions.
 
 ```
-create_user({
+fyso_auth({
+  action: "create_user",
   tenantSlug: "my-app",
   email: "dev@team.com",
   password: "securepass123",
@@ -406,7 +425,8 @@ Permissions are `create`, `read`, `update`, `delete` per entity:
 Deploy any static site (Astro, Vite, Next.js export, plain HTML) to a Fyso subdomain.
 
 ```
-deploy_static_site({
+fyso_deploy({
+  action: "deploy",
   subdomain: "my-app",
   path: "/path/to/dist"
 })
@@ -432,13 +452,13 @@ If the MCP server can't access your filesystem directly, it returns a `curl` com
 ### List deployed sites
 
 ```
-list_static_sites()
+fyso_deploy({ action: "list" })
 ```
 
 ### Generate a deploy token for CI/CD
 
 ```
-generate_deploy_token({ subdomain: "my-app" })
+fyso_deploy({ action: "generate_token", subdomain: "my-app" })
 ```
 
 Returns a one-time token (expires in 5 minutes) for use in GitHub Actions or other CI pipelines. See [GitHub Actions Deployment](/deployment/github-actions) for a full workflow.
