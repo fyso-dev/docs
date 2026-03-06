@@ -4,268 +4,338 @@ sidebar_position: 2
 
 # MCP Tools Reference
 
-Complete reference of all available MCP tools, grouped by category.
+Complete reference of all available MCP tools.
 
-Configure which tools are exposed with the `FYSO_TOOLS` environment variable. See [Tool Profiles](tool-profiles.md).
+The MCP server exposes **8 grouped tools** (each with an `action` enum parameter), plus individual tools for channels, bots, and invitations. Configure which tools are exposed with the `FYSO_TOOLS` environment variable. See [Tool Profiles](tool-profiles.md).
 
----
+## How grouped tools work
 
-## Tenant
+Each grouped tool accepts an `action` parameter that selects the operation. Additional parameters depend on the action chosen. Example:
 
-| Tool | Profile | Description |
-|------|---------|-------------|
-| `list_tenants` | core | Listar tenants accesibles |
-| `select_tenant` | core | Seleccionar tenant activo para operaciones posteriores |
-
----
-
-## Entities
-
-| Tool | Profile | Description |
-|------|---------|-------------|
-| `generate_entity` | core | Crear entidad con campos a partir de definicion JSON |
-| `list_entities` | core | Listar entidades (opcionalmente incluir borradores) |
-| `get_entity_schema` | core | Obtener definicion completa de la entidad y lista de campos |
-| `publish_entity` | core | Publicar version de entidad con mensaje |
-| `discard_entity_draft` | core | Descartar borrador de entidad. Si nunca fue publicada, se elimina. Si es un re-draft, revierte al ultimo snapshot publicado |
-| `add_field` | core | Agregar campo a una entidad publicada. Maneja el ciclo completo: crea borrador, agrega el campo y re-publica automaticamente |
-| `delete_entity` | advanced | Eliminar entidad y todos sus registros (irreversible) |
-| `list_entity_changes` | advanced | Ver historial de versiones |
-| `manage_custom_fields` | advanced | Agregar, actualizar o eliminar campos personalizados |
+```
+fyso_data({ action: "create", entity: "tasks", data: { title: "Fix bug" } })
+fyso_data({ action: "query", entity: "tasks", filters: "status = open" })
+fyso_auth({ action: "list_tenants" })
+```
 
 ---
 
-## Records
+## `fyso_data` — Records and bookings
 
-| Tool | Profile | Description |
-|------|---------|-------------|
-| `query_records` | core | Consultar registros con filtros, paginacion, ordenamiento y busqueda semantica |
-| `create_record` | core | Crear un nuevo registro |
-| `update_record` | core | Actualizar parcialmente un registro |
-| `delete_record` | core | Eliminar un registro |
+CRUD operations on records and scheduling.
 
----
+| Action | Description | Required params |
+|--------|-------------|-----------------|
+| `create` | Create a new record | `entity`, `data` |
+| `query` | Search/filter records | `entity` |
+| `update` | Modify a record | `entity`, `id`, `data` |
+| `delete` | Remove a record | `entity`, `id` |
+| `create_booking` | Book a scheduling slot | `professional_id`, `date`, `time` |
+| `get_slots` | Available scheduling slots | `professional_id`, `date` |
 
-## Views
+### Parameters
 
-| Tool | Profile | Description |
-|------|---------|-------------|
-| `create_view` | core | Crear una vista filtrada de entidad con permisos RBAC independientes |
-| `list_views` | core | Listar todas las vistas de entidades en el tenant actual |
-| `update_view` | core | Actualizar nombre, descripcion, filtro o estado activo de una vista |
-| `delete_view` | core | Eliminar una vista de entidad |
-
----
-
-## Business Rules
-
-| Tool | Profile | Description |
-|------|---------|-------------|
-| `generate_business_rule` | core | Generar y crear una regla a partir de lenguaje natural o DSL JSON |
-| `list_business_rules` | core | Listar reglas de una entidad |
-| `publish_business_rule` | core | Publicar regla (solo las reglas publicadas se ejecutan) |
-| `create_business_rule` | advanced | Crear regla a partir de definicion DSL explicita |
-| `get_business_rule` | advanced | Obtener definicion completa de una regla |
-| `test_business_rule` | advanced | Probar regla con datos de ejemplo sin guardar |
-| `delete_business_rule` | advanced | Eliminar una regla |
-| `get_rule_logs` | advanced | Ver logs de ejecucion de una regla |
-
----
-
-## RBAC (Roles y Permisos)
-
-| Tool | Profile | Description |
-|------|---------|-------------|
-| `list_roles` | core | Listar roles definidos en el tenant |
-| `create_role` | core | Crear un nuevo rol con permisos |
-| `assign_role` | core | Asignar un rol a un usuario |
-| `revoke_role` | core | Revocar un rol de un usuario |
+| Param | Type | Used by | Description |
+|-------|------|---------|-------------|
+| `action` | string (enum) | all | Operation to perform |
+| `entity` | string | create, query, update, delete | Entity name |
+| `data` | object | create, update | Record data |
+| `id` | string | update, delete | Record ID |
+| `filters` | string | query | Filter expression. Operators: `=`, `!=`, `>`, `<`, `>=`, `<=`, `contains`. Combine with `AND`/`OR`. Example: `status = active AND date >= 2026-01-01` |
+| `sort` | string | query | Field to sort by |
+| `order_dir` | `asc` \| `desc` | query | Sort direction |
+| `limit` | number | query | Max records (default: 50, max: 200) |
+| `offset` | number | query | Pagination offset |
+| `semantic` | string | query | Natural language semantic search |
+| `min_similarity` | number | query | Similarity threshold 0-1 for semantic search |
+| `resolve_depth` | number | query | Relation resolution depth 1-3 (default: 1) |
+| `professional_id` | string | create_booking, get_slots | Professional UUID |
+| `patient_id` | string | create_booking | Patient/client UUID |
+| `date` | string | create_booking, get_slots | Date YYYY-MM-DD |
+| `time` | string | create_booking | Time HH:MM |
+| `duration` | number | create_booking | Duration in minutes |
+| `notes` | string | create_booking | Booking notes |
+| `from` | string | get_slots | Range start YYYY-MM-DD |
+| `to` | string | get_slots | Range end YYYY-MM-DD |
 
 ---
 
-## Users
+## `fyso_schema` — Entities and fields
 
-| Tool | Profile | Description |
-|------|---------|-------------|
-| `create_user` | core | Crear usuario de tenant con rol y permisos |
-| `list_users` | core | Listar usuarios en el tenant |
-| `update_user_password` | core | Restablecer contrasena de cualquier usuario (operacion admin, no requiere contrasena actual) |
-| `tenant_login` | advanced | Autenticarse como usuario de tenant, retorna JWT |
+Manage entities, fields, and schema versioning.
 
----
+| Action | Description | Required params |
+|--------|-------------|-----------------|
+| `list` | List entities | — |
+| `get` | Get entity schema | `entityName` |
+| `add_field` | Add field to published entity | `entityName`, `field` or inline params |
+| `manage_fields` | CRUD custom fields | `entityName` |
+| `generate` | Create entity from definition | `definition` |
+| `publish` | Publish entity draft | `entityName` |
+| `discard` | Discard entity draft | `entityName` |
+| `delete` | Delete entity (irreversible) | `entityName`, `confirm: true` |
+| `list_changes` | Pending schema changes | — |
 
-## Files
+### Parameters
 
-| Tool | Profile | Description |
-|------|---------|-------------|
-| `upload_file` | core | Subir un archivo, retorna metadatos del archivo almacenado |
-
----
-
-## PDF
-
-| Tool | Profile | Description |
-|------|---------|-------------|
-| `generate_pdf` | core | Generar PDF a partir de plantilla y datos de registro |
-| `create_pdf_template` | core | Crear una plantilla PDF |
-
----
-
-## Static Sites
-
-| Tool | Profile | Description |
-|------|---------|-------------|
-| `deploy_static_site` | core | Desplegar sitio estatico en `*-sites.fyso.dev` |
-| `list_static_sites` | core | Listar sitios desplegados |
-| `delete_static_site` | advanced | Eliminar un sitio |
-| `generate_deploy_token` | advanced | Generar token de deploy persistente y reutilizable para CI/CD, con workflow de GitHub Actions listo para usar |
-| `set_custom_domain` | advanced | Agregar, verificar, consultar o eliminar un dominio personalizado para un sitio (Pro) |
+| Param | Type | Used by | Description |
+|-------|------|---------|-------------|
+| `action` | string (enum) | all | Operation to perform |
+| `entityName` | string | get, add_field, manage_fields, publish, discard, delete | Entity name |
+| `include_drafts` | boolean | list | Include draft entities |
+| `include_published` | boolean | list_changes | Include published with no pending changes |
+| `version` | string | get | Version to retrieve: number, `draft`, or `published` |
+| `field` | object | add_field, manage_fields | Field definition: `{ name, fieldKey, fieldType, isRequired?, isUnique?, description?, config? }` |
+| `field_action` | `list` \| `add` \| `update` \| `delete` | manage_fields | Sub-action for custom fields |
+| `field_type` | `custom` \| `system` \| `all` | manage_fields | Field filter for listing |
+| `fieldId` | string | manage_fields | Field ID for update/delete |
+| `definition` | object | generate | Entity definition: `{ entity: { name, displayName?, description? }, fields: [{ name, fieldKey, fieldType, ... }] }` |
+| `auto_publish` | boolean | generate | Auto-publish after generate (requires `version_message`) |
+| `version_message` | string | publish, generate | Version message |
+| `confirm` | boolean | delete | Must be `true` to confirm deletion |
+| `fieldType` | string | add_field | Field type: `text`, `textarea`, `number`, `email`, `phone`, `date`, `boolean`, `select`, `relation`, `file`, `location` |
 
 ---
 
-## API
+## `fyso_rules` — Business rules
 
-| Tool | Profile | Description |
-|------|---------|-------------|
-| `get_rest_api_spec` | core | Obtener spec OpenAPI para las entidades del tenant |
-| `generate_api_client` | core | Generar codigo de cliente API en un lenguaje dado |
+Create, test, publish, and manage business rules.
 
----
+**Required:** `action` and `entityName` for all actions.
 
-## Metadata
+| Action | Description | Additional required params |
+|--------|-------------|---------------------------|
+| `create` | Create rule from DSL | `name`, `triggerType`, `rule` |
+| `get` | Rule details | `ruleId` |
+| `list` | List rules | — |
+| `generate` | Generate from prompt/DSL | `description` or `rule` |
+| `publish` | Activate draft rule | `ruleId` |
+| `delete` | Delete rule | `ruleId` |
+| `test` | Dry-run with test data | `ruleId`, `testData` |
+| `logs` | Execution history | `ruleId` |
 
-| Tool | Profile | Description |
-|------|---------|-------------|
-| `export_metadata` | core | Exportar estructura del tenant (entidades, campos, reglas) como JSON |
-| `import_metadata` | core | Importar JSON de metadata en el tenant |
+### Parameters
 
----
-
-## Apps
-
-| Tool | Profile | Description |
-|------|---------|-------------|
-| `publish_app` | core | Publicar tenant como app instalable |
-| `unpublish_app` | core | Despublicar app |
-| `update_app` | core | Actualizar nombre, descripcion o refrescar metadata de la app |
-
----
-
-## Scheduling
-
-| Tool | Profile | Description |
-|------|---------|-------------|
-| `get_available_slots` | core | Obtener horarios disponibles para un profesional |
-| `create_booking` | core | Crear una reserva en un horario disponible |
-
----
-
-## Secrets
-
-| Tool | Profile | Description |
-|------|---------|-------------|
-| `set_secret` | advanced | Almacenar un secreto cifrado para uso en flows |
-| `delete_secret` | advanced | Eliminar un secreto almacenado |
+| Param | Type | Used by | Description |
+|-------|------|---------|-------------|
+| `action` | string (enum) | all | Operation to perform |
+| `entityName` | string | all | Entity the rule belongs to |
+| `ruleId` | string | get, publish, delete, test, logs | Rule ID |
+| `name` | string | create | Rule name |
+| `description` | string | create, generate | Rule description or natural language prompt |
+| `triggerType` | `field_change` \| `before_save` \| `after_save` \| `on_load` | create | When the rule triggers |
+| `triggerFields` | string[] | create | Fields that trigger the rule |
+| `rule` | object | create, generate | Rule DSL with compute/validate/transform/actions |
+| `ruleDsl` | object | create, generate | Alias for `rule` |
+| `priority` | number | create | Execution priority, lower = first (default: 100) |
+| `auto_publish` | boolean | create, generate | Auto-publish after create/generate |
+| `include_drafts` | boolean | list | Include draft rules |
+| `testData` | object | test | Test record data for dry-run |
+| `limit` | number | logs | Max log entries |
 
 ---
 
-## Flows
+## `fyso_auth` — Users, roles, and tenants
 
-| Tool | Profile | Description |
-|------|---------|-------------|
-| `create_flow` | advanced | Crear un flow de automatizacion con triggers y pasos |
-| `list_flows` | advanced | Listar flows en el tenant |
-| `update_flow` | advanced | Actualizar definicion de un flow |
-| `delete_flow` | advanced | Eliminar un flow |
-| `toggle_flow` | advanced | Activar o desactivar un flow |
+User management, RBAC, and tenant operations.
 
----
+| Action | Description | Required params |
+|--------|-------------|-----------------|
+| `create_user` | Create tenant user | `email`, `password`, `name` |
+| `list_users` | List tenant users | — |
+| `update_password` | Reset user password | `userId`, `password` |
+| `create_role` | Create role with permissions | `name`, `permissions` |
+| `list_roles` | List roles | — |
+| `assign_role` | Assign role to user | `userId`, `roleId` |
+| `revoke_role` | Revoke role from user | `userId`, `roleId` |
+| `login` | Authenticate as tenant user | `tenantSlug`, `email`, `password` |
+| `list_tenants` | List accessible tenants | — |
+| `select_tenant` | Select active tenant | `tenantSlug` |
 
-## Webhooks
+### Parameters
 
-| Tool | Profile | Description |
-|------|---------|-------------|
-| `create_webhook` | advanced | Suscribirse a eventos de registros de entidad (created/updated/deleted) |
-| `list_webhooks` | advanced | Listar suscripciones de webhooks, opcionalmente filtrados por entidad |
-| `delete_webhook` | advanced | Eliminar una suscripcion de webhook |
-
----
-
-## Knowledge Base
-
-| Tool | Profile | Description |
-|------|---------|-------------|
-| `upload_document` | core | Subir documento para indexacion RAG (PDF, HTML, texto, markdown, URL) |
-| `search_knowledge` | core | Busqueda semantica en documentos indexados. Soporta `one_per_document`, `threshold`, `document_ids` |
-| `list_documents` | core | Listar documentos subidos con filtrado por estado |
-| `get_document` | core | Obtener metadata, contenido y preview de chunks del documento |
-| `delete_document` | core | Eliminar un documento y todos sus chunks (registrado via evento `knowledge_delete`) |
-| `get_knowledge_stats` | core | Obtener estadisticas de indexacion, analytics de busqueda y uso de tokens de embedding (ventana de 30 dias) |
+| Param | Type | Used by | Description |
+|-------|------|---------|-------------|
+| `action` | string (enum) | all | Operation to perform |
+| `email` | string | create_user, login | User email |
+| `name` | string | create_user, create_role | User or role name |
+| `password` | string | create_user, update_password, login | Password |
+| `userId` | string | update_password, assign_role, revoke_role | User ID |
+| `roleId` | string | assign_role, revoke_role | Role ID |
+| `permissions` | object | create_role | Role permissions object |
+| `description` | string | create_role | Role description |
+| `tenantSlug` | string | create_user, login, select_tenant, update_password | Tenant slug |
 
 ---
 
-## Usage
+## `fyso_views` — Entity views
 
-| Tool | Profile | Description |
-|------|---------|-------------|
-| `get_usage` | core | Obtener metricas de uso actuales y limites del plan para el tenant seleccionado. Retorna entidades, registros, sitios, usuarios, requests API, llamadas MCP, almacenamiento y geocodificacion del periodo de facturacion actual |
+Manage filtered entity views with independent RBAC permissions.
 
----
+| Action | Description | Required params |
+|--------|-------------|-----------------|
+| `create` | Create a new view | `entitySlug`, `slug`, `name` |
+| `list` | List all views | — |
+| `update` | Modify a view | `slug` |
+| `delete` | Remove a view | `slug` |
 
-## Channels
+### Parameters
 
-### Discovery (Consumer)
-
-Estas tools permiten buscar y consumir channels publicados por otros tenants.
-
-| Tool | Profile | Description |
-|------|---------|-------------|
-| `search_channels` | all | Buscar channels publicos por texto y/o tags |
-| `get_channel_info` | all | Obtener informacion detallada de un channel especifico |
-| `get_channel_tools` | all | Listar tools disponibles en un channel con sus input schemas |
-| `execute_channel_tool` | all | Ejecutar una tool personalizada de un channel. Realiza triple autorizacion y opera sobre datos del owner del channel |
-
-### Management (Owner)
-
-Estas tools permiten publicar y administrar tu propio channel.
-
-| Tool | Profile | Description |
-|------|---------|-------------|
-| `get_my_channel` | all | Obtener el channel del tenant actual. Retorna el channel sin importar su estado activo |
-| `publish_channel` | all | Publicar tu tenant como channel publico con nombre, descripcion y tags |
-| `update_channel` | all | Actualizar metadata del channel (nombre, descripcion, tags). Requiere ser owner |
-| `unpublish_channel` | all | Despublicar channel del catalogo publico (soft delete, reversible) |
-| `set_channel_permissions` | all | Configurar permisos del channel con nivel de acceso por defecto y reglas opcionales por entidad |
-
-### Channel Tools (Owner)
-
-Estas tools permiten definir tools personalizadas dentro de tu channel usando DSL declarativo.
-
-| Tool | Profile | Description |
-|------|---------|-------------|
-| `define_channel_tool` | all | Definir una tool personalizada para tu channel usando DSL declarativo. Mapea parametros a operaciones CRUD de entidades |
-| `update_channel_tool` | all | Actualizar configuracion de una tool existente (descripcion, input schema o DSL). El slug no se puede cambiar |
-| `remove_channel_tool` | all | Eliminar una tool personalizada del channel |
+| Param | Type | Used by | Description |
+|-------|------|---------|-------------|
+| `action` | string (enum) | all | Operation to perform |
+| `entitySlug` | string | create | Entity this view is based on |
+| `slug` | string | create, update, delete | View slug identifier |
+| `name` | string | create, update | Display name |
+| `description` | string | create, update | View description |
+| `filterDsl` | object | create, update | Filter definition: `{ validate: [{ condition: 'field == value' }] }` |
+| `isActive` | boolean | update | Enable/disable the view |
 
 ---
 
-## Bots
+## `fyso_knowledge` — Knowledge base
 
-Identidades persistentes para agentes que operan de forma autonoma.
+Search tenant knowledge base and Fyso platform documentation.
 
-| Tool | Profile | Description |
-|------|---------|-------------|
-| `register_bot` | all | Registrar nueva identidad de bot con nombre unico vinculado a un tenant. Retorna clave secreta para identificacion futura |
-| `identify_bot` | all | Identificarse como bot registrado usando nombre y secreto. Selecciona automaticamente el tenant vinculado |
-| `list_bots` | all | Listar todas las identidades de bot registradas por el usuario admin actual |
-| `whoami_bot` | all | Verificar la identidad de bot actual de la sesion |
-| `revoke_bot` | all | Revocar (desactivar) una identidad de bot. El bot ya no podra identificarse |
+| Action | Description | Required params |
+|--------|-------------|-----------------|
+| `search` | Semantic search tenant knowledge | `query` |
+| `stats` | Knowledge base metrics | — |
+| `search_docs` | Search Fyso platform docs | `query` |
+
+### Parameters
+
+| Param | Type | Used by | Description |
+|-------|------|---------|-------------|
+| `action` | string (enum) | all | Operation to perform |
+| `query` | string | search, search_docs | Natural language search query |
+| `limit` | number | search, search_docs | Max results (search: default 5, max 20; search_docs: default 5, max 10) |
+| `threshold` | number | search | Minimum similarity 0-1 (default: 0.3) |
+| `document_ids` | string[] | search | Filter to specific document IDs |
+| `one_per_document` | boolean | search | Best chunk per document only |
+| `metadata_filter` | object | search | Metadata filter (e.g. `{ tag: 'policy' }`) |
+| `topic` | string | search_docs | Topic filter: `api`, `entities`, `business-rules`, `deployment`, `billing`, `knowledge`, `mcp`, `rbac`, `views`, `flows`, `webhooks`, `scheduling` |
 
 ---
 
-## Invitations
+## `fyso_deploy` — Static sites
 
-| Tool | Profile | Description |
-|------|---------|-------------|
-| `generate_invitation_code` | all | Generar un codigo de invitacion para acceso beta. Formato FYSO-XXXX-XXXX con limite de usos configurable |
-| `list_invitation_codes` | all | Listar todos los codigos de invitacion con estadisticas de uso |
+Deploy static sites, manage custom domains, and generate CI/CD tokens.
+
+| Action | Description | Required params |
+|--------|-------------|-----------------|
+| `deploy` | Upload and deploy site | `subdomain` |
+| `list` | List active sites | — |
+| `delete` | Remove a site | `subdomain` |
+| `set_domain` | Manage custom domain | `subdomain` |
+| `generate_token` | CI/CD deploy token | `subdomain` |
+
+### Parameters
+
+| Param | Type | Used by | Description |
+|-------|------|---------|-------------|
+| `action` | string (enum) | all | Operation to perform |
+| `subdomain` | string | deploy, delete, set_domain, generate_token | Site subdomain (e.g. `my-app` -> `my-app-sites.fyso.dev`) |
+| `path` | string | deploy | Absolute path to build output directory |
+| `bundle_base64` | string | deploy | Base64-encoded ZIP of site files (for remote MCP) |
+| `domain` | string | set_domain | Custom domain (e.g. `app.mycompany.com`) |
+| `domain_action` | `add` \| `verify` \| `status` \| `remove` | set_domain | Domain sub-action (default: `add`) |
+| `name` | string | generate_token | Token name (e.g. `GitHub Actions`) |
+| `expires_in_days` | number | generate_token | Token expiry in days (omit for no expiry) |
+| `package_json` | object | generate_token | package.json for framework auto-detection |
+| `framework` | string | generate_token | Override framework: `astro`, `vite`, `next`, `nuxt`, `gatsby`, `hugo`, `default` |
+
+---
+
+## `fyso_meta` — API, metadata, and secrets
+
+API spec, client generation, metadata import/export, secrets, and usage metrics.
+
+| Action | Description | Required params |
+|--------|-------------|-----------------|
+| `api_spec` | REST API OpenAPI spec | — |
+| `api_client` | Generate typed client code | — |
+| `export` | Export tenant metadata | — |
+| `import` | Import metadata | `data` |
+| `usage` | Billing metrics | — |
+| `set_secret` | Store encrypted secret | `key`, `value` |
+| `delete_secret` | Delete a secret | `key` |
+
+### Parameters
+
+| Param | Type | Used by | Description |
+|-------|------|---------|-------------|
+| `action` | string (enum) | all | Operation to perform |
+| `entities` | string[] | api_spec, api_client | Entity names (omit for all) |
+| `includeExamples` | boolean | api_spec | Include curl examples (default: true) |
+| `language` | string | api_client | Target language (e.g. `typescript`, `python`) |
+| `framework` | string | api_client | Target framework (e.g. `react`, `next`) |
+| `format` | string | api_client | Output format |
+| `data` | string | import | JSON string of metadata to import |
+| `tenantId` | string | export, import | Tenant ID/slug override |
+| `key` | string | set_secret, delete_secret | Secret name |
+| `value` | string | set_secret | Secret value (encrypted at rest) |
+
+---
+
+## Individual tools
+
+The following tools remain as individual tools (not grouped). They are available with the `all` profile.
+
+### Channels — Discovery
+
+| Tool | Description |
+|------|-------------|
+| `search_channels` | Search public channels by text and/or tags |
+| `get_channel_info` | Get detailed info for a specific channel |
+| `get_channel_tools` | List tools available in a channel with input schemas |
+| `execute_channel_tool` | Execute a custom tool from a channel with triple authorization |
+
+### Channels — Management
+
+| Tool | Description |
+|------|-------------|
+| `get_my_channel` | Get the current tenant's channel |
+| `publish_channel` | Publish tenant as public channel with name, description, and tags |
+| `update_channel` | Update channel metadata (name, description, tags) |
+| `unpublish_channel` | Unpublish channel from public catalog (soft delete, reversible) |
+| `set_channel_permissions` | Configure channel permissions with per-entity access rules |
+
+### Channel Tools
+
+| Tool | Description |
+|------|-------------|
+| `define_channel_tool` | Define a custom tool using declarative DSL |
+| `update_channel_tool` | Update tool config (description, input schema, DSL) |
+| `remove_channel_tool` | Remove a custom tool from the channel |
+
+### Bots
+
+Persistent identities for autonomous agents.
+
+| Tool | Description |
+|------|-------------|
+| `register_bot` | Register a new bot identity linked to a tenant |
+| `identify_bot` | Authenticate as a registered bot |
+| `list_bots` | List all bot identities registered by the current admin |
+| `whoami_bot` | Check current bot identity |
+| `revoke_bot` | Revoke (deactivate) a bot identity |
+
+### Invitations
+
+| Tool | Description |
+|------|-------------|
+| `generate_invitation_code` | Generate a beta invitation code (FYSO-XXXX-XXXX format) |
+| `list_invitation_codes` | List all invitation codes with usage stats |
+
+---
+
+## REST-only features
+
+The following features are available via the [REST API](/api/rest-api) but are not exposed as MCP tools:
+
+- **Flows** — `create_flow`, `list_flows`, `update_flow`, `delete_flow`, `toggle_flow`
+- **Webhooks** — `create_webhook`, `list_webhooks`, `delete_webhook`
+- **Documents** — `upload_document`, `list_documents`, `get_document`, `delete_document`
+- **PDF** — `generate_pdf`, `create_pdf_template`
+- **Apps** — `publish_app`, `unpublish_app`, `update_app`

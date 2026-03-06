@@ -77,7 +77,7 @@ Each method has different permissions and use cases. See [Authentication](./auth
 3. Select a tenant and start building:
 
 ```
-select_tenant({ tenantSlug: "my-workspace" })
-list_entities()
-query_records({ entityName: "contacts", limit: 5 })
+fyso_auth({ action: "select_tenant", tenantSlug: "my-workspace" })
+fyso_schema({ action: "list" })
+fyso_data({ action: "query", entity: "contacts", limit: 5 })
 ```
