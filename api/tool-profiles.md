@@ -1,63 +1,46 @@
 # Tool Profiles
 
-Los perfiles controlan que herramientas MCP estan disponibles para el agente.
+Tool profiles control which MCP tools are exposed to the agent. Fyso uses a 3-tier system (`core`, `advanced`, `all`) with the ability to assign a specific profile per user.
 
-## Configuracion
+## Available profiles
 
-Variable de entorno: `FYSO_TOOLS`
+### `core` — Default
 
-| Valor | Descripcion |
-|-------|-------------|
-| `core` | Default. ~26 tools esenciales para uso diario |
-| `advanced` | ~38 tools. Agrega poder-usuario: delete, test, flows, secrets, logs |
-| `all` | ~49 tools. Todo, incluyendo channels y bots |
+The standard profile for daily use. Includes all tools needed to build and operate applications.
 
-## Perfil: core
+Includes: `fyso_data` (record CRUD, scheduling), `fyso_schema` (entity management), `fyso_rules` (business rules), `fyso_auth` (users, roles, tenants, invitations), `fyso_views` (entity views), `fyso_knowledge` (search), `fyso_deploy` (static sites), `fyso_meta` (API spec, metadata, secrets, usage).
 
-Tools para el dia a dia de construccion de apps:
+**8 grouped tools** (each with multiple actions)
 
-```
-list_tenants, select_tenant,
-generate_entity, list_entities, get_entity_schema, publish_entity,
-query_records, create_record, update_record, delete_record,
-generate_business_rule, list_business_rules, publish_business_rule,
-create_user, list_users,
-deploy_static_site, list_static_sites,
-export_metadata, import_metadata,
-get_rest_api_spec, generate_api_client,
-publish_app, unpublish_app, update_app,
-get_available_slots, create_booking,
-generate_pdf, upload_file
-```
+### `advanced`
 
-## Perfil: advanced
+Everything in `core` plus all actions within the grouped tools. The `core`/`advanced` distinction now applies to which _actions_ within the grouped tools are available, rather than separate tools. Destructive actions (delete entity, delete record) and testing/debugging actions (test rule, rule logs, manage custom fields, change history) are gated behind `advanced`.
 
-Todo lo de `core` mas:
+**8 grouped tools** (full action set)
 
-```
-delete_entity, list_entity_changes, manage_custom_fields,
-create_business_rule, get_business_rule, test_business_rule,
-delete_business_rule,
-tenant_login,
-delete_static_site,
-set_secret, delete_secret,
-create_flow, list_flows, update_flow, delete_flow, toggle_flow,
-get_rule_logs
-```
+### `all`
 
-## Perfil: all
+Same as `advanced`. All MCP functionality is covered by the 8 grouped tools.
 
-Todo lo de `advanced` mas channels, bots y codigos de invitacion:
+**8 grouped tools** (full action set)
 
-```
-search_channels, get_channel_info, get_my_channel, get_channel_tools,
-publish_channel, update_channel, unpublish_channel, set_channel_permissions,
-define_channel_tool, update_channel_tool, remove_channel_tool, execute_channel_tool,
-register_bot, identify_bot, list_bots, whoami_bot, revoke_bot,
-generate_invitation_code, list_invitation_codes
-```
+## Super admin tools
 
-## Ejemplo de configuracion
+A separate set of 7 super admin tools exists outside the 3-tier system. These tools are gated by the `FYSO_SA_KEY` environment variable and are not included in any of the profiles above. They are intended exclusively for platform operators and are never exposed to regular users regardless of their profile.
+
+## Profile resolution order
+
+The active tool profile for a user is resolved in this order (highest priority first):
+
+1. **User level** — the `tool_profile` column in `admin_users`. When set, it takes priority over everything else. Admins can assign a specific profile to individual users.
+2. **Server environment variable** — `FYSO_TOOLS=core|advanced|all`. Applies to all users on the server unless a user-level profile is set.
+3. **Default** — `core`. Used when there is no user-level assignment or environment variable configured.
+
+This allows an admin to run the server with `FYSO_TOOLS=core` but grant `advanced` or `all` to specific users via the `admin_users.tool_profile` column.
+
+## Configuration
+
+In `claude_desktop_config.json` or your MCP client equivalent:
 
 ```json
 {
@@ -66,11 +49,19 @@ generate_invitation_code, list_invitation_codes
       "command": "npx",
       "args": ["-y", "@fyso/mcp-server"],
       "env": {
-        "FYSO_API_KEY": "...",
+        "FYSO_API_KEY": "your-api-key",
         "FYSO_API_URL": "https://api.fyso.dev/api",
-        "FYSO_TOOLS": "advanced"
+        "FYSO_TOOLS": "core"
       }
     }
   }
 }
 ```
+
+## Choosing a profile
+
+| Use case | Recommended profile |
+|----------|---------------------|
+| Building apps, managing data | `core` |
+| CI/CD, advanced debugging, destructive ops | `advanced` |
+| Full access (same as advanced) | `all` |

@@ -6,7 +6,7 @@ sidebar_position: 2
 
 Referencia completa de todas las herramientas MCP disponibles.
 
-El servidor MCP expone **8 herramientas agrupadas** (cada una con un parametro `action` tipo enum), mas herramientas individuales para canales, bots e invitaciones. Configura que herramientas se exponen con la variable de entorno `FYSO_TOOLS`. Ver [Perfiles de herramientas](tool-profiles.md).
+El servidor MCP expone **8 herramientas agrupadas** (cada una con un parametro `action` tipo enum) mas **7 herramientas de super administrador**. No se exponen herramientas individuales. Configura que herramientas se exponen con la variable de entorno `FYSO_TOOLS`. Ver [Perfiles de herramientas](tool-profiles.md).
 
 ## Como funcionan las herramientas agrupadas
 
@@ -150,6 +150,8 @@ Gestion de usuarios, RBAC y operaciones de tenant.
 | `login` | Autenticarse como usuario de tenant | `tenantSlug`, `email`, `password` |
 | `list_tenants` | Listar tenants accesibles | — |
 | `select_tenant` | Seleccionar tenant activo | `tenantSlug` |
+| `generate_invitation` | Generar codigo de invitacion beta | `note` |
+| `list_invitations` | Listar codigos de invitacion con estadisticas de uso | — |
 
 ### Parametros
 
@@ -164,6 +166,9 @@ Gestion de usuarios, RBAC y operaciones de tenant.
 | `permissions` | object | create_role | Objeto de permisos del rol |
 | `description` | string | create_role | Descripcion del rol |
 | `tenantSlug` | string | create_user, login, select_tenant, update_password | Slug del tenant |
+| `note` | string | generate_invitation | Nota para el codigo de invitacion |
+| `maxUses` | number | generate_invitation | Numero maximo de usos |
+| `expiresAt` | string | generate_invitation | Fecha de expiracion ISO 8601 |
 
 ---
 
@@ -277,62 +282,12 @@ Spec de API, generacion de clientes, import/export de metadata, secretos y metri
 
 ---
 
-## Herramientas individuales
-
-Las siguientes herramientas se mantienen como herramientas individuales (no agrupadas). Estan disponibles con el perfil `all`.
-
-### Canales — Descubrimiento
-
-| Herramienta | Descripcion |
-|-------------|-------------|
-| `search_channels` | Buscar canales publicos por texto y/o tags |
-| `get_channel_info` | Obtener informacion detallada de un canal |
-| `get_channel_tools` | Listar tools disponibles en un canal con input schemas |
-| `execute_channel_tool` | Ejecutar una tool personalizada de un canal con triple autorizacion |
-
-### Canales — Gestion
-
-| Herramienta | Descripcion |
-|-------------|-------------|
-| `get_my_channel` | Obtener el canal del tenant actual |
-| `publish_channel` | Publicar tenant como canal publico con nombre, descripcion y tags |
-| `update_channel` | Actualizar metadata del canal (nombre, descripcion, tags) |
-| `unpublish_channel` | Despublicar canal del catalogo publico (soft delete, reversible) |
-| `set_channel_permissions` | Configurar permisos del canal con reglas de acceso por entidad |
-
-### Channel Tools
-
-| Herramienta | Descripcion |
-|-------------|-------------|
-| `define_channel_tool` | Definir una tool personalizada usando DSL declarativo |
-| `update_channel_tool` | Actualizar configuracion de una tool (descripcion, input schema, DSL) |
-| `remove_channel_tool` | Eliminar una tool personalizada del canal |
-
-### Bots
-
-Identidades persistentes para agentes autonomos.
-
-| Herramienta | Descripcion |
-|-------------|-------------|
-| `register_bot` | Registrar nueva identidad de bot vinculada a un tenant |
-| `identify_bot` | Autenticarse como bot registrado |
-| `list_bots` | Listar identidades de bot del admin actual |
-| `whoami_bot` | Verificar identidad de bot actual |
-| `revoke_bot` | Revocar (desactivar) una identidad de bot |
-
-### Invitaciones
-
-| Herramienta | Descripcion |
-|-------------|-------------|
-| `generate_invitation_code` | Generar codigo de invitacion beta (formato FYSO-XXXX-XXXX) |
-| `list_invitation_codes` | Listar codigos de invitacion con estadisticas de uso |
-
----
-
 ## Funciones solo via REST
 
 Las siguientes funcionalidades estan disponibles via la [REST API](/api/rest-api) pero no se exponen como herramientas MCP:
 
+- **Canales** — `search_channels`, `get_channel_info`, `get_channel_tools`, `execute_channel_tool`, `get_my_channel`, `publish_channel`, `update_channel`, `unpublish_channel`, `set_channel_permissions`, `define_channel_tool`, `update_channel_tool`, `remove_channel_tool`
+- **Bots** — `register_bot`, `identify_bot`, `list_bots`, `whoami_bot`, `revoke_bot`
 - **Flows** — `create_flow`, `list_flows`, `update_flow`, `delete_flow`, `toggle_flow`
 - **Webhooks** — `create_webhook`, `list_webhooks`, `delete_webhook`
 - **Documentos** — `upload_document`, `list_documents`, `get_document`, `delete_document`

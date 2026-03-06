@@ -12,7 +12,7 @@ Los perfiles de herramientas controlan que herramientas MCP se exponen al agente
 
 El perfil estandar para uso diario. Incluye todas las herramientas necesarias para construir y operar aplicaciones.
 
-Incluye: `fyso_data` (CRUD de registros, scheduling), `fyso_schema` (gestion de entidades), `fyso_rules` (reglas de negocio), `fyso_auth` (usuarios, roles, tenants), `fyso_views` (vistas de entidades), `fyso_knowledge` (busqueda), `fyso_deploy` (sitios estaticos), `fyso_meta` (spec de API, metadata, secretos, uso).
+Incluye: `fyso_data` (CRUD de registros, scheduling), `fyso_schema` (gestion de entidades), `fyso_rules` (reglas de negocio), `fyso_auth` (usuarios, roles, tenants, invitaciones), `fyso_views` (vistas de entidades), `fyso_knowledge` (busqueda), `fyso_deploy` (sitios estaticos), `fyso_meta` (spec de API, metadata, secretos, uso).
 
 **8 herramientas agrupadas** (cada una con multiples acciones)
 
@@ -24,9 +24,9 @@ Todo lo de `core` mas todas las acciones dentro de las herramientas agrupadas. L
 
 ### `all`
 
-Todo lo de `advanced` mas herramientas individuales de gestion de canales, identidad de bots e invitaciones.
+Igual que `advanced`. Toda la funcionalidad MCP esta cubierta por las 8 herramientas agrupadas.
 
-**8 agrupadas + ~24 herramientas individuales**
+**8 herramientas agrupadas** (set completo de acciones)
 
 ## Orden de resolucion del perfil
 
@@ -40,7 +40,7 @@ Esto permite que un administrador ejecute el servidor con `FYSO_TOOLS=core` pero
 
 ## Herramientas de super administrador
 
-Existe un conjunto separado de herramientas de super administrador fuera del sistema de 3 niveles. Estas herramientas estan protegidas por la variable de entorno `FYSO_SA_KEY` y no se incluyen en ninguno de los perfiles anteriores. Estan destinadas exclusivamente a operadores de la plataforma y no se exponen a usuarios regulares sin importar su perfil.
+Existe un conjunto separado de 7 herramientas de super administrador fuera del sistema de 3 niveles. Estas herramientas estan protegidas por la variable de entorno `FYSO_SA_KEY` y no se incluyen en ninguno de los perfiles anteriores. Estan destinadas exclusivamente a operadores de la plataforma y no se exponen a usuarios regulares sin importar su perfil.
 
 ## Configuracion
 
@@ -68,4 +68,4 @@ En `claude_desktop_config.json` o el cliente MCP equivalente:
 |-------------|-------------------|
 | Construir apps, gestionar datos | `core` |
 | CI/CD, debugging avanzado, ops destructivas | `advanced` |
-| Gestion de bots/canales | `all` |
+| Acceso completo (igual que advanced) | `all` |
