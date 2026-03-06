@@ -151,6 +151,8 @@ User management, RBAC, and tenant operations.
 | `login` | Authenticate as tenant user | `tenantSlug`, `email`, `password` |
 | `list_tenants` | List accessible tenants | — |
 | `select_tenant` | Select active tenant | `tenantSlug` |
+| `generate_invitation` | Generate beta invitation code (FYSO-XXXX-XXXX) | — |
+| `list_invitations` | List invitation codes with usage stats | — |
 
 ### Parameters
 
@@ -165,6 +167,9 @@ User management, RBAC, and tenant operations.
 | `permissions` | object | create_role | Role permissions object |
 | `description` | string | create_role | Role description |
 | `tenantSlug` | string | create_user, login, select_tenant, update_password | Tenant slug |
+| `note` | string | generate_invitation | Optional note for the invitation |
+| `maxUses` | number | generate_invitation | Max uses for the code |
+| `expiresAt` | string | generate_invitation | Expiration date (ISO 8601) |
 
 ---
 
@@ -278,62 +283,12 @@ API spec, client generation, metadata import/export, secrets, and usage metrics.
 
 ---
 
-## Individual tools
-
-The following tools remain as individual tools (not grouped). They are available with the `all` profile.
-
-### Channels — Discovery
-
-| Tool | Description |
-|------|-------------|
-| `search_channels` | Search public channels by text and/or tags |
-| `get_channel_info` | Get detailed info for a specific channel |
-| `get_channel_tools` | List tools available in a channel with input schemas |
-| `execute_channel_tool` | Execute a custom tool from a channel with triple authorization |
-
-### Channels — Management
-
-| Tool | Description |
-|------|-------------|
-| `get_my_channel` | Get the current tenant's channel |
-| `publish_channel` | Publish tenant as public channel with name, description, and tags |
-| `update_channel` | Update channel metadata (name, description, tags) |
-| `unpublish_channel` | Unpublish channel from public catalog (soft delete, reversible) |
-| `set_channel_permissions` | Configure channel permissions with per-entity access rules |
-
-### Channel Tools
-
-| Tool | Description |
-|------|-------------|
-| `define_channel_tool` | Define a custom tool using declarative DSL |
-| `update_channel_tool` | Update tool config (description, input schema, DSL) |
-| `remove_channel_tool` | Remove a custom tool from the channel |
-
-### Bots
-
-Persistent identities for autonomous agents.
-
-| Tool | Description |
-|------|-------------|
-| `register_bot` | Register a new bot identity linked to a tenant |
-| `identify_bot` | Authenticate as a registered bot |
-| `list_bots` | List all bot identities registered by the current admin |
-| `whoami_bot` | Check current bot identity |
-| `revoke_bot` | Revoke (deactivate) a bot identity |
-
-### Invitations
-
-| Tool | Description |
-|------|-------------|
-| `generate_invitation_code` | Generate a beta invitation code (FYSO-XXXX-XXXX format) |
-| `list_invitation_codes` | List all invitation codes with usage stats |
-
----
-
 ## REST-only features
 
 The following features are available via the [REST API](/api/rest-api) but are not exposed as MCP tools:
 
+- **Channels** — `search_channels`, `get_channel_info`, `get_channel_tools`, `execute_channel_tool`, `publish_channel`, `update_channel`, `unpublish_channel`, `set_channel_permissions`, `define_channel_tool`, `update_channel_tool`, `remove_channel_tool`
+- **Bots** — `register_bot`, `identify_bot`, `list_bots`, `whoami_bot`, `revoke_bot`
 - **Flows** — `create_flow`, `list_flows`, `update_flow`, `delete_flow`, `toggle_flow`
 - **Webhooks** — `create_webhook`, `list_webhooks`, `delete_webhook`
 - **Documents** — `upload_document`, `list_documents`, `get_document`, `delete_document`
