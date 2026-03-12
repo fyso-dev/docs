@@ -169,7 +169,7 @@ See [Public Keys](/docs/admin/anonymous-keys) for full reference including role 
 
 ## Bot Identity
 
-For multi-agent systems and service accounts. Bots are registered per tenant, identified by name + secret. The secret is shown once at registration and can be reset.
+For multi-agent systems and service accounts. Bots are registered per tenant, authenticated by name + secret, and receive a short-lived JWT (1 hour TTL) scoped to the entity permissions defined at registration.
 
 All bot management endpoints require admin authentication.
 
@@ -181,53 +181,66 @@ curl -X POST https://api.fyso.dev/api/auth/bots/register \
   -H "Content-Type: application/json" \
   -d '{
     "name": "inventory-agent",
-    "tenantSlug": "my-workspace"
+    "tenantSlug": "my-workspace",
+    "permissions": {
+      "entities": {
+        "products":  ["read", "update"],
+        "inventory": ["create", "read", "update", "delete"]
+      }
+    }
   }'
 
 # Response (201):
 # {
 #   "success": true,
 #   "data": {
-#     "id": "uuid",
-#     "name": "inventory-agent",
-#     "secret": "a1b2c3...long-random-string",
-#     "tenantSlug": "my-workspace"
+#     "id":        "uuid",
+#     "name":      "inventory-agent",
+#     "secret":    "dK9mXqP3nR8vTw2z...",
+#     "tenantSlug":"my-workspace"
 #   }
 # }
 ```
 
 The `secret` is shown only once. Store it immediately.
 
-### Identify (authenticate) a bot
+### Identify — get a JWT
 
 ```bash
 curl -X POST https://api.fyso.dev/api/auth/bots/identify \
   -H "Authorization: Bearer ADMIN_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "inventory-agent",
-    "secret": "a1b2c3...long-random-string"
+    "name":   "inventory-agent",
+    "secret": "dK9mXqP3nR8vTw2z..."
   }'
 
 # Response (200):
 # {
 #   "success": true,
 #   "data": {
-#     "id": "uuid",
-#     "name": "inventory-agent",
-#     "tenantSlug": "my-workspace",
-#     "tenantId": "uuid"
+#     "id":          "uuid",
+#     "name":        "inventory-agent",
+#     "tenantSlug":  "my-workspace",
+#     "tenantId":    "uuid",
+#     "permissions": { "entities": { "products": ["read", "update"], ... } },
+#     "token":       "eyJhbGci...",
+#     "expiresIn":   3600
 #   }
 # }
 ```
 
-### Other bot endpoints
+Use the `token` in the `Authorization: Bearer` header for entity API calls. Re-identify when the token expires.
+
+### Bot endpoints
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/api/auth/bots` | GET | List all bots in the tenant |
-| `/api/auth/bots/:id/revoke` | POST | Revoke a bot (identify calls will fail) |
-| `/api/auth/bots/:id/reset-secret` | POST | Generate a new secret (old one stops working) |
+| `/api/auth/bots/register` | POST | Register a bot with permissions |
+| `/api/auth/bots/identify` | POST | Authenticate — returns JWT |
+| `/api/auth/bots` | GET | List bots (scoped to authenticated admin) |
+| `/api/auth/bots/:id/revoke` | POST | Revoke permanently |
+| `/api/auth/bots/:id/reset-secret` | POST | Rotate secret (admin only) |
 
 ### MCP tools
 
@@ -238,6 +251,8 @@ curl -X POST https://api.fyso.dev/api/auth/bots/identify \
 | `list_bots` | List bots in the tenant |
 | `whoami_bot` | Get current bot identity |
 | `revoke_bot` | Revoke a bot |
+
+See [Bot Identity](/docs/agents/bot-identity) for permissions structure, JWT refresh pattern, lockout behavior, and security considerations.
 
 ---
 
