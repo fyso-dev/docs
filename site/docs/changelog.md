@@ -1,3 +1,125 @@
+## v1.30.0 — 2026-03-12
+
+### Features
+- **Bot identity — JWT with entity permissions** — `POST /api/auth/bots/identify` now returns a JWT carrying scoped entity permissions. The JWT is accepted by entity record endpoints (`requireTenantContext` middleware), with permissions enforced on every request — no admin bypass. Bots are revocation-checked on each request against `bot_identities`. (#953, #957)
+- **Bot identity — extended schema** — `bot_identities` table gains `permissions`, `createdByUserId`, `createdByType` columns to support user-created bots with scoped permissions. (#954)
+- **Bot self-registration by tenant users** — Tenant users can register bots scoped to their own tenant without admin involvement. Bot permissions must be a strict subset of the registering user's own permissions. Per-user limit: 5 active bots. (#959)
+
+### Fixes
+- **Paddle checkout returns transactionId** — Checkout response now includes `transactionId` for Paddle.js overlay flow. (#958)
+- **Paddle CSP headers** — Added Paddle domains to Content-Security-Policy `connect-src` and `frame-src`. (#964)
+- **Paddle.js overlay** — Checkout now uses the Paddle.js overlay instead of redirect, keeping users on the billing page. (#956)
+
+---
+
+## v1.29.0 — 2026-03-09
+
+### Features
+- **`fyso_welcome` MCP onboarding tool** — New MCP tool that proposes entity structures based on business type. Called by the Claude Code plugin on first connect to guide new users through setup. (#942)
+- **Onboarding-first dashboard** — Dashboard now shows an MCP connection banner for new accounts that haven't connected an MCP client yet. (#941)
+- **Single-tenant shortcut** — Users with access to only one tenant skip the tenant selector and are taken directly to their workspace. (#939)
+- **Google login auto-provisioning** — First Google login now automatically creates an account and tenant, removing the need for a separate sign-up step. (#935)
+
+### Fixes
+- **Open registration** — Removed closed beta requirement; removed deprecated MCP tools. (#938)
+- **`add_field` tool validation** — MCP tool now validates `fieldKey` and `fieldType` before sending to the API. (#927)
+
+---
+
+## v1.28.1 — 2026-03-08
+
+### Fixes
+- **PgListener crash loop** — `postgres.js .listen()` does not accept a third callback; the spurious argument triggered `handleConnectionLost()` immediately on connect, causing an infinite reconnect loop that crashed the container. Fixed using the `onclose` connection option. (#911)
+- **Platform invitation links** — `window.location.origin` produced `fyso.dev` links when admin was on that domain. Now uses `VITE_APP_URL`, defaulting to `https://app.fyso.dev`. (#911)
+- **Invitation accept pages** — Relative `/api/...` fetch paths don't resolve on Cloudflare Pages. Changed to `getApiUrl()`. (#911)
+- **CSP blocking API calls** — Added `https://*.amazonlightsail.com`, `wss://*.amazonlightsail.com`, `wss://*.fyso.dev`, and `https://cloudflareinsights.com` to `connect-src`. (#911)
+- **WebSocket platform key auth** — Platform API keys (`fyso_pkey_*`) now work for WebSocket connections with full RBAC enforcement (field and row filtering on broadcast). (#911)
+
+---
+
+## v1.28.0 — 2026-03-07
+
+### Features
+- **Real-time records via WebSocket** — Live table updates in the browser. PostgreSQL `pg_notify` triggers fire on INSERT/UPDATE/DELETE for all entity tables. A PgListener service subscribes on a dedicated connection; a SubscriptionManager routes events to WebSocket clients with RBAC field/row filtering. The `useRealtimeRecords` React hook handles reconnection with exponential backoff and React Query cache invalidation. Admins can enable/disable real-time per entity from settings. WebSocket endpoint: `wss://api.fyso.dev/ws`. See [WebSocket reference](/api/websocket). (#891–#909)
+
+---
+
+## v1.27.0 — 2026-03-07
+
+### Features
+- **Paddle payment provider** — Alternative to Stripe, switchable via `PAYMENT_PROVIDER=paddle`. Full implementation with HMAC-SHA256 webhook verification at `POST /api/webhooks/paddle`. (#883, #884)
+
+### Refactoring
+- **MCP tools consolidated** — 48 individual MCP tools replaced by 8 grouped tools (`fyso_data`, `fyso_schema`, `fyso_rules`, `fyso_auth`, `fyso_views`, `fyso_knowledge`, `fyso_deploy`, `fyso_meta`). Backward-compatible handlers retained. (#867, #868)
+- **Channel/bot MCP tools removed** — Obsolete tools pruned; invitations grouped into `fyso_auth`. (#874)
+
+### Security
+- **API key TTL validation** — Reject NaN, Infinity, negative, and zero TTL values with 400 errors. (#889)
+- **HTTP security headers** — CSP, X-Frame-Options, HSTS for Cloudflare Pages. (#870)
+
+---
+
+## v1.26.0 — 2026-03-04
+
+### Breaking changes
+- **REST API response format simplified** — Record data is now flat: `response.data.items[n].campo` instead of `response.data.data[n].data.campo`. `PaginatedResult.data` renamed to `PaginatedResult.items`. System fields (`id`, `entityId`, `createdAt`, etc.) are always present at the top level. Reserved field names (`id`, `entityId`, `name`, `createdAt`, `updatedAt`, `createdBy`, `updatedBy`) are rejected when creating entity fields.
+
+### Fixes
+- **`get_rest_api_spec` base URL** — MCP tool now uses `new URL().origin` instead of string replace; all curl examples include `X-Tenant-ID`. (#862)
+
+---
+
+## v1.25.0 — 2026-03-03
+
+### Features
+- **`$currentUser.email` and `$currentUser.name` in filterDsl** — Row-level filter conditions can now reference the authenticated user's email and name. Audit fields `created_by` and `updated_by` are set on record create/update. (#856)
+- **`fyso_knowledge` search_docs action** — MCP agents can search Fyso platform documentation directly via the knowledge tool. (#859)
+
+### Fixes
+- **Record timestamps** — `created_at`/`updated_at` set explicitly on insert; no longer return null. (#855)
+- **View slug reuse** — Deleted view slugs can now be reused. (#857)
+- **Views routes error handling** — Routes wrapped in try-catch with DB connection safeguards. (#858)
+
+---
+
+## v1.24.0 — 2026-03-03
+
+### Security
+A hardening wave addressing 56 bugs found during an internal security review. Key fixes:
+
+- **SQL row filter** — `== null` now generates `IS NULL`; rejects trailing tokens, unknown characters (semicolons, backticks), and undefined `$currentTenant`. (#811, #814, #816, #818)
+- **RBAC** — Wildcard action `*` expands to all actions; multiple row filters from multiple roles are OR'd; `excludeFields` union follows correct union semantics. (#819, #821, #822)
+- **Authorization** — Unknown required access level fails closed. (#823)
+- **File storage** — Path traversal protection (rejects `..` and null bytes); cross-tenant access prevention. (#833, #834)
+- **Session** — Deactivated users blocked at `validateSession`. (#826)
+- **Audit logger** — Passwords, tokens, and secrets redacted from logs. (#836)
+- **Billing** — SQL injection guard on tenant schema interpolation. (#825)
+
+---
+
+## v1.23.0 — 2026-03-02
+
+### Security
+- **SQL injection** — Parameterized queries in `metadata.service.ts`. (#720)
+- **Secrets** — Removed hardcoded encryption key fallback. (#721)
+
+### Features
+- **Knowledge indexing observability** — Stats dashboard, reindex trigger, and worker status. (#679)
+
+---
+
+## v1.22.0 — 2026-03-01
+
+### Features
+- **Entity views UI** — Admin panel CRUD for views, plus a view records page with DynamicTable. (#740)
+- **Configurable title field** — Entities can define which field appears as the record display name, with smart fallback. (#749)
+
+### Fixes
+- **MCP URL** — Fixed hardcoded URL; now uses `mcp.fyso.dev/mcp`. (#747)
+- **MCP cleanup** — Removed dead public-keys MCP tools. (#746)
+
+---
+
 ## v1.21.0 — 2026-03-01
 
 ### Features
