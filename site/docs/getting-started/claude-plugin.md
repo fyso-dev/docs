@@ -10,33 +10,30 @@ The `@fyso/claude-plugin` package installs the full Fyso development experience 
 
 | Component | Description |
 |-----------|-------------|
-| Skills | 19 slash commands (`/fyso-plan`, `/fyso-build`, `/fyso-verify`, `/fyso-ui`, and more) |
-| Hooks | `PostToolUse` hook that auto-syncs `FYSO-REFERENCE.md` when reference files change |
+| Skills | 20 slash commands (`/fyso-plan`, `/fyso-build`, `/fyso-verify`, `/fyso-ui`, and more) |
+| Hooks | 5 hooks across 4 lifecycle events — destructive op guard, reference sync, state tracking, project context loading, and draft verification |
 | MCP server | Connects Claude Code to `https://app.fyso.dev/mcp` via OAuth |
 | Reference docs | `FYSO-REFERENCE.md` — consolidated API and DSL reference, always loaded |
 
 ## Installation
 
-```bash
-bunx @fyso/claude-plugin install
+### Claude Code Marketplace (recommended)
+
+Search for **fyso** in the Claude Code plugins marketplace, or install directly from the repository:
+
+```
+https://github.com/fyso-dev/claude-plugin
 ```
 
-That command:
-1. Symlinks each skill into `~/.claude/skills/`
-2. Merges the sync hook into `~/.claude/settings.json`
-3. Copies `FYSO-REFERENCE.md` into `~/.claude/`
+### Manual install from a clone
+
+```bash
+git clone https://github.com/fyso-dev/claude-plugin
+cd claude-plugin
+# Follow instructions in README.md
+```
 
 Restart Claude Code after install.
-
-### Alternative install methods
-
-```bash
-# From a local clone of the fyso repo
-bun packages/claude-plugin/bin/cli.ts install
-
-# Silent mode (runs automatically via postinstall)
-bunx @fyso/claude-plugin install --auto
-```
 
 ## Authentication
 
@@ -59,46 +56,29 @@ The `.mcp.json` the plugin registers looks like this:
 
 No environment variables are required.
 
-## CLI commands
+## Hooks
 
-```bash
-fyso-plugin install      # Install skills, hooks, and reference docs
-fyso-plugin uninstall    # Remove installed skills
-fyso-plugin status       # Show what is installed
-fyso-plugin sync         # Regenerate FYSO-REFERENCE.md from source files
-fyso-plugin help         # Show usage
-```
+The plugin installs 5 hooks across 4 Claude Code lifecycle events:
 
-All commands can also be run with `bunx @fyso/claude-plugin <command>`.
+### PreToolUse — Destructive operation guard
 
-## Verify the install
+Triggers before `delete_entity`, `delete_business_rule`, `purge_entity_data`, or `delete_record`. Before the operation runs, Claude is prompted to verify the entity has no records and no other entity holds a relation field pointing to it. If data or relations exist, Claude explains the impact and waits for explicit confirmation.
 
-```bash
-fyso-plugin status
-```
+### PostToolUse — Reference sync
 
-Expected output (green dots = installed):
+Triggers after any `Edit` or `Write` tool call that touches a reference `.md` file inside the skills directory. Automatically regenerates `FYSO-REFERENCE.md` so the reference stays current without manual intervention.
 
-```
-Skills:
-  ● /fyso-plan   (symlink)
-  ● /fyso-build  (symlink)
-  ...
+### PostToolUse — State tracking
 
-Hooks:
-  ● PostToolUse: sync-reference hook
+Triggers after MCP calls that modify tenant state: `generate_entity`, `publish_entity`, `create_business_rule`, `publish_business_rule`, `update_entity`, and `import_metadata`. If `.planning/STATE.md` exists in the project, Claude silently updates it to reflect the change.
 
-Reference:
-  ● FYSO-REFERENCE.md
-```
+### SessionStart — Project context loading
 
-## Uninstall
+At session start, Claude reads `.planning/PROJECT.md`, `.planning/STATE.md`, and `.planning/ROADMAP.md` if they exist — silently, without reporting them — to build accurate context about the current project and tenant state.
 
-```bash
-fyso-plugin uninstall
-```
+### Stop — Draft verification
 
-Removes all skill symlinks from `~/.claude/skills/`. The hook in `settings.json` and `FYSO-REFERENCE.md` are left in place — remove them manually if needed.
+Before a session ends, Claude checks whether any entities or rules are still in draft that should be published, and whether `STATE.md` reflects the real tenant state. If anything is unpublished or out of sync, Claude informs the user in 2–3 lines. If everything is in order, Claude says nothing.
 
 ## Plugin manifest fields
 
@@ -110,7 +90,7 @@ The `.claude-plugin/plugin.json` manifest declares:
 | `hooks` | `./hooks/hooks.json` |
 | `mcpServers` | `./.mcp.json` |
 
-The `agents` field is not used — agents are referenced by skills at runtime, not installed as separate components.
+The `agents` field was removed from `plugin.json`. The `agents/` directory (5 agent personas) still ships with the plugin and is referenced by skills at runtime.
 
 ## Troubleshooting
 
@@ -128,10 +108,4 @@ npx -y mcp-remote https://app.fyso.dev/mcp
 
 **`FYSO_API_KEY` errors**
 
-The plugin no longer uses `FYSO_API_KEY`. If you see this error, you may have an older version of the plugin. Re-install with `bunx @fyso/claude-plugin install`.
-
-**Reference out of date**
-
-```bash
-fyso-plugin sync
-```
+The plugin does not use `FYSO_API_KEY`. If you see this error, you may have an older version. Re-install from the marketplace or from a fresh clone.
