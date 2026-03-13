@@ -55,6 +55,76 @@ curl -H "X-API-Key: API_KEY" \
 | X-Tenant-ID | Yes | Tenant slug (e.g., `my-company-abc123`) |
 | Content-Type | Yes (POST/PUT) | `application/json` |
 
+### 3. Bot JWT
+
+Bots are service accounts that authenticate with a name and secret to receive a short-lived JWT. The JWT is then used on entity endpoints exactly like any other token.
+
+```bash
+# 1. Identify the bot to get a JWT
+curl -X POST https://api.fyso.dev/api/auth/bots/identify \
+  -H "Authorization: Bearer ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{ "name": "my-bot", "secret": "bot-secret" }'
+
+# Response includes: { "token": "eyJhbGci...", "expiresIn": 3600 }
+
+# 2. Use the JWT on entity endpoints
+curl -H "Authorization: Bearer BOT_JWT" \
+  "https://api.fyso.dev/api/entities/products/records"
+```
+
+Bots carry scoped permissions (`entities: { entityName: ["create", "read", "update", "delete"] }`) defined at registration. Requests that exceed declared permissions return `403`.
+
+See [Bot Identity](/docs/agents/bot-identity) for the full guide: registration, permissions, JWT refresh pattern, lockout behavior, and secret rotation.
+
+## Bot Endpoints
+
+All bot endpoints are under `/api/auth/bots` and require an admin JWT.
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/auth/bots/register` | Register a new bot with permissions |
+| `POST` | `/api/auth/bots/identify` | Authenticate — returns JWT |
+| `GET` | `/api/auth/bots` | List bots (scoped to authenticated admin) |
+| `POST` | `/api/auth/bots/:id/revoke` | Revoke a bot permanently |
+| `POST` | `/api/auth/bots/:id/reset-secret` | Rotate bot secret (admin only) |
+
+### Register — `POST /api/auth/bots/register`
+
+**Request body:**
+
+| Field | Type | Required | Notes |
+|-------|------|----------|-------|
+| `name` | string | Yes | 3-50 chars, lowercase, alphanumeric and hyphens. Unique per tenant. |
+| `tenantSlug` | string | Yes | Tenant the bot belongs to. |
+| `permissions` | object | No | `{ entities: { [entityName]: string[] } }`. No wildcards. |
+
+**Response (201):** `{ id, name, secret, tenantSlug }`. Secret shown once.
+
+### Identify — `POST /api/auth/bots/identify`
+
+**Request body:** `{ name, secret }`
+
+**Response (200):** `{ id, name, tenantSlug, tenantId, permissions, token, expiresIn }`. Token TTL: 3600 seconds.
+
+**Errors:** `401` (wrong secret, locked), `403` (revoked).
+
+### List — `GET /api/auth/bots`
+
+Returns all bots belonging to the authenticated admin. No `secret` field.
+
+### Revoke — `POST /api/auth/bots/:id/revoke`
+
+Permanent. Active JWTs issued before revocation remain valid until their TTL.
+
+**Response (200):** `{ revoked: true }`
+
+### Reset secret — `POST /api/auth/bots/:id/reset-secret`
+
+Old secret is invalidated immediately. Returns new secret (shown once).
+
+**Response (200):** `{ id, name, secret }`
+
 ## CRUD Endpoints
 
 ### List Records
