@@ -6,7 +6,9 @@ sidebar_position: 2
 
 Complete reference of all available MCP tools.
 
-The MCP server exposes **8 grouped tools** (each with an `action` enum parameter), plus individual tools for channels, bots, and invitations. Configure which tools are exposed with the `FYSO_TOOLS` environment variable. See [Tool Profiles](tool-profiles.md).
+The MCP server exposes **8 grouped tools** (each with an `action` enum parameter), plus `fyso_welcome` for onboarding. Configure which tools are exposed with the `FYSO_TOOLS` environment variable. See [Tool Profiles](tool-profiles.md).
+
+Channels, bots, flows, webhooks, and other features are available via the [REST API](/api/rest-api) but not as MCP tools.
 
 ## How grouped tools work
 
@@ -283,12 +285,26 @@ API spec, client generation, metadata import/export, secrets, and usage metrics.
 
 ---
 
+---
+
+## `fyso_welcome` — Onboarding
+
+An onboarding conversation tool. Given a `businessType`, it proposes a starter set of entities and fields suited to that business, and returns suggested next steps. Used by the Claude Code plugin on first connect.
+
+| Param | Type | Required | Description |
+|-------|------|----------|-------------|
+| `businessType` | string | Yes | Business category (e.g., `freelancer`, `clinic`, `ecommerce`, `saas`, `nonprofit`, `other`) |
+
+This tool does not accept an `action` parameter — it is a single-purpose tool, not a grouped router.
+
+---
+
 ## REST-only features
 
 The following features are available via the [REST API](/api/rest-api) but are not exposed as MCP tools:
 
 - **Channels** — `search_channels`, `get_channel_info`, `get_channel_tools`, `execute_channel_tool`, `publish_channel`, `update_channel`, `unpublish_channel`, `set_channel_permissions`, `define_channel_tool`, `update_channel_tool`, `remove_channel_tool`
-- **Bots** — `register_bot`, `identify_bot`, `list_bots`, `whoami_bot`, `revoke_bot`
+- **Bots** — `register_bot`, `identify_bot`, `list_bots`, `whoami_bot`, `revoke_bot` (see [Bot Identity](/agents/bot-identity))
 - **Flows** — `create_flow`, `list_flows`, `update_flow`, `delete_flow`, `toggle_flow`
 - **Webhooks** — `create_webhook`, `list_webhooks`, `delete_webhook`
 - **Documents** — `upload_document`, `list_documents`, `get_document`, `delete_document`
