@@ -4,7 +4,7 @@
  * Runs automatically before each build via the "prebuild" npm script.
  *
  * - Agents section first (AI agents land here)
- * - Then getting-started → entities → records → rules → api → admin → deploy → pdf → scheduling → billing → changelog
+ * - Then getting-started → entities → records → rules → api → admin → integrations → deploy → pdf → scheduling → billing → changelog
  * - Strips YAML frontmatter from each file
  */
 
@@ -20,6 +20,7 @@ const FILES = [
   // Agents first — primary audience for llms-full.txt
   'agents/overview.md',
   'agents/authentication.md',
+  'agents/bot-identity.md',
   'agents/mcp-quickstart.md',
   'agents/building-a-site.md',
   'agents/users-and-rbac.md',
@@ -60,7 +61,8 @@ const FILES = [
   'admin/apps.md',
   'admin/import-export.md',
   'admin/platform-invitations.md',
-  'admin/n8n-integration.md',
+  // Integrations
+  'integrations/n8n.md',
   // Deployment
   'deployment/static-sites.md',
   'deployment/github-actions.md',
