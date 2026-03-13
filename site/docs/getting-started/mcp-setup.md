@@ -6,7 +6,17 @@ sidebar_position: 3
 
 Connect an AI agent (Claude, Cursor, etc.) to your Fyso workspace using the MCP server.
 
-## Option 1: Claude Desktop (manual config)
+## Option 1: Claude Code plugin (recommended)
+
+The `@fyso/claude-plugin` package installs skills, hooks, and the MCP connection in one command:
+
+```bash
+bunx @fyso/claude-plugin install
+```
+
+Authentication uses OAuth — a browser window opens on first use, no API key needed. See [Claude Code Plugin](./claude-plugin.md) for full details.
+
+## Option 2: Claude Desktop (manual config)
 
 Add to `claude_desktop_config.json`:
 
@@ -26,7 +36,7 @@ Add to `claude_desktop_config.json`:
 }
 ```
 
-## Option 2: Smithery
+## Option 3: Smithery
 
 Install directly from Smithery.ai:
 
@@ -34,11 +44,13 @@ Install directly from Smithery.ai:
 npx @smithery/cli install @fyso/mcp-server --client claude
 ```
 
-## Option 3: Anthropic Connectors Directory
+## Option 4: Anthropic Connectors Directory
 
 Find Fyso in the Anthropic MCP Connectors Directory and install with one click.
 
-## Environment Variables
+## Environment Variables (manual config only)
+
+These apply when configuring the MCP server manually (Option 2). The Claude Code plugin handles authentication via OAuth and does not require these variables.
 
 | Variable | Required | Description |
 |----------|----------|-------------|
@@ -57,9 +69,9 @@ list_tenants()
 
 ## Compatible Clients
 
+- Claude Code (via `@fyso/claude-plugin`)
 - Claude Desktop
 - Cursor
-- Claude Code (CLI)
 - Codex
 - Gemini
 - Any MCP-compatible client
