@@ -25,9 +25,13 @@ Choose bots over API keys when you want explicit, least-privilege scoping per se
 
 ## Registration
 
-All bot management endpoints require an admin JWT obtained from `POST /api/auth/login`.
+Bot endpoints accept two caller types: an **admin JWT** (from `POST /api/auth/login`) or a **tenant user JWT** (from a user session). The only exception is `reset-secret`, which is admin-only.
 
-### Step 1 — Log in as admin
+### Admin registration
+
+Admins register bots for any tenant they own. The request must include `tenantSlug`.
+
+**Step 1 — Log in as admin**
 
 ```bash
 curl -X POST https://api.fyso.dev/api/auth/login \
@@ -41,7 +45,7 @@ curl -X POST https://api.fyso.dev/api/auth/login \
 # { "success": true, "data": { "token": "eyJhbGci...", "admin": { ... } } }
 ```
 
-### Step 2 — Register the bot
+**Step 2 — Register the bot**
 
 ```bash
 curl -X POST https://api.fyso.dev/api/auth/bots/register \
@@ -71,6 +75,45 @@ curl -X POST https://api.fyso.dev/api/auth/bots/register \
 ```
 
 The `secret` is shown exactly once. Store it in a secret manager or environment variable immediately.
+
+### User self-registration
+
+Tenant users can also register bots scoped to their own tenant. The `tenantSlug` field is not required — the tenant is resolved from the user's session. API key authentication (`fyso_ak_*`) is not accepted for this flow; a user JWT is required.
+
+Permissions requested for the bot must be a strict subset of the user's own permissions. A user cannot grant a bot more access than they themselves have.
+
+```bash
+curl -X POST https://api.fyso.dev/api/auth/bots/register \
+  -H "Authorization: Bearer USER_JWT" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "sync-agent",
+    "permissions": {
+      "entities": {
+        "contacts": ["read", "update"]
+      }
+    }
+  }'
+
+# Response (201):
+# {
+#   "success": true,
+#   "data": {
+#     "id":       "a1b2c3d4-...",
+#     "name":     "sync-agent",
+#     "secret":   "dK9mXqP3nR8vTw2zAe7yLs4cBhJfGu6i",
+#     "tenantId": "f8e7d6c5-..."
+#   }
+# }
+```
+
+**Errors specific to user registration:**
+
+| Status | Condition |
+|--------|-----------|
+| `403` | Requested permissions exceed the user's own scope, or wildcard entity requested |
+| `403` | API key used instead of user JWT |
+| `429` | Per-user bot limit reached (default: 5 active bots per user) |
 
 ---
 
@@ -118,11 +161,11 @@ Each entry maps an entity name (the slug used in API paths) to an array of allow
 
 ## Identify — getting a JWT
 
-Once registered, a bot identifies itself to receive a short-lived JWT:
+Once registered, a bot identifies itself to receive a short-lived JWT. The caller must be the admin or user who created the bot:
 
 ```bash
 curl -X POST https://api.fyso.dev/api/auth/bots/identify \
-  -H "Authorization: Bearer ADMIN_TOKEN" \
+  -H "Authorization: Bearer ADMIN_OR_USER_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "name":   "inventory-agent",
@@ -223,9 +266,11 @@ A successful identify resets the counter. If your bot is locked, wait for the lo
 
 ## Listing bots
 
+Admins see all bots in the tenant. Users see only bots they created.
+
 ```bash
 curl https://api.fyso.dev/api/auth/bots \
-  -H "Authorization: Bearer ADMIN_TOKEN"
+  -H "Authorization: Bearer ADMIN_OR_USER_TOKEN"
 
 # Response:
 # {
@@ -307,29 +352,19 @@ Only active bots can have their secret reset. Revoked bots return `404`.
 
 Register a new bot.
 
-**Auth:** Admin JWT required.
+**Auth:** Admin JWT or tenant user JWT. API keys are not accepted.
 
 **Request body:**
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `name` | string | Yes | Bot name. 3-50 chars, lowercase, alphanumeric and hyphens. Cannot start or end with a hyphen. Must be unique within the tenant. |
-| `tenantSlug` | string | Yes | Slug of the tenant this bot belongs to. |
-| `permissions` | object | No | Entity permissions map. See [Permissions](#permissions). |
+| `tenantSlug` | string | Admin only | Slug of the tenant this bot belongs to. Resolved from session for user callers. |
+| `permissions` | object | No | Entity permissions map. See [Permissions](#permissions). User callers: must not exceed the caller's own permissions. |
 
-**Response (201):**
+**Response (201) — admin caller:** `{ id, name, secret, tenantSlug }`. Secret shown once.
 
-```json
-{
-  "success": true,
-  "data": {
-    "id":         "uuid",
-    "name":       "inventory-agent",
-    "secret":     "plaintext-secret-shown-once",
-    "tenantSlug": "my-workspace"
-  }
-}
-```
+**Response (201) — user caller:** `{ id, name, secret, tenantId }`. Secret shown once.
 
 ---
 
@@ -337,7 +372,7 @@ Register a new bot.
 
 Authenticate a bot and receive a JWT.
 
-**Auth:** Admin JWT required.
+**Auth:** Admin JWT or tenant user JWT.
 
 **Request body:**
 
@@ -374,9 +409,12 @@ Authenticate a bot and receive a JWT.
 
 ### `GET /api/auth/bots`
 
-List bots visible to the authenticated admin.
+List bots.
 
-**Auth:** Admin JWT required.
+**Auth:** Admin JWT or tenant user JWT.
+
+- Admin: returns all bots in the tenant (including user-created bots).
+- User: returns only bots created by that user.
 
 **Response (200):** Array of bot objects (no `secret` field).
 
@@ -386,7 +424,10 @@ List bots visible to the authenticated admin.
 
 Revoke a bot permanently.
 
-**Auth:** Admin JWT required.
+**Auth:** Admin JWT or tenant user JWT.
+
+- Admin: can revoke any bot in the tenant.
+- User: can only revoke bots they created.
 
 **Response (200):**
 
