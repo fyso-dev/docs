@@ -34,6 +34,7 @@
 - [Quick Start](https://docs.fyso.dev/docs/getting-started/quick-start): 5-minute intro — tenant, entity, records, rules
 - [Key Concepts](https://docs.fyso.dev/docs/getting-started/concepts): Tenants, entities, fields, records, rules, RBAC, tool profiles
 - [Configure MCP](https://docs.fyso.dev/docs/getting-started/mcp-setup): Claude Desktop, Smithery, env vars, compatible clients
+- [Claude Plugin](https://docs.fyso.dev/docs/getting-started/claude-plugin): Install and configure the Fyso Claude Code plugin
 
 ## Entities
 

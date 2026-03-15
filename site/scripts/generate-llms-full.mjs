@@ -25,10 +25,12 @@ const FILES = [
   'agents/building-a-site.md',
   'agents/users-and-rbac.md',
   'agents/channel-tools.md',
+  'agents/embeddings.md',
   // Getting started
   'getting-started/quick-start.md',
   'getting-started/concepts.md',
   'getting-started/mcp-setup.md',
+  'getting-started/claude-plugin.md',
   // Entities
   'entities/create-entity.md',
   'entities/field-types.md',

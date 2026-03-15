@@ -50,7 +50,7 @@ CRUD operations on records and scheduling.
 | `offset` | number | query | Pagination offset |
 | `semantic` | string | query | Natural language semantic search |
 | `min_similarity` | number | query | Similarity threshold 0-1 for semantic search |
-| `resolve_depth` | number | query | Relation resolution depth 1-2 (default: 1, list endpoints only) |
+| `resolve_depth` | number | query | Relation resolution depth (default: 1, max: 3) |
 | `professional_id` | string | create_booking, get_slots | Professional UUID |
 | `patient_id` | string | create_booking | Patient/client UUID |
 | `date` | string | create_booking, get_slots | Date YYYY-MM-DD |

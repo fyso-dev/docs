@@ -149,7 +149,7 @@ curl -H "Authorization: Bearer JWT_TOKEN" \
 | `order` | string | `asc` | Direction: `asc` or `desc` |
 | `search` | string | - | Full-text search across text fields |
 | `resolve` | boolean | - | Expand relations to full objects |
-| `resolve_depth` | number | - | Relation resolution depth 1–2. Resolves nested relations in list endpoints. Example: `?resolve_depth=1` |
+| `resolve_depth` | number | - | Relation resolution depth (max 2 on list endpoints, max 3 on single record). Example: `?resolve_depth=1` |
 | `filters` | string | - | Filter expression. Example: `?filters=status = active`. Operators: `=`, `!=`, `>`, `<`, `>=`, `<=`, `contains`. Combine with `AND`: `?filters=status = active AND role = admin` |
 | `filter.{fieldKey}` | string | - | Legacy per-field filter (e.g., `filter.estado=activo`). Prefer `filters` for compound logic. |
 
