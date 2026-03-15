@@ -1,3 +1,202 @@
+## v1.33.2 — 2026-03-15
+
+### Seguridad
+- **Payload de debug de IA restringido** — `debug_payload` en las respuestas de IA ahora requiere que la configuracion `ai.debug` del tenant este habilitada. Deshabilitado por defecto en produccion.
+
+### Correcciones
+- **Filtros en REST API** — `?filters=campo = valor` ahora filtra correctamente los registros en endpoints de listado. Los filtros AND compuestos tambien funcionan.
+- **resolve_depth en REST API** — `?resolve_depth=1` resuelve correctamente las relaciones en endpoints de listado.
+- **Validacion de referencias en reglas de negocio** — Las referencias a campos en el DSL de reglas se validan contra el schema de la entidad al publicar, evitando fallos silenciosos.
+
+---
+
+## v1.33.1 — 2026-03-15
+
+### Funcionalidades
+- **Editor de agentes mejorado** — El editor de agentes ahora gestiona canales de forma 1:N, historial de prompts con rollback y multiples proveedores de IA por agente.
+- **Dashboard de costos de IA** — Nueva pagina de administracion que muestra el gasto de IA por proveedor, modelo y agente a lo largo del tiempo.
+- **CRUD de plantillas de prompts** — Crea, edita y elimina plantillas de prompts reutilizables desde el panel de administracion.
+- **Carga masiva de documentos** — Arrastra y suelta multiples archivos para cargarlos a la base de conocimiento en una sola operacion.
+- **Pagina de gestion de integraciones** — Nueva pagina de administracion para gestionar instancias de integraciones registradas (credenciales, estado, re-autenticacion).
+- **Editor visual de reglas de negocio** — Constructor de reglas con drag-and-drop que soporta acciones de llamada a IA.
+
+---
+
+## v1.33.0 — 2026-03-15
+
+### Cambios que rompen compatibilidad
+- **RBAC puro — roles legacy eliminados** — Los nombres de roles integrados fueron eliminados. Los roles ahora son plantillas completamente editables. Un rol por tenant puede marcarse como `is_owner`. Las asignaciones de roles existentes se migran automaticamente; las configuraciones de roles personalizados se conservan.
+
+### Funcionalidades
+- **Canales de agente 1:N** — Cada agente puede conectarse a multiples canales simultaneamente (web widget, Telegram, etc.).
+- **Rate limiting y presupuesto de IA** — Presupuestos de tokens y limites de frecuencia configurables por tenant y por agente, con alertas antes de superar el limite.
+- **Versionado de prompts con rollback** — Cada cambio en un prompt se guarda como version. Se puede revertir a cualquier version anterior desde el editor de agentes.
+- **Streaming SSE para canales** — Las respuestas de los agentes se transmiten token a token via Server-Sent Events. Telegram muestra indicadores de escritura.
+- **Multiples proveedores de IA por tenant** — Agrega varias configuraciones de proveedor (OpenAI, Anthropic o cualquier endpoint compatible con OpenAI). Se usa el primer proveedor activo; se pueden configurar cadenas de prioridad y fallback.
+- **Plantillas de prompts reutilizables** — Define plantillas de prompts compartidas entre agentes. Las plantillas soportan sustitucion de campos con sintaxis `{{campo}}`.
+- **Presets por industria** — Configuraciones iniciales con un clic para tipos de negocio comunes: taller, clinica, tienda.
+- **Dashboard de costos de IA** — Seguimiento de gasto en tiempo real por proveedor, modelo y agente.
+- **Integracion con Telegram** — Bot de Telegram como plugin de integracion de primera clase. Se configura desde la pagina de integraciones.
+- **Indexacion masiva de conocimiento** — Carga multiples documentos a la vez; la indexacion se ejecuta en paralelo con reporte de progreso.
+
+---
+
+## v1.32.0 — 2026-03-14
+
+### Funcionalidades
+- **SDK de integraciones** — Se pueden construir integraciones de terceros con `defineAction` / `validateManifest`. Las integraciones se registran con un almacen de credenciales, un registro de manifiestos y un ejecutor en tiempo de ejecucion.
+- **Integracion con Discord via webhook** — Integracion integrada para enviar mensajes a canales de Discord. Se configura una vez y se usa en reglas de negocio.
+- **Herramientas MCP para agentes** — Nuevo grupo de herramientas `fyso_agents`: `list`, `create`, `update`, `delete`, `run`, `test`, `list_runs`, `list_versions`, `rollback`, `list_templates`, `from_template`.
+- **Agent Runner** — Ejecuta agentes de forma programatica con seguimiento de sesion, historial de ejecucion y snapshots de version.
+- **Base de conocimiento en Agent Runner** — Los agentes usan automaticamente la base de conocimiento del tenant para recuperacion RAG durante las ejecuciones.
+- **Accion MCP `create_tenant`** — Provisiona nuevos tenants desde una sesion MCP (superadmin).
+- **Herramienta MCP `report_feedback`** — Envia feedback estructurado desde una sesion de agente.
+
+---
+
+## v1.31.0 — 2026-03-14
+
+### Funcionalidades
+- **Motor de IA** — Fyso ahora incluye un motor de IA integrado. Configura adaptadores de proveedores de IA (endpoints compatibles con OpenAI, Anthropic) desde el panel de administracion. Todas las llamadas de IA se registran con modelo, tokens, latencia y costo.
+- **Presupuesto y rate limiting de IA** — Configura presupuestos mensuales de tokens y limites de frecuencia por tenant. El estimador de presupuesto muestra el gasto proyectado antes de habilitar.
+- **Contexto de ejecucion (`$ctx`)** — Las reglas de negocio y las acciones de IA comparten un contexto de variables entre acciones (`$ctx`). Permite pasar datos entre pasos de regla sin almacenamiento externo.
+- **Motor de plantillas** — Sustitucion de campos en prompts y acciones de reglas usando la sintaxis `{{campo}}`.
+- **Tipo de accion `ai_call`** — Las reglas de negocio pueden invocar un modelo de IA como accion, con la respuesta disponible en `$ctx`.
+- **Tipo de accion `webhook_send`** — Las reglas de negocio pueden enviar webhooks HTTP como accion.
+- **Herramienta MCP `test_ai_call`** — Playground de prompts: prueba cualquier prompt contra cualquier proveedor configurado y ve el desglose completo de tokens y costos.
+- **Infraestructura de Agent Runner** — Tablas internas de sesiones, ejecuciones y llamadas de herramientas. Base para el Agent Runner de v1.32.
+- **Generador semantico de herramientas** — Los agentes generan automaticamente descripciones semanticas de las herramientas disponibles a partir de su definicion `tools_scope`.
+- **Panel de prueba de agentes** — Interfaz de chat en vivo para probar agentes en `/agents/:id/test`, con inspector de ejecucion (pestanas Resumen, Flujo, Pasos, Raw).
+- **Memoria de agentes** — Habilita `memory_enabled: true` en un agente para extraer y persistir hechos entre conversaciones. Los hechos se inyectan en el system prompt en las sesiones siguientes.
+- **Cumplimiento GDPR** — Aceptacion de DPA, consentimiento de IA por sesion, supresion de datos y log de auditoria de consentimiento. Endpoints: `POST /api/auth/tenants/:id/dpa-accept`, `POST /api/rgpd/sessions/:sessionId/consent`, `DELETE /api/rgpd/users/:externalRef/ai-data`.
+- **Widget web** — Integra un agente como burbuja de chat flotante con una sola etiqueta `<script>`. Titulo, color y posicion configurables.
+- **Editor visual de reglas** — Editor de reglas de negocio con drag-and-drop en `/agents/:slug/rules`, con chips de variables de plantilla.
+- **Visor de logs de IA** — `/agents/:slug/logs` muestra el historial de ejecuciones con barra de estadisticas, panel de filtros y dialogo de detalle por ejecucion.
+
+---
+
+## v1.30.0 — 2026-03-12
+
+### Funcionalidades
+- **Identidad de bot — JWT con permisos de entidad** — `POST /api/auth/bots/identify` ahora devuelve un JWT con permisos de entidad con alcance. El JWT es aceptado por los endpoints de registros de entidad (middleware `requireTenantContext`), con permisos aplicados en cada solicitud sin bypass de admin. Los bots se verifican contra `bot_identities` en cada solicitud. (#953, #957)
+- **Identidad de bot — schema extendido** — La tabla `bot_identities` incorpora columnas `permissions`, `createdByUserId`, `createdByType` para soportar bots creados por usuarios con permisos con alcance. (#954)
+- **Autoregistro de bots por usuarios del tenant** — Los usuarios del tenant pueden registrar bots con alcance a su propio tenant sin intervencion del admin. Los permisos del bot deben ser un subconjunto estricto de los permisos del usuario registrante. Limite por usuario: 5 bots activos. (#959)
+
+### Correcciones
+- **Paddle checkout devuelve transactionId** — La respuesta de checkout ahora incluye `transactionId` para el flujo de overlay de Paddle.js. (#958)
+- **CSP headers de Paddle** — Se agregaron los dominios de Paddle a `connect-src` y `frame-src` de Content-Security-Policy. (#964)
+- **Overlay de Paddle.js** — El checkout ahora usa el overlay de Paddle.js en lugar de redireccion, manteniendo a los usuarios en la pagina de facturacion. (#956)
+
+---
+
+## v1.29.0 — 2026-03-09
+
+### Funcionalidades
+- **Herramienta MCP `fyso_welcome`** — Nueva herramienta MCP que propone estructuras de entidades segun el tipo de negocio. El plugin de Claude Code la invoca en la primera conexion para guiar a nuevos usuarios durante la configuracion. (#942)
+- **Dashboard con onboarding prioritario** — El dashboard ahora muestra un banner de conexion MCP para las cuentas nuevas que aun no han conectado un cliente MCP. (#941)
+- **Acceso directo para tenant unico** — Los usuarios con acceso a un solo tenant omiten el selector de tenants y van directamente a su espacio de trabajo. (#939)
+- **Auto-provisionamiento en login con Google** — El primer login con Google ahora crea automaticamente una cuenta y un tenant, eliminando la necesidad de un paso separado de registro. (#935)
+
+### Correcciones
+- **Registro abierto** — Se elimino el requisito de beta cerrada; se eliminaron herramientas MCP obsoletas. (#938)
+- **Validacion de herramienta `add_field`** — La herramienta MCP ahora valida `fieldKey` y `fieldType` antes de enviar a la API. (#927)
+
+---
+
+## v1.28.1 — 2026-03-08
+
+### Correcciones
+- **Bucle de crash de PgListener** — `postgres.js .listen()` no acepta un tercer callback; el argumento incorrecto activaba `handleConnectionLost()` de inmediato, causando un bucle infinito de reconexion. Se corrigio usando la opcion de conexion `onclose`. (#911)
+- **Links de invitacion de plataforma** — `window.location.origin` generaba links con `fyso.dev` cuando el admin estaba en ese dominio. Ahora usa `VITE_APP_URL`, con valor por defecto `https://app.fyso.dev`. (#911)
+- **Paginas de aceptacion de invitacion** — Las rutas relativas `/api/...` no se resuelven en Cloudflare Pages. Se cambio a `getApiUrl()`. (#911)
+- **CSP bloqueando llamadas a API** — Se agregaron `https://*.amazonlightsail.com`, `wss://*.amazonlightsail.com`, `wss://*.fyso.dev` y `https://cloudflareinsights.com` a `connect-src`. (#911)
+- **Autenticacion de platform keys en WebSocket** — Las platform API keys (`fyso_pkey_*`) ahora funcionan en conexiones WebSocket con aplicacion completa de RBAC (filtrado de campos y filas en el broadcast). (#911)
+
+---
+
+## v1.28.0 — 2026-03-07
+
+### Funcionalidades
+- **Registros en tiempo real via WebSocket** — Actualizaciones en vivo en el navegador. Los triggers `pg_notify` de PostgreSQL se activan en INSERT/UPDATE/DELETE para todas las tablas de entidades. Un servicio PgListener se suscribe en una conexion dedicada; un SubscriptionManager enruta los eventos a los clientes WebSocket con filtrado de campos y filas por RBAC. El hook React `useRealtimeRecords` maneja la reconexion con backoff exponencial e invalidacion de cache de React Query. Los admins pueden habilitar o deshabilitar tiempo real por entidad. Endpoint WebSocket: `wss://api.fyso.dev/ws`. Ver [referencia WebSocket](/api/websocket). (#891–#909)
+
+---
+
+## v1.27.0 — 2026-03-07
+
+### Funcionalidades
+- **Proveedor de pagos Paddle** — Alternativa a Stripe, configurable via `PAYMENT_PROVIDER=paddle`. Implementacion completa con verificacion de webhooks HMAC-SHA256 en `POST /api/webhooks/paddle`. (#883, #884)
+
+### Refactorizacion
+- **Herramientas MCP consolidadas** — 48 herramientas MCP individuales reemplazadas por 8 herramientas agrupadas (`fyso_data`, `fyso_schema`, `fyso_rules`, `fyso_auth`, `fyso_views`, `fyso_knowledge`, `fyso_deploy`, `fyso_meta`). Se mantienen handlers backward-compatible. (#867, #868)
+- **Herramientas MCP de canal y bot eliminadas** — Se eliminaron herramientas obsoletas; las invitaciones se agruparon en `fyso_auth`. (#874)
+
+### Seguridad
+- **Validacion de TTL de API keys** — Se rechazan valores NaN, Infinity, negativos y cero con errores 400. (#889)
+- **Headers de seguridad HTTP** — CSP, X-Frame-Options, HSTS para Cloudflare Pages. (#870)
+
+---
+
+## v1.26.0 — 2026-03-04
+
+### Cambios que rompen compatibilidad
+- **Formato de respuesta REST API simplificado** — Los datos de registros ahora son planos: `response.data.items[n].campo` en lugar de `response.data.data[n].data.campo`. `PaginatedResult.data` se renombro a `PaginatedResult.items`. Los campos de sistema (`id`, `entityId`, `createdAt`, etc.) siempre estan presentes en el nivel superior. Los nombres de campos reservados (`id`, `entityId`, `name`, `createdAt`, `updatedAt`, `createdBy`, `updatedBy`) se rechazan al crear campos de entidad.
+
+### Correcciones
+- **URL base de `get_rest_api_spec`** — La herramienta MCP ahora usa `new URL().origin` en lugar de reemplazo de cadena; todos los ejemplos curl incluyen `X-Tenant-ID`. (#862)
+
+---
+
+## v1.25.0 — 2026-03-03
+
+### Funcionalidades
+- **`$currentUser.email` y `$currentUser.name` en filterDsl** — Las condiciones de filtro a nivel de fila pueden referenciar el email y el nombre del usuario autenticado. Los campos de auditoria `created_by` y `updated_by` se establecen al crear y actualizar registros. (#856)
+- **Accion `search_docs` en `fyso_knowledge`** — Los agentes MCP pueden buscar en la documentacion de la plataforma Fyso directamente via la herramienta de conocimiento. (#859)
+
+### Correcciones
+- **Timestamps de registros** — `created_at`/`updated_at` se establecen explicitamente en la insercion; ya no devuelven null. (#855)
+- **Reutilizacion de slugs de vistas** — Los slugs de vistas eliminadas ahora pueden reutilizarse. (#857)
+- **Manejo de errores en rutas de vistas** — Las rutas se envuelven en try-catch con salvaguardas de conexion a base de datos. (#858)
+
+---
+
+## v1.24.0 — 2026-03-03
+
+### Seguridad
+Una ola de endurecimiento que corrige 56 errores encontrados durante una revision de seguridad interna. Correcciones clave:
+
+- **Filtro de filas SQL** — `== null` ahora genera `IS NULL`; se rechazan tokens finales, caracteres desconocidos (puntos y coma, backticks) y `$currentTenant` indefinido. (#811, #814, #816, #818)
+- **RBAC** — La accion comodin `*` se expande a todas las acciones; multiples filtros de filas de multiples roles se combinan con OR; la union de `excludeFields` sigue la semantica de union correcta. (#819, #821, #822)
+- **Autorizacion** — Los niveles de acceso requeridos desconocidos fallan de forma cerrada. (#823)
+- **Almacenamiento de archivos** — Proteccion contra path traversal (rechaza `..` y bytes nulos); prevencion de acceso entre tenants. (#833, #834)
+- **Sesion** — Los usuarios desactivados son bloqueados en `validateSession`. (#826)
+- **Logger de auditoria** — Contrasenas, tokens y secretos son redactados de los logs. (#836)
+- **Facturacion** — Guardia contra inyeccion SQL en interpolacion de schemas de tenant. (#825)
+
+---
+
+## v1.23.0 — 2026-03-02
+
+### Seguridad
+- **Inyeccion SQL** — Se usan queries parametrizadas en `metadata.service.ts`. (#720)
+- **Secretos** — Se elimino el fallback de clave de cifrado hardcodeada. (#721)
+
+### Funcionalidades
+- **Observabilidad de indexacion de conocimiento** — Dashboard de estadisticas, disparador de reindexacion y estado del worker. (#679)
+
+---
+
+## v1.22.0 — 2026-03-01
+
+### Funcionalidades
+- **UI de vistas de entidades** — CRUD de vistas en el panel de administracion, mas una pagina de registros de vista con DynamicTable. (#740)
+- **Campo de titulo configurable** — Las entidades pueden definir que campo aparece como nombre de presentacion del registro, con fallback inteligente. (#749)
+
+### Correcciones
+- **URL del MCP** — Se corrigio la URL hardcodeada; ahora usa `mcp.fyso.dev/mcp`. (#747)
+- **Limpieza del MCP** — Se eliminaron herramientas MCP de public-keys obsoletas. (#746)
+
+---
+
 ## v1.21.0 — 2026-03-01
 
 ### Funcionalidades

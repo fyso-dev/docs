@@ -79,9 +79,9 @@ Each method has different permissions and use cases. See [Authentication](./auth
 3. Select a tenant and start building:
 
 ```
-select_tenant({ tenantSlug: "my-workspace" })
-list_entities()
-query_records({ entityName: "contacts", limit: 5 })
+fyso_auth({ action: "select_tenant", tenantSlug: "my-workspace" })
+fyso_schema({ action: "list" })
+fyso_data({ action: "query", entity: "contacts", limit: 5 })
 ```
 
 
@@ -255,7 +255,7 @@ See [Public Keys](/docs/admin/anonymous-keys) for full reference including role 
 
 ## Bot Identity
 
-For multi-agent systems and service accounts. Bots are registered per tenant, identified by name + secret. The secret is shown once at registration and can be reset.
+For multi-agent systems and service accounts. Bots are registered per tenant, authenticated by name + secret, and receive a short-lived JWT (1 hour TTL) scoped to the entity permissions defined at registration.
 
 All bot management endpoints require admin authentication.
 
@@ -267,53 +267,66 @@ curl -X POST https://api.fyso.dev/api/auth/bots/register \
   -H "Content-Type: application/json" \
   -d '{
     "name": "inventory-agent",
-    "tenantSlug": "my-workspace"
+    "tenantSlug": "my-workspace",
+    "permissions": {
+      "entities": {
+        "products":  ["read", "update"],
+        "inventory": ["create", "read", "update", "delete"]
+      }
+    }
   }'
 
 # Response (201):
 # {
 #   "success": true,
 #   "data": {
-#     "id": "uuid",
-#     "name": "inventory-agent",
-#     "secret": "a1b2c3...long-random-string",
-#     "tenantSlug": "my-workspace"
+#     "id":        "uuid",
+#     "name":      "inventory-agent",
+#     "secret":    "dK9mXqP3nR8vTw2z...",
+#     "tenantSlug":"my-workspace"
 #   }
 # }
 ```
 
 The `secret` is shown only once. Store it immediately.
 
-### Identify (authenticate) a bot
+### Identify — get a JWT
 
 ```bash
 curl -X POST https://api.fyso.dev/api/auth/bots/identify \
   -H "Authorization: Bearer ADMIN_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "inventory-agent",
-    "secret": "a1b2c3...long-random-string"
+    "name":   "inventory-agent",
+    "secret": "dK9mXqP3nR8vTw2z..."
   }'
 
 # Response (200):
 # {
 #   "success": true,
 #   "data": {
-#     "id": "uuid",
-#     "name": "inventory-agent",
-#     "tenantSlug": "my-workspace",
-#     "tenantId": "uuid"
+#     "id":          "uuid",
+#     "name":        "inventory-agent",
+#     "tenantSlug":  "my-workspace",
+#     "tenantId":    "uuid",
+#     "permissions": { "entities": { "products": ["read", "update"], ... } },
+#     "token":       "eyJhbGci...",
+#     "expiresIn":   3600
 #   }
 # }
 ```
 
-### Other bot endpoints
+Use the `token` in the `Authorization: Bearer` header for entity API calls. Re-identify when the token expires.
+
+### Bot endpoints
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/api/auth/bots` | GET | List all bots in the tenant |
-| `/api/auth/bots/:id/revoke` | POST | Revoke a bot (identify calls will fail) |
-| `/api/auth/bots/:id/reset-secret` | POST | Generate a new secret (old one stops working) |
+| `/api/auth/bots/register` | POST | Register a bot with permissions |
+| `/api/auth/bots/identify` | POST | Authenticate — returns JWT |
+| `/api/auth/bots` | GET | List bots (scoped to authenticated admin) |
+| `/api/auth/bots/:id/revoke` | POST | Revoke permanently |
+| `/api/auth/bots/:id/reset-secret` | POST | Rotate secret (admin only) |
 
 ### MCP tools
 
@@ -324,6 +337,8 @@ curl -X POST https://api.fyso.dev/api/auth/bots/identify \
 | `list_bots` | List bots in the tenant |
 | `whoami_bot` | Get current bot identity |
 | `revoke_bot` | Revoke a bot |
+
+See [Bot Identity](/docs/agents/bot-identity) for permissions structure, JWT refresh pattern, lockout behavior, and security considerations.
 
 ---
 
@@ -405,6 +420,468 @@ If you're using an API key (`fyso_ak_*`), the tenant is already bound to the key
 
 ---
 
+# Bot Identity
+
+Bots are service accounts that authenticate against the Entity API using a name and a long-lived secret. They receive short-lived JWTs (1 hour TTL by default) and carry scoped permissions defined at registration time.
+
+Use bots when you need a persistent, non-human identity — for example, a webhook handler, a scheduled sync job, or a secondary agent running inside a multi-agent pipeline.
+
+---
+
+## When to use bots vs other auth methods
+
+| Method | Best for | Permissions |
+|--------|----------|-------------|
+| API Key (`fyso_ak_*`) | MCP servers, admin scripts | Full tenant access |
+| Platform Key (`fyso_pkey_*`) | Public REST APIs | Role-based matrix, static |
+| Bot identity | Automated services, agents | Explicit entity-level, dynamic JWT |
+| Tenant user token | User-facing apps | Role-based |
+
+Choose bots over API keys when you want explicit, least-privilege scoping per service. Choose bots over Platform keys when the credential must be managed programmatically (register, rotate, revoke via API without touching the admin panel).
+
+---
+
+## Registration
+
+Bot endpoints accept two caller types: an **admin JWT** (from `POST /api/auth/login`) or a **tenant user JWT** (from a user session). The only exception is `reset-secret`, which is admin-only.
+
+### Admin registration
+
+Admins register bots for any tenant they own. The request must include `tenantSlug`.
+
+**Step 1 — Log in as admin**
+
+```bash
+curl -X POST https://api.fyso.dev/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "admin@example.com",
+    "password": "your-password"
+  }'
+
+# Response:
+# { "success": true, "data": { "token": "eyJhbGci...", "admin": { ... } } }
+```
+
+**Step 2 — Register the bot**
+
+```bash
+curl -X POST https://api.fyso.dev/api/auth/bots/register \
+  -H "Authorization: Bearer ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "inventory-agent",
+    "tenantSlug": "my-workspace",
+    "permissions": {
+      "entities": {
+        "products":  ["read", "update"],
+        "inventory": ["create", "read", "update", "delete"]
+      }
+    }
+  }'
+
+# Response (201):
+# {
+#   "success": true,
+#   "data": {
+#     "id":        "a1b2c3d4-...",
+#     "name":      "inventory-agent",
+#     "secret":    "dK9mXqP3nR8vTw2zAe7yLs4cBhJfGu6i",
+#     "tenantSlug":"my-workspace"
+#   }
+# }
+```
+
+The `secret` is shown exactly once. Store it in a secret manager or environment variable immediately.
+
+### User self-registration
+
+Tenant users can also register bots scoped to their own tenant. The `tenantSlug` field is not required — the tenant is resolved from the user's session. API key authentication (`fyso_ak_*`) is not accepted for this flow; a user JWT is required.
+
+Permissions requested for the bot must be a strict subset of the user's own permissions. A user cannot grant a bot more access than they themselves have.
+
+```bash
+curl -X POST https://api.fyso.dev/api/auth/bots/register \
+  -H "Authorization: Bearer USER_JWT" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "sync-agent",
+    "permissions": {
+      "entities": {
+        "contacts": ["read", "update"]
+      }
+    }
+  }'
+
+# Response (201):
+# {
+#   "success": true,
+#   "data": {
+#     "id":       "a1b2c3d4-...",
+#     "name":     "sync-agent",
+#     "secret":   "dK9mXqP3nR8vTw2zAe7yLs4cBhJfGu6i",
+#     "tenantId": "f8e7d6c5-..."
+#   }
+# }
+```
+
+**Errors specific to user registration:**
+
+| Status | Condition |
+|--------|-----------|
+| `403` | Requested permissions exceed the user's own scope, or wildcard entity requested |
+| `403` | API key used instead of user JWT |
+| `429` | Per-user bot limit reached (default: 5 active bots per user) |
+
+---
+
+## Permissions
+
+Permissions follow this structure:
+
+```json
+{
+  "entities": {
+    "<entity-name>": ["create", "read", "update", "delete"]
+  }
+}
+```
+
+Each entry maps an entity name (the slug used in API paths) to an array of allowed CRUD actions. You can include any subset of the four actions.
+
+**Constraints:**
+- All four actions (`create`, `read`, `update`, `delete`) are the only valid values. Any other string returns a `400`.
+- Wildcard entity names (e.g., `"*"`) are **not allowed** for bots. You must list each entity explicitly.
+- `permissions` is optional at registration. If omitted, the bot has no entity access until you reset and re-register with permissions.
+
+**Example — read-only bot:**
+
+```json
+{
+  "entities": {
+    "contacts": ["read"],
+    "deals":    ["read"]
+  }
+}
+```
+
+**Example — write-only ingestion bot:**
+
+```json
+{
+  "entities": {
+    "events": ["create"]
+  }
+}
+```
+
+---
+
+## Identify — getting a JWT
+
+Once registered, a bot identifies itself to receive a short-lived JWT. The caller must be the admin or user who created the bot:
+
+```bash
+curl -X POST https://api.fyso.dev/api/auth/bots/identify \
+  -H "Authorization: Bearer ADMIN_OR_USER_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name":   "inventory-agent",
+    "secret": "dK9mXqP3nR8vTw2zAe7yLs4cBhJfGu6i"
+  }'
+
+# Response (200):
+# {
+#   "success": true,
+#   "data": {
+#     "id":          "a1b2c3d4-...",
+#     "name":        "inventory-agent",
+#     "tenantSlug":  "my-workspace",
+#     "tenantId":    "f8e7d6c5-...",
+#     "permissions": { "entities": { "products": ["read", "update"], ... } },
+#     "token":       "eyJhbGci...",
+#     "expiresIn":   3600
+#   }
+# }
+```
+
+### Use the JWT on entity endpoints
+
+```bash
+curl https://api.fyso.dev/api/entities/products/records \
+  -H "Authorization: Bearer BOT_JWT"
+
+curl -X POST https://api.fyso.dev/api/entities/inventory/records \
+  -H "Authorization: Bearer BOT_JWT" \
+  -H "Content-Type: application/json" \
+  -d '{ "sku": "ABC-123", "quantity": 50 }'
+```
+
+Requests that exceed the bot's declared permissions receive `403 Forbidden`.
+
+---
+
+## JWT refresh pattern
+
+The JWT has a 1 hour TTL (`expiresIn: 3600`). Re-identify when the token expires. Pattern for long-running services:
+
+```typescript
+let botToken: string | null = null;
+let tokenExpiresAt: number = 0;
+
+async function getBotToken(): Promise<string> {
+  // Re-identify if token is missing or within 60s of expiry
+  if (!botToken || Date.now() / 1000 >= tokenExpiresAt - 60) {
+    const res = await fetch("https://api.fyso.dev/api/auth/bots/identify", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${process.env.ADMIN_TOKEN}`,
+      },
+      body: JSON.stringify({
+        name:   process.env.BOT_NAME,
+        secret: process.env.BOT_SECRET,
+      }),
+    });
+
+    const json = await res.json();
+    if (!json.success) throw new Error(`Bot identify failed: ${json.error}`);
+
+    botToken = json.data.token;
+    tokenExpiresAt = Math.floor(Date.now() / 1000) + json.data.expiresIn;
+  }
+
+  return botToken!;
+}
+
+// Usage:
+const token = await getBotToken();
+const response = await fetch("https://api.fyso.dev/api/entities/products/records", {
+  headers: { "Authorization": `Bearer ${token}` },
+});
+```
+
+The 60-second buffer avoids race conditions where the token expires mid-request.
+
+---
+
+## Lockout behavior
+
+Failed `identify` calls (wrong secret) are tracked per bot:
+
+| Failed attempts | Lockout duration |
+|-----------------|-----------------|
+| 1-4 | No lockout |
+| 5 | 1 minute |
+| 6 | 5 minutes |
+| 7 | 30 minutes |
+| 8 | 1 hour |
+| 9+ | 2 hours |
+
+A successful identify resets the counter. If your bot is locked, wait for the lockout to clear before retrying — additional failed attempts extend the lockout.
+
+---
+
+## Listing bots
+
+Admins see all bots in the tenant. Users see only bots they created.
+
+```bash
+curl https://api.fyso.dev/api/auth/bots \
+  -H "Authorization: Bearer ADMIN_OR_USER_TOKEN"
+
+# Response:
+# {
+#   "success": true,
+#   "data": [
+#     {
+#       "id":           "a1b2c3d4-...",
+#       "name":         "inventory-agent",
+#       "tenantSlug":   "my-workspace",
+#       "isActive":     true,
+#       "lastSeenAt":   "2026-03-11T10:30:00Z",
+#       "permissions":  { "entities": { ... } },
+#       "createdAt":    "2026-03-01T09:00:00Z"
+#     }
+#   ]
+# }
+```
+
+---
+
+## Revocation
+
+Revoking a bot immediately invalidates further `identify` calls. Active JWTs remain valid until their TTL expires (max 1 hour).
+
+```bash
+curl -X POST https://api.fyso.dev/api/auth/bots/BOT_ID/revoke \
+  -H "Authorization: Bearer ADMIN_TOKEN"
+
+# Response:
+# { "success": true, "data": { "revoked": true } }
+```
+
+Revocation is permanent. To re-enable, register a new bot.
+
+---
+
+## Secret rotation
+
+Reset a bot's secret when it is compromised or as part of regular key rotation. The old secret stops working immediately.
+
+```bash
+curl -X POST https://api.fyso.dev/api/auth/bots/BOT_ID/reset-secret \
+  -H "Authorization: Bearer ADMIN_TOKEN"
+
+# Response:
+# {
+#   "success": true,
+#   "data": {
+#     "id":     "a1b2c3d4-...",
+#     "name":   "inventory-agent",
+#     "secret": "newSecretValueShownOnce"
+#   }
+# }
+```
+
+Only active bots can have their secret reset. Revoked bots return `404`.
+
+`reset-secret` is admin-only. There is no user-level equivalent.
+
+---
+
+## Security considerations
+
+**Secrets:** Stored as bcrypt hashes server-side. The plaintext value is returned only once at registration or reset. There is no recovery path — if lost, reset the secret.
+
+**JWT scope:** Bot JWTs carry `"aud": "fyso-bot"` and `"scope": "bot"`. They are validated separately from user tokens and API keys. A bot JWT cannot be used to access admin endpoints.
+
+**Least privilege:** Register each bot with the minimum set of entities and actions it actually needs. A bot with `["read"]` on `contacts` cannot write to `contacts` or access `invoices`, even if the tenant has those entities.
+
+**No wildcards:** Unlike Platform API keys, bot permissions cannot use `"*"` to grant access to all entities. This is intentional — bots are meant to have narrow, explicit scopes.
+
+**Revoke before you delete:** If a bot's credentials are leaked, revoke immediately. Active JWTs cannot be invalidated before their TTL, but revocation stops new JWTs from being issued.
+
+---
+
+## API reference
+
+### `POST /api/auth/bots/register`
+
+Register a new bot.
+
+**Auth:** Admin JWT or tenant user JWT. API keys are not accepted.
+
+**Request body:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `name` | string | Yes | Bot name. 3-50 chars, lowercase, alphanumeric and hyphens. Cannot start or end with a hyphen. Must be unique within the tenant. |
+| `tenantSlug` | string | Admin only | Slug of the tenant this bot belongs to. Resolved from session for user callers. |
+| `permissions` | object | No | Entity permissions map. See [Permissions](#permissions). User callers: must not exceed the caller's own permissions. |
+
+**Response (201) — admin caller:** `{ id, name, secret, tenantSlug }`. Secret shown once.
+
+**Response (201) — user caller:** `{ id, name, secret, tenantId }`. Secret shown once.
+
+---
+
+### `POST /api/auth/bots/identify`
+
+Authenticate a bot and receive a JWT.
+
+**Auth:** Admin JWT or tenant user JWT.
+
+**Request body:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `name` | string | Yes | Bot name. |
+| `secret` | string | Yes | Bot secret. |
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "id":          "uuid",
+    "name":        "inventory-agent",
+    "tenantSlug":  "my-workspace",
+    "tenantId":    "uuid",
+    "permissions": { "entities": { "products": ["read", "update"] } },
+    "token":       "eyJhbGci...",
+    "expiresIn":   3600
+  }
+}
+```
+
+**Error responses:**
+
+| Status | Condition |
+|--------|-----------|
+| `401` | Bot not found, wrong secret, or lockout active |
+| `403` | Bot has been revoked |
+
+---
+
+### `GET /api/auth/bots`
+
+List bots.
+
+**Auth:** Admin JWT or tenant user JWT.
+
+- Admin: returns all bots in the tenant (including user-created bots).
+- User: returns only bots created by that user.
+
+**Response (200):** Array of bot objects (no `secret` field).
+
+---
+
+### `POST /api/auth/bots/:id/revoke`
+
+Revoke a bot permanently.
+
+**Auth:** Admin JWT or tenant user JWT.
+
+- Admin: can revoke any bot in the tenant.
+- User: can only revoke bots they created.
+
+**Response (200):**
+
+```json
+{ "success": true, "data": { "revoked": true } }
+```
+
+Returns `404` if the bot does not exist or belongs to a different admin.
+
+---
+
+### `POST /api/auth/bots/:id/reset-secret`
+
+Generate a new secret for an active bot.
+
+**Auth:** Admin JWT required. Admin-only — no user-level equivalent.
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "id":     "uuid",
+    "name":   "inventory-agent",
+    "secret": "new-plaintext-secret-shown-once"
+  }
+}
+```
+
+Returns `404` if the bot is revoked or not found.
+
+
+
+---
+
 # MCP Quickstart
 
 A step-by-step walkthrough of the core Fyso MCP workflow. Every tool call here is real -- you can copy-paste these into your MCP client and they will work.
@@ -438,7 +915,7 @@ Every operation in Fyso happens inside a tenant. Start by listing your tenants, 
 **List tenants:**
 
 ```
-list_tenants()
+fyso_auth({ action: "list_tenants" })
 ```
 
 Response:
@@ -456,7 +933,7 @@ Response:
 **Select a tenant:**
 
 ```
-select_tenant({ tenantSlug: "my-app" })
+fyso_auth({ action: "select_tenant", tenantSlug: "my-app" })
 ```
 
 Response:
@@ -473,18 +950,21 @@ From this point on, all operations target `my-app`.
 
 ## 3. Create an Entity
 
-Entities are your data tables. Use `generate_entity` to create one from a JSON definition.
+Entities are your data tables. Use `fyso_schema` with the `generate` action to create one from a JSON definition.
 
 ```
-generate_entity({
-  name: "tasks",
-  fields: [
-    { "name": "title", "type": "text", "required": true },
-    { "name": "description", "type": "long_text" },
-    { "name": "status", "type": "select", "options": ["open", "in_progress", "done"] },
-    { "name": "priority", "type": "select", "options": ["low", "medium", "high", "critical"] },
-    { "name": "assignee", "type": "text" }
-  ]
+fyso_schema({
+  action: "generate",
+  definition: {
+    entity: { name: "tasks" },
+    fields: [
+      { "name": "title", "fieldKey": "title", "fieldType": "text" },
+      { "name": "description", "fieldKey": "description", "fieldType": "textarea" },
+      { "name": "status", "fieldKey": "status", "fieldType": "select", "config": { "options": ["open", "in_progress", "done"] } },
+      { "name": "priority", "fieldKey": "priority", "fieldType": "select", "config": { "options": ["low", "medium", "high", "critical"] } },
+      { "name": "assignee", "fieldKey": "assignee", "fieldType": "text" }
+    ]
+  }
 })
 ```
 
@@ -500,7 +980,7 @@ Response:
     "slug": "tasks",
     "fields": [
       { "key": "title", "type": "text", "required": true },
-      { "key": "description", "type": "long_text", "required": false },
+      { "key": "description", "type": "textarea", "required": false },
       { "key": "status", "type": "select", "options": ["open", "in_progress", "done"] },
       { "key": "priority", "type": "select", "options": ["low", "medium", "high", "critical"] },
       { "key": "assignee", "type": "text", "required": false }
@@ -512,19 +992,21 @@ Response:
 The entity is created as a draft. To make it live:
 
 ```
-publish_entity({
+fyso_schema({
+  action: "publish",
   entityName: "tasks",
-  message: "Initial version"
+  version_message: "Initial version"
 })
 ```
 
 ## 4. Create Records
 
-Add data to your entity with `create_record`.
+Add data to your entity with `fyso_data`.
 
 ```
-create_record({
-  entityName: "tasks",
+fyso_data({
+  action: "create",
+  entity: "tasks",
   data: {
     "title": "Fix login bug",
     "description": "Users get 500 error on login with special characters in password",
@@ -560,8 +1042,9 @@ Response:
 Create a few more:
 
 ```
-create_record({
-  entityName: "tasks",
+fyso_data({
+  action: "create",
+  entity: "tasks",
   data: {
     "title": "Add dark mode",
     "description": "Support system-level dark mode preference",
@@ -571,8 +1054,9 @@ create_record({
   }
 })
 
-create_record({
-  entityName: "tasks",
+fyso_data({
+  action: "create",
+  entity: "tasks",
   data: {
     "title": "Update dependencies",
     "description": "Run npm audit fix and update major versions",
@@ -585,23 +1069,25 @@ create_record({
 
 ## 5. Query Records
 
-`query_records` supports filters, pagination, sorting, and semantic search.
+`fyso_data` with the `query` action supports filters, pagination, sorting, and semantic search.
 
 ### Simple filter
 
 ```
-query_records({
-  entityName: "tasks",
-  filter: "status = open"
+fyso_data({
+  action: "query",
+  entity: "tasks",
+  filters: "status = open"
 })
 ```
 
 ### Compound filter
 
 ```
-query_records({
-  entityName: "tasks",
-  filter: "status = open AND priority = high"
+fyso_data({
+  action: "query",
+  entity: "tasks",
+  filters: "status = open AND priority = high"
 })
 ```
 
@@ -622,8 +1108,9 @@ String values don't need quotes, but you can use them: `assignee = "alice@team.c
 ### Pagination
 
 ```
-query_records({
-  entityName: "tasks",
+fyso_data({
+  action: "query",
+  entity: "tasks",
   limit: 10,
   offset: 0
 })
@@ -632,10 +1119,11 @@ query_records({
 ### Sorting
 
 ```
-query_records({
-  entityName: "tasks",
-  orderBy: "priority",
-  orderDir: "desc"
+fyso_data({
+  action: "query",
+  entity: "tasks",
+  sort: "priority",
+  order_dir: "desc"
 })
 ```
 
@@ -644,10 +1132,11 @@ query_records({
 Find records by meaning, not exact text match:
 
 ```
-query_records({
-  entityName: "tasks",
+fyso_data({
+  action: "query",
+  entity: "tasks",
   semantic: "authentication issues",
-  minSimilarity: 0.6,
+  min_similarity: 0.6,
   limit: 5
 })
 ```
@@ -656,13 +1145,14 @@ This would match "Fix login bug" even though the query doesn't contain the word 
 
 ### Combining filters
 
-You can combine `filter` with `semantic` -- the filter is applied as a post-filter on semantic results:
+You can combine `filters` with `semantic` -- the filter is applied as a post-filter on semantic results:
 
 ```
-query_records({
-  entityName: "tasks",
+fyso_data({
+  action: "query",
+  entity: "tasks",
   semantic: "UI improvements",
-  filter: "status = open",
+  filters: "status = open",
   limit: 10
 })
 ```
@@ -692,12 +1182,13 @@ query_records({
 
 ## 6. Add a Business Rule
 
-Business rules run automatically when records are created, updated, or queried. Use `generate_business_rule` with a natural language prompt.
+Business rules run automatically when records are created, updated, or queried. Use `fyso_rules` with the `generate` action and a natural language prompt.
 
 ```
-generate_business_rule({
+fyso_rules({
+  action: "generate",
   entityName: "tasks",
-  prompt: "When a task is created, if no priority is set, default it to 'medium'"
+  description: "When a task is created, if no priority is set, default it to 'medium'"
 })
 ```
 
@@ -729,7 +1220,9 @@ Response:
 The rule is created as a draft. Publish it to make it active:
 
 ```
-publish_business_rule({
+fyso_rules({
+  action: "publish",
+  entityName: "tasks",
   ruleId: "rule-uuid"
 })
 ```
@@ -737,7 +1230,9 @@ publish_business_rule({
 Only published rules execute. You can test before publishing:
 
 ```
-test_business_rule({
+fyso_rules({
+  action: "test",
+  entityName: "tasks",
   ruleId: "rule-uuid",
   testData: {
     "title": "New task without priority",
@@ -751,7 +1246,8 @@ test_business_rule({
 Create tenant users with specific roles and per-entity permissions.
 
 ```
-create_user({
+fyso_auth({
+  action: "create_user",
   tenantSlug: "my-app",
   email: "dev@team.com",
   password: "securepass123",
@@ -809,7 +1305,8 @@ Permissions are `create`, `read`, `update`, `delete` per entity:
 Deploy any static site (Astro, Vite, Next.js export, plain HTML) to a Fyso subdomain.
 
 ```
-deploy_static_site({
+fyso_deploy({
+  action: "deploy",
   subdomain: "my-app",
   path: "/path/to/dist"
 })
@@ -835,13 +1332,13 @@ If the MCP server can't access your filesystem directly, it returns a `curl` com
 ### List deployed sites
 
 ```
-list_static_sites()
+fyso_deploy({ action: "list" })
 ```
 
 ### Generate a deploy token for CI/CD
 
 ```
-generate_deploy_token({ subdomain: "my-app" })
+fyso_deploy({ action: "generate_token", subdomain: "my-app" })
 ```
 
 Returns a one-time token (expires in 5 minutes) for use in GitHub Actions or other CI pipelines. See [GitHub Actions Deployment](/deployment/github-actions) for a full workflow.
@@ -2582,7 +3079,17 @@ Configure with `FYSO_TOOLS` env var. See [Tool Profiles](../api/tool-profiles.md
 
 Connect an AI agent (Claude, Cursor, etc.) to your Fyso workspace using the MCP server.
 
-## Option 1: Claude Desktop (manual config)
+## Option 1: Claude Code plugin (recommended)
+
+The `@fyso/claude-plugin` package installs skills, hooks, and the MCP connection in one command:
+
+```bash
+bunx @fyso/claude-plugin install
+```
+
+Authentication uses OAuth — a browser window opens on first use, no API key needed. See [Claude Code Plugin](./claude-plugin.md) for full details.
+
+## Option 2: Claude Desktop (manual config)
 
 Add to `claude_desktop_config.json`:
 
@@ -2602,7 +3109,7 @@ Add to `claude_desktop_config.json`:
 }
 ```
 
-## Option 2: Smithery
+## Option 3: Smithery
 
 Install directly from Smithery.ai:
 
@@ -2610,11 +3117,13 @@ Install directly from Smithery.ai:
 npx @smithery/cli install @fyso/mcp-server --client claude
 ```
 
-## Option 3: Anthropic Connectors Directory
+## Option 4: Anthropic Connectors Directory
 
 Find Fyso in the Anthropic MCP Connectors Directory and install with one click.
 
-## Environment Variables
+## Environment Variables (manual config only)
+
+These apply when configuring the MCP server manually (Option 2). The Claude Code plugin handles authentication via OAuth and does not require these variables.
 
 | Variable | Required | Description |
 |----------|----------|-------------|
@@ -2633,9 +3142,9 @@ list_tenants()
 
 ## Compatible Clients
 
+- Claude Code (via `@fyso/claude-plugin`)
 - Claude Desktop
 - Cursor
-- Claude Code (CLI)
 - Codex
 - Gemini
 - Any MCP-compatible client
@@ -4548,271 +5057,381 @@ The result shows the calculated values without saving anything to the database.
 
 # MCP Tools Reference
 
-Complete reference of all available MCP tools, grouped by category.
+Complete reference of all available MCP tools.
 
-Configure which tools are exposed with the `FYSO_TOOLS` environment variable. See [Tool Profiles](tool-profiles.md).
+The MCP server exposes **10 grouped tools** (each with an `action` enum parameter), plus `fyso_welcome` for onboarding. Configure which tools are exposed with the `FYSO_TOOLS` environment variable. See [Tool Profiles](tool-profiles.md).
 
----
+Channels, bots, flows, webhooks, and other features are available via the [REST API](/api/rest-api) but not as MCP tools.
 
-## Tenant
+## How grouped tools work
 
-| Tool | Profile | Description |
-|------|---------|-------------|
-| `list_tenants` | core | Listar tenants accesibles |
-| `select_tenant` | core | Seleccionar tenant activo para operaciones posteriores |
+Each grouped tool accepts an `action` parameter that selects the operation. Additional parameters depend on the action chosen. Example:
 
----
-
-## Entities
-
-| Tool | Profile | Description |
-|------|---------|-------------|
-| `generate_entity` | core | Crear entidad con campos a partir de definicion JSON |
-| `list_entities` | core | Listar entidades (opcionalmente incluir borradores) |
-| `get_entity_schema` | core | Obtener definicion completa de la entidad y lista de campos |
-| `publish_entity` | core | Publicar version de entidad con mensaje |
-| `discard_entity_draft` | core | Descartar borrador de entidad. Si nunca fue publicada, se elimina. Si es un re-draft, revierte al ultimo snapshot publicado |
-| `add_field` | core | Agregar campo a una entidad publicada. Maneja el ciclo completo: crea borrador, agrega el campo y re-publica automaticamente |
-| `delete_entity` | advanced | Eliminar entidad y todos sus registros (irreversible) |
-| `list_entity_changes` | advanced | Ver historial de versiones |
-| `manage_custom_fields` | advanced | Agregar, actualizar o eliminar campos personalizados |
+```
+fyso_data({ action: "create", entity: "tasks", data: { title: "Fix bug" } })
+fyso_data({ action: "query", entity: "tasks", filters: "status = open" })
+fyso_auth({ action: "list_tenants" })
+```
 
 ---
 
-## Records
+## `fyso_data` — Records and bookings
 
-| Tool | Profile | Description |
-|------|---------|-------------|
-| `query_records` | core | Consultar registros con filtros, paginacion, ordenamiento y busqueda semantica |
-| `create_record` | core | Crear un nuevo registro |
-| `update_record` | core | Actualizar parcialmente un registro |
-| `delete_record` | core | Eliminar un registro |
+CRUD operations on records and scheduling.
 
----
+| Action | Description | Required params |
+|--------|-------------|-----------------|
+| `create` | Create a new record | `entity`, `data` |
+| `query` | Search/filter records | `entity` |
+| `update` | Modify a record | `entity`, `id`, `data` |
+| `delete` | Remove a record | `entity`, `id` |
+| `create_booking` | Book a scheduling slot | `professional_id`, `date`, `time` |
+| `get_slots` | Available scheduling slots | `professional_id`, `date` |
 
-## Views
+### Parameters
 
-| Tool | Profile | Description |
-|------|---------|-------------|
-| `create_view` | core | Crear una vista filtrada de entidad con permisos RBAC independientes |
-| `list_views` | core | Listar todas las vistas de entidades en el tenant actual |
-| `update_view` | core | Actualizar nombre, descripcion, filtro o estado activo de una vista |
-| `delete_view` | core | Eliminar una vista de entidad |
-
----
-
-## Business Rules
-
-| Tool | Profile | Description |
-|------|---------|-------------|
-| `generate_business_rule` | core | Generar y crear una regla a partir de lenguaje natural o DSL JSON |
-| `list_business_rules` | core | Listar reglas de una entidad |
-| `publish_business_rule` | core | Publicar regla (solo las reglas publicadas se ejecutan) |
-| `create_business_rule` | advanced | Crear regla a partir de definicion DSL explicita |
-| `get_business_rule` | advanced | Obtener definicion completa de una regla |
-| `test_business_rule` | advanced | Probar regla con datos de ejemplo sin guardar |
-| `delete_business_rule` | advanced | Eliminar una regla |
-| `get_rule_logs` | advanced | Ver logs de ejecucion de una regla |
-
----
-
-## RBAC (Roles y Permisos)
-
-| Tool | Profile | Description |
-|------|---------|-------------|
-| `list_roles` | core | Listar roles definidos en el tenant |
-| `create_role` | core | Crear un nuevo rol con permisos |
-| `assign_role` | core | Asignar un rol a un usuario |
-| `revoke_role` | core | Revocar un rol de un usuario |
+| Param | Type | Used by | Description |
+|-------|------|---------|-------------|
+| `action` | string (enum) | all | Operation to perform |
+| `entity` | string | create, query, update, delete | Entity name |
+| `data` | object | create, update | Record data |
+| `id` | string | update, delete | Record ID |
+| `filters` | string | query | Filter expression. Operators: `=`, `!=`, `>`, `<`, `>=`, `<=`, `contains`. Combine with `AND`/`OR`. Example: `status = active AND date >= 2026-01-01` |
+| `sort` | string | query | Field to sort by |
+| `order_dir` | `asc` \| `desc` | query | Sort direction |
+| `limit` | number | query | Max records (default: 50, max: 200) |
+| `offset` | number | query | Pagination offset |
+| `semantic` | string | query | Natural language semantic search |
+| `min_similarity` | number | query | Similarity threshold 0-1 for semantic search |
+| `resolve_depth` | number | query | Relation resolution depth 1-3 (default: 1) |
+| `professional_id` | string | create_booking, get_slots | Professional UUID |
+| `patient_id` | string | create_booking | Patient/client UUID |
+| `date` | string | create_booking, get_slots | Date YYYY-MM-DD |
+| `time` | string | create_booking | Time HH:MM |
+| `duration` | number | create_booking | Duration in minutes |
+| `notes` | string | create_booking | Booking notes |
+| `from` | string | get_slots | Range start YYYY-MM-DD |
+| `to` | string | get_slots | Range end YYYY-MM-DD |
 
 ---
 
-## Users
+## `fyso_schema` — Entities and fields
 
-| Tool | Profile | Description |
-|------|---------|-------------|
-| `create_user` | core | Crear usuario de tenant con rol y permisos |
-| `list_users` | core | Listar usuarios en el tenant |
-| `update_user_password` | core | Restablecer contrasena de cualquier usuario (operacion admin, no requiere contrasena actual) |
-| `tenant_login` | advanced | Autenticarse como usuario de tenant, retorna JWT |
+Manage entities, fields, and schema versioning.
 
----
+| Action | Description | Required params |
+|--------|-------------|-----------------|
+| `list` | List entities | — |
+| `get` | Get entity schema | `entityName` |
+| `add_field` | Add field to published entity | `entityName`, `field` or inline params |
+| `manage_fields` | CRUD custom fields | `entityName` |
+| `generate` | Create entity from definition | `definition` |
+| `publish` | Publish entity draft | `entityName` |
+| `discard` | Discard entity draft | `entityName` |
+| `delete` | Delete entity (irreversible) | `entityName`, `confirm: true` |
+| `list_changes` | Pending schema changes | — |
 
-## Files
+### Parameters
 
-| Tool | Profile | Description |
-|------|---------|-------------|
-| `upload_file` | core | Subir un archivo, retorna metadatos del archivo almacenado |
-
----
-
-## PDF
-
-| Tool | Profile | Description |
-|------|---------|-------------|
-| `generate_pdf` | core | Generar PDF a partir de plantilla y datos de registro |
-| `create_pdf_template` | core | Crear una plantilla PDF |
-
----
-
-## Static Sites
-
-| Tool | Profile | Description |
-|------|---------|-------------|
-| `deploy_static_site` | core | Desplegar sitio estatico en `*-sites.fyso.dev` |
-| `list_static_sites` | core | Listar sitios desplegados |
-| `delete_static_site` | advanced | Eliminar un sitio |
-| `generate_deploy_token` | advanced | Generar token de deploy persistente y reutilizable para CI/CD, con workflow de GitHub Actions listo para usar |
-| `set_custom_domain` | advanced | Agregar, verificar, consultar o eliminar un dominio personalizado para un sitio (Pro) |
+| Param | Type | Used by | Description |
+|-------|------|---------|-------------|
+| `action` | string (enum) | all | Operation to perform |
+| `entityName` | string | get, add_field, manage_fields, publish, discard, delete | Entity name |
+| `include_drafts` | boolean | list | Include draft entities |
+| `include_published` | boolean | list_changes | Include published with no pending changes |
+| `version` | string | get | Version to retrieve: number, `draft`, or `published` |
+| `field` | object | add_field, manage_fields | Field definition: `{ name, fieldKey, fieldType, isRequired?, isUnique?, description?, config? }` |
+| `field_action` | `list` \| `add` \| `update` \| `delete` | manage_fields | Sub-action for custom fields |
+| `field_type` | `custom` \| `system` \| `all` | manage_fields | Field filter for listing |
+| `fieldId` | string | manage_fields | Field ID for update/delete |
+| `definition` | object | generate | Entity definition: `{ entity: { name, displayName?, description? }, fields: [{ name, fieldKey, fieldType, ... }] }` |
+| `auto_publish` | boolean | generate | Auto-publish after generate (requires `version_message`) |
+| `version_message` | string | publish, generate | Version message |
+| `confirm` | boolean | delete | Must be `true` to confirm deletion |
+| `fieldType` | string | add_field | Field type: `text`, `textarea`, `number`, `email`, `phone`, `date`, `boolean`, `select`, `relation`, `file`, `location` |
 
 ---
 
-## API
+## `fyso_rules` — Business rules
 
-| Tool | Profile | Description |
-|------|---------|-------------|
-| `get_rest_api_spec` | core | Obtener spec OpenAPI para las entidades del tenant |
-| `generate_api_client` | core | Generar codigo de cliente API en un lenguaje dado |
+Create, test, publish, and manage business rules.
 
----
+**Required:** `action` and `entityName` for all actions.
 
-## Metadata
+| Action | Description | Additional required params |
+|--------|-------------|---------------------------|
+| `create` | Create rule from DSL | `name`, `triggerType`, `rule` |
+| `get` | Rule details | `ruleId` |
+| `list` | List rules | — |
+| `generate` | Generate from prompt/DSL | `description` or `rule` |
+| `publish` | Activate draft rule | `ruleId` |
+| `delete` | Delete rule | `ruleId` |
+| `test` | Dry-run with test data | `ruleId`, `testData` |
+| `logs` | Execution history | `ruleId` |
 
-| Tool | Profile | Description |
-|------|---------|-------------|
-| `export_metadata` | core | Exportar estructura del tenant (entidades, campos, reglas) como JSON |
-| `import_metadata` | core | Importar JSON de metadata en el tenant |
+### Parameters
 
----
-
-## Apps
-
-| Tool | Profile | Description |
-|------|---------|-------------|
-| `publish_app` | core | Publicar tenant como app instalable |
-| `unpublish_app` | core | Despublicar app |
-| `update_app` | core | Actualizar nombre, descripcion o refrescar metadata de la app |
-
----
-
-## Scheduling
-
-| Tool | Profile | Description |
-|------|---------|-------------|
-| `get_available_slots` | core | Obtener horarios disponibles para un profesional |
-| `create_booking` | core | Crear una reserva en un horario disponible |
-
----
-
-## Secrets
-
-| Tool | Profile | Description |
-|------|---------|-------------|
-| `set_secret` | advanced | Almacenar un secreto cifrado para uso en flows |
-| `delete_secret` | advanced | Eliminar un secreto almacenado |
+| Param | Type | Used by | Description |
+|-------|------|---------|-------------|
+| `action` | string (enum) | all | Operation to perform |
+| `entityName` | string | all | Entity the rule belongs to |
+| `ruleId` | string | get, publish, delete, test, logs | Rule ID |
+| `name` | string | create | Rule name |
+| `description` | string | create, generate | Rule description or natural language prompt |
+| `triggerType` | `field_change` \| `before_save` \| `after_save` \| `on_load` | create | When the rule triggers |
+| `triggerFields` | string[] | create | Fields that trigger the rule |
+| `rule` | object | create, generate | Rule DSL with compute/validate/transform/actions |
+| `ruleDsl` | object | create, generate | Alias for `rule` |
+| `priority` | number | create | Execution priority, lower = first (default: 100) |
+| `auto_publish` | boolean | create, generate | Auto-publish after create/generate |
+| `include_drafts` | boolean | list | Include draft rules |
+| `testData` | object | test | Test record data for dry-run |
+| `limit` | number | logs | Max log entries |
 
 ---
 
-## Flows
+## `fyso_auth` — Users, roles, and tenants
 
-| Tool | Profile | Description |
-|------|---------|-------------|
-| `create_flow` | advanced | Crear un flow de automatizacion con triggers y pasos |
-| `list_flows` | advanced | Listar flows en el tenant |
-| `update_flow` | advanced | Actualizar definicion de un flow |
-| `delete_flow` | advanced | Eliminar un flow |
-| `toggle_flow` | advanced | Activar o desactivar un flow |
+User management, RBAC, and tenant operations.
 
----
+| Action | Description | Required params |
+|--------|-------------|-----------------|
+| `create_user` | Create tenant user | `email`, `password`, `name` |
+| `list_users` | List tenant users | — |
+| `update_password` | Reset user password | `userId`, `password` |
+| `create_role` | Create role with permissions | `name`, `permissions` |
+| `list_roles` | List roles | — |
+| `assign_role` | Assign role to user | `userId`, `roleId` |
+| `revoke_role` | Revoke role from user | `userId`, `roleId` |
+| `login` | Authenticate as tenant user | `tenantSlug`, `email`, `password` |
+| `list_tenants` | List accessible tenants | — |
+| `select_tenant` | Select active tenant | `tenantSlug` |
+| `generate_invitation` | Generate beta invitation code (FYSO-XXXX-XXXX) | — |
+| `list_invitations` | List invitation codes with usage stats | — |
 
-## Webhooks
+### Parameters
 
-| Tool | Profile | Description |
-|------|---------|-------------|
-| `create_webhook` | advanced | Suscribirse a eventos de registros de entidad (created/updated/deleted) |
-| `list_webhooks` | advanced | Listar suscripciones de webhooks, opcionalmente filtrados por entidad |
-| `delete_webhook` | advanced | Eliminar una suscripcion de webhook |
-
----
-
-## Knowledge Base
-
-| Tool | Profile | Description |
-|------|---------|-------------|
-| `upload_document` | core | Subir documento para indexacion RAG (PDF, HTML, texto, markdown, URL) |
-| `search_knowledge` | core | Busqueda semantica en documentos indexados. Soporta `one_per_document`, `threshold`, `document_ids` |
-| `list_documents` | core | Listar documentos subidos con filtrado por estado |
-| `get_document` | core | Obtener metadata, contenido y preview de chunks del documento |
-| `delete_document` | core | Eliminar un documento y todos sus chunks (registrado via evento `knowledge_delete`) |
-| `get_knowledge_stats` | core | Obtener estadisticas de indexacion, analytics de busqueda y uso de tokens de embedding (ventana de 30 dias) |
-
----
-
-## Usage
-
-| Tool | Profile | Description |
-|------|---------|-------------|
-| `get_usage` | core | Obtener metricas de uso actuales y limites del plan para el tenant seleccionado. Retorna entidades, registros, sitios, usuarios, requests API, llamadas MCP, almacenamiento y geocodificacion del periodo de facturacion actual |
+| Param | Type | Used by | Description |
+|-------|------|---------|-------------|
+| `action` | string (enum) | all | Operation to perform |
+| `email` | string | create_user, login | User email |
+| `name` | string | create_user, create_role | User or role name |
+| `password` | string | create_user, update_password, login | Password |
+| `userId` | string | update_password, assign_role, revoke_role | User ID |
+| `roleId` | string | assign_role, revoke_role | Role ID |
+| `permissions` | object | create_role | Role permissions object |
+| `description` | string | create_role | Role description |
+| `tenantSlug` | string | create_user, login, select_tenant, update_password | Tenant slug |
+| `note` | string | generate_invitation | Optional note for the invitation |
+| `maxUses` | number | generate_invitation | Max uses for the code |
+| `expiresAt` | string | generate_invitation | Expiration date (ISO 8601) |
 
 ---
 
-## Channels
+## `fyso_views` — Entity views
 
-### Discovery (Consumer)
+Manage filtered entity views with independent RBAC permissions.
 
-Estas tools permiten buscar y consumir channels publicados por otros tenants.
+| Action | Description | Required params |
+|--------|-------------|-----------------|
+| `create` | Create a new view | `entitySlug`, `slug`, `name` |
+| `list` | List all views | — |
+| `update` | Modify a view | `slug` |
+| `delete` | Remove a view | `slug` |
 
-| Tool | Profile | Description |
-|------|---------|-------------|
-| `search_channels` | all | Buscar channels publicos por texto y/o tags |
-| `get_channel_info` | all | Obtener informacion detallada de un channel especifico |
-| `get_channel_tools` | all | Listar tools disponibles en un channel con sus input schemas |
-| `execute_channel_tool` | all | Ejecutar una tool personalizada de un channel. Realiza triple autorizacion y opera sobre datos del owner del channel |
+### Parameters
 
-### Management (Owner)
-
-Estas tools permiten publicar y administrar tu propio channel.
-
-| Tool | Profile | Description |
-|------|---------|-------------|
-| `get_my_channel` | all | Obtener el channel del tenant actual. Retorna el channel sin importar su estado activo |
-| `publish_channel` | all | Publicar tu tenant como channel publico con nombre, descripcion y tags |
-| `update_channel` | all | Actualizar metadata del channel (nombre, descripcion, tags). Requiere ser owner |
-| `unpublish_channel` | all | Despublicar channel del catalogo publico (soft delete, reversible) |
-| `set_channel_permissions` | all | Configurar permisos del channel con nivel de acceso por defecto y reglas opcionales por entidad |
-
-### Channel Tools (Owner)
-
-Estas tools permiten definir tools personalizadas dentro de tu channel usando DSL declarativo.
-
-| Tool | Profile | Description |
-|------|---------|-------------|
-| `define_channel_tool` | all | Definir una tool personalizada para tu channel usando DSL declarativo. Mapea parametros a operaciones CRUD de entidades |
-| `update_channel_tool` | all | Actualizar configuracion de una tool existente (descripcion, input schema o DSL). El slug no se puede cambiar |
-| `remove_channel_tool` | all | Eliminar una tool personalizada del channel |
+| Param | Type | Used by | Description |
+|-------|------|---------|-------------|
+| `action` | string (enum) | all | Operation to perform |
+| `entitySlug` | string | create | Entity this view is based on |
+| `slug` | string | create, update, delete | View slug identifier |
+| `name` | string | create, update | Display name |
+| `description` | string | create, update | View description |
+| `filterDsl` | object | create, update | Filter definition: `{ validate: [{ condition: 'field == value' }] }` |
+| `isActive` | boolean | update | Enable/disable the view |
 
 ---
 
-## Bots
+## `fyso_knowledge` — Knowledge base
 
-Identidades persistentes para agentes que operan de forma autonoma.
+Search tenant knowledge base and Fyso platform documentation.
 
-| Tool | Profile | Description |
-|------|---------|-------------|
-| `register_bot` | all | Registrar nueva identidad de bot con nombre unico vinculado a un tenant. Retorna clave secreta para identificacion futura |
-| `identify_bot` | all | Identificarse como bot registrado usando nombre y secreto. Selecciona automaticamente el tenant vinculado |
-| `list_bots` | all | Listar todas las identidades de bot registradas por el usuario admin actual |
-| `whoami_bot` | all | Verificar la identidad de bot actual de la sesion |
-| `revoke_bot` | all | Revocar (desactivar) una identidad de bot. El bot ya no podra identificarse |
+| Action | Description | Required params |
+|--------|-------------|-----------------|
+| `search` | Semantic search tenant knowledge | `query` |
+| `stats` | Knowledge base metrics | — |
+| `search_docs` | Search Fyso platform docs | `query` |
+
+### Parameters
+
+| Param | Type | Used by | Description |
+|-------|------|---------|-------------|
+| `action` | string (enum) | all | Operation to perform |
+| `query` | string | search, search_docs | Natural language search query |
+| `limit` | number | search, search_docs | Max results (search: default 5, max 20; search_docs: default 5, max 10) |
+| `threshold` | number | search | Minimum similarity 0-1 (default: 0.3) |
+| `document_ids` | string[] | search | Filter to specific document IDs |
+| `one_per_document` | boolean | search | Best chunk per document only |
+| `metadata_filter` | object | search | Metadata filter (e.g. `{ tag: 'policy' }`) |
+| `topic` | string | search_docs | Topic filter: `api`, `entities`, `business-rules`, `deployment`, `billing`, `knowledge`, `mcp`, `rbac`, `views`, `flows`, `webhooks`, `scheduling` |
 
 ---
 
-## Invitations
+## `fyso_deploy` — Static sites
 
-| Tool | Profile | Description |
-|------|---------|-------------|
-| `generate_invitation_code` | all | Generar un codigo de invitacion para acceso beta. Formato FYSO-XXXX-XXXX con limite de usos configurable |
-| `list_invitation_codes` | all | Listar todos los codigos de invitacion con estadisticas de uso |
+Deploy static sites, manage custom domains, and generate CI/CD tokens.
+
+| Action | Description | Required params |
+|--------|-------------|-----------------|
+| `deploy` | Upload and deploy site | `subdomain` |
+| `list` | List active sites | — |
+| `delete` | Remove a site | `subdomain` |
+| `set_domain` | Manage custom domain | `subdomain` |
+| `generate_token` | CI/CD deploy token | `subdomain` |
+
+### Parameters
+
+| Param | Type | Used by | Description |
+|-------|------|---------|-------------|
+| `action` | string (enum) | all | Operation to perform |
+| `subdomain` | string | deploy, delete, set_domain, generate_token | Site subdomain (e.g. `my-app` -> `my-app-sites.fyso.dev`) |
+| `path` | string | deploy | Absolute path to build output directory |
+| `bundle_base64` | string | deploy | Base64-encoded ZIP of site files (for remote MCP) |
+| `domain` | string | set_domain | Custom domain (e.g. `app.mycompany.com`) |
+| `domain_action` | `add` \| `verify` \| `status` \| `remove` | set_domain | Domain sub-action (default: `add`) |
+| `name` | string | generate_token | Token name (e.g. `GitHub Actions`) |
+| `expires_in_days` | number | generate_token | Token expiry in days (omit for no expiry) |
+| `package_json` | object | generate_token | package.json for framework auto-detection |
+| `framework` | string | generate_token | Override framework: `astro`, `vite`, `next`, `nuxt`, `gatsby`, `hugo`, `default` |
+
+---
+
+## `fyso_meta` — API, metadata, and secrets
+
+API spec, client generation, metadata import/export, secrets, and usage metrics.
+
+| Action | Description | Required params |
+|--------|-------------|-----------------|
+| `api_spec` | REST API OpenAPI spec | — |
+| `api_client` | Generate typed client code | — |
+| `export` | Export tenant metadata | — |
+| `import` | Import metadata | `data` |
+| `usage` | Billing metrics | — |
+| `set_secret` | Store encrypted secret | `key`, `value` |
+| `delete_secret` | Delete a secret | `key` |
+
+### Parameters
+
+| Param | Type | Used by | Description |
+|-------|------|---------|-------------|
+| `action` | string (enum) | all | Operation to perform |
+| `entities` | string[] | api_spec, api_client | Entity names (omit for all) |
+| `includeExamples` | boolean | api_spec | Include curl examples (default: true) |
+| `language` | string | api_client | Target language (e.g. `typescript`, `python`) |
+| `framework` | string | api_client | Target framework (e.g. `react`, `next`) |
+| `format` | string | api_client | Output format |
+| `data` | string | import | JSON string of metadata to import |
+| `tenantId` | string | export, import | Tenant ID/slug override |
+| `key` | string | set_secret, delete_secret | Secret name |
+| `value` | string | set_secret | Secret value (encrypted at rest) |
+
+---
+
+## `fyso_agents` — Agent management
+
+Create, configure, and run AI agents. Manage versions, runs, and templates.
+
+| Action | Description | Required params |
+|--------|-------------|-----------------|
+| `list` | List all agents | — |
+| `create` | Create a new agent | `name` |
+| `update` | Modify an agent | `agentId` |
+| `delete` | Delete an agent | `agentId` |
+| `run` | Execute an agent with input | `agentId`, `input` |
+| `test` | Run agent in sandbox mode | `agentId`, `input` |
+| `list_runs` | List agent run history | `agentId` |
+| `list_versions` | List prompt versions | `agentId` |
+| `rollback` | Revert to a previous version | `agentId`, `versionId` |
+| `list_templates` | List industry preset templates | — |
+| `from_template` | Create agent from template | `templateId`, `name` |
+
+### Parameters
+
+| Param | Type | Used by | Description |
+|-------|------|---------|-------------|
+| `action` | string (enum) | all | Operation to perform |
+| `agentId` | string | update, delete, run, test, list_runs, list_versions, rollback | Agent ID |
+| `name` | string | create, from_template | Agent name |
+| `input` | string | run, test | User message or prompt |
+| `versionId` | string | rollback | Version ID to restore |
+| `templateId` | string | from_template | Template ID |
+| `memory_enabled` | boolean | create, update | Enable cross-session memory extraction |
+| `tools_scope` | string[] | create, update | List of tool names available to the agent |
+| `system_prompt` | string | create, update | Agent system prompt |
+| `channels` | object[] | create, update | Channel configurations (web, telegram, etc.) |
+
+---
+
+## `fyso_ai` — AI providers and calls
+
+Configure AI providers, manage prompts, test calls, and view logs.
+
+| Action | Description | Required params |
+|--------|-------------|-----------------|
+| `configure_provider` | Set default AI provider config | `provider`, `apiKey` |
+| `list_providers` | List configured providers | — |
+| `add_provider` | Add an additional provider | `provider`, `apiKey` |
+| `remove_provider` | Remove a provider | `providerId` |
+| `test_call` | Test a prompt against a provider | `prompt` |
+| `call_logs` | View AI call history | — |
+| `debug_log` | Get debug payload for a call | `callId` |
+| `create_template` | Create a reusable prompt template | `name`, `prompt` |
+| `list_templates` | List prompt templates | — |
+| `update_template` | Modify a prompt template | `templateId` |
+
+### Parameters
+
+| Param | Type | Used by | Description |
+|-------|------|---------|-------------|
+| `action` | string (enum) | all | Operation to perform |
+| `provider` | string | configure_provider, add_provider | Provider type: `openai`, `anthropic`, or any OpenAI-compatible base URL |
+| `apiKey` | string | configure_provider, add_provider | API key for the provider |
+| `providerId` | string | remove_provider | Provider configuration ID |
+| `model` | string | configure_provider, add_provider, test_call | Model name (e.g. `gpt-4o`, `claude-3-5-sonnet-20241022`) |
+| `prompt` | string | test_call, create_template | Prompt text |
+| `name` | string | create_template | Template name |
+| `templateId` | string | update_template | Template ID |
+| `callId` | string | debug_log | AI call ID (requires `ai.debug` tenant setting) |
+| `limit` | number | call_logs | Max log entries |
+
+---
+
+---
+
+## `fyso_welcome` — Onboarding
+
+An onboarding conversation tool. Given a `businessType`, it proposes a starter set of entities and fields suited to that business, and returns suggested next steps. Used by the Claude Code plugin on first connect.
+
+| Param | Type | Required | Description |
+|-------|------|----------|-------------|
+| `businessType` | string | Yes | Business category (e.g., `freelancer`, `clinic`, `ecommerce`, `saas`, `nonprofit`, `other`) |
+
+This tool does not accept an `action` parameter — it is a single-purpose tool, not a grouped router.
+
+---
+
+## REST-only features
+
+The following features are available via the [REST API](/api/rest-api) but are not exposed as MCP tools:
+
+- **Channels** — `search_channels`, `get_channel_info`, `get_channel_tools`, `execute_channel_tool`, `publish_channel`, `update_channel`, `unpublish_channel`, `set_channel_permissions`, `define_channel_tool`, `update_channel_tool`, `remove_channel_tool`
+- **Bots** — `register_bot`, `identify_bot`, `list_bots`, `whoami_bot`, `revoke_bot` (see [Bot Identity](/agents/bot-identity))
+- **Flows** — `create_flow`, `list_flows`, `update_flow`, `delete_flow`, `toggle_flow`
+- **Webhooks** — `create_webhook`, `list_webhooks`, `delete_webhook`
+- **Documents** — `upload_document`, `list_documents`, `get_document`, `delete_document`
+- **PDF** — `generate_pdf`, `create_pdf_template`
+- **Apps** — `publish_app`, `unpublish_app`, `update_app`
 
 
 
@@ -4821,6 +5440,16 @@ Identidades persistentes para agentes que operan de forma autonoma.
 # REST API
 
 Fyso exposes a REST API for external access to tenant data.
+
+## Base URL
+
+All API requests use a single centralized host:
+
+```
+https://api.fyso.dev/api
+```
+
+> **Important:** Do NOT use tenant subdomains (e.g., `my-tenant.fyso.dev`) for API calls. The API is centralized — tenant isolation is handled via the `X-Tenant-ID` header.
 
 ## Authentication
 
@@ -4840,6 +5469,7 @@ curl -X POST "https://api.fyso.dev/api/auth/tenant/login" \
 
 # 2. Use the token
 curl -H "Authorization: Bearer JWT_TOKEN" \
+  -H "X-Tenant-ID: mi-empresa" \
   "https://api.fyso.dev/api/entities/clientes/records"
 ```
 
@@ -4847,12 +5477,92 @@ curl -H "Authorization: Bearer JWT_TOKEN" \
 
 ```bash
 curl -H "Authorization: Bearer API_KEY" \
+  -H "X-Tenant-ID: my-company-abc123" \
   "https://api.fyso.dev/api/entities/clientes/records"
 
 # Or alternative:
 curl -H "X-API-Key: API_KEY" \
+  -H "X-Tenant-ID: my-company-abc123" \
   "https://api.fyso.dev/api/entities/clientes/records"
 ```
+
+### Required Headers
+
+| Header | Required | Description |
+|--------|----------|-------------|
+| Authorization | Yes | `Bearer {JWT}` or `Bearer {API_KEY}` or `Bearer {fyso_pk_*}` |
+| X-Tenant-ID | Yes | Tenant slug (e.g., `my-company-abc123`) |
+| Content-Type | Yes (POST/PUT) | `application/json` |
+
+### 3. Bot JWT
+
+Bots are service accounts that authenticate with a name and secret to receive a short-lived JWT. The JWT is then used on entity endpoints exactly like any other token.
+
+```bash
+# 1. Identify the bot to get a JWT
+curl -X POST https://api.fyso.dev/api/auth/bots/identify \
+  -H "Authorization: Bearer ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{ "name": "my-bot", "secret": "bot-secret" }'
+
+# Response includes: { "token": "eyJhbGci...", "expiresIn": 3600 }
+
+# 2. Use the JWT on entity endpoints
+curl -H "Authorization: Bearer BOT_JWT" \
+  "https://api.fyso.dev/api/entities/products/records"
+```
+
+Bots carry scoped permissions (`entities: { entityName: ["create", "read", "update", "delete"] }`) defined at registration. Requests that exceed declared permissions return `403`.
+
+See [Bot Identity](/docs/agents/bot-identity) for the full guide: registration, permissions, JWT refresh pattern, lockout behavior, and secret rotation.
+
+## Bot Endpoints
+
+All bot endpoints are under `/api/auth/bots` and require an admin JWT.
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/auth/bots/register` | Register a new bot with permissions |
+| `POST` | `/api/auth/bots/identify` | Authenticate — returns JWT |
+| `GET` | `/api/auth/bots` | List bots (scoped to authenticated admin) |
+| `POST` | `/api/auth/bots/:id/revoke` | Revoke a bot permanently |
+| `POST` | `/api/auth/bots/:id/reset-secret` | Rotate bot secret (admin only) |
+
+### Register — `POST /api/auth/bots/register`
+
+**Request body:**
+
+| Field | Type | Required | Notes |
+|-------|------|----------|-------|
+| `name` | string | Yes | 3-50 chars, lowercase, alphanumeric and hyphens. Unique per tenant. |
+| `tenantSlug` | string | Yes | Tenant the bot belongs to. |
+| `permissions` | object | No | `{ entities: { [entityName]: string[] } }`. No wildcards. |
+
+**Response (201):** `{ id, name, secret, tenantSlug }`. Secret shown once.
+
+### Identify — `POST /api/auth/bots/identify`
+
+**Request body:** `{ name, secret }`
+
+**Response (200):** `{ id, name, tenantSlug, tenantId, permissions, token, expiresIn }`. Token TTL: 3600 seconds.
+
+**Errors:** `401` (wrong secret, locked), `403` (revoked).
+
+### List — `GET /api/auth/bots`
+
+Returns all bots belonging to the authenticated admin. No `secret` field.
+
+### Revoke — `POST /api/auth/bots/:id/revoke`
+
+Permanent. Active JWTs issued before revocation remain valid until their TTL.
+
+**Response (200):** `{ revoked: true }`
+
+### Reset secret — `POST /api/auth/bots/:id/reset-secret`
+
+Old secret is invalidated immediately. Returns new secret (shown once).
+
+**Response (200):** `{ id, name, secret }`
 
 ## CRUD Endpoints
 
@@ -4860,6 +5570,12 @@ curl -H "X-API-Key: API_KEY" \
 
 ```
 GET /api/entities/{entityName}/records
+```
+
+```bash
+curl -H "Authorization: Bearer JWT_TOKEN" \
+  -H "X-Tenant-ID: my-company-abc123" \
+  "https://api.fyso.dev/api/entities/clientes/records?page=1&limit=20"
 ```
 
 **Query params:**
@@ -4872,7 +5588,9 @@ GET /api/entities/{entityName}/records
 | `order` | string | `asc` | Direction: `asc` or `desc` |
 | `search` | string | - | Full-text search across text fields |
 | `resolve` | boolean | - | Expand relations to full objects |
-| `filter.{fieldKey}` | string | - | Filter by field (e.g., `filter.estado=activo`) |
+| `resolve_depth` | number | - | Relation resolution depth 1–2. Resolves nested relations in list endpoints. Example: `?resolve_depth=1` |
+| `filters` | string | - | Filter expression. Example: `?filters=status = active`. Operators: `=`, `!=`, `>`, `<`, `>=`, `<=`, `contains`. Combine with `AND`: `?filters=status = active AND role = admin` |
+| `filter.{fieldKey}` | string | - | Legacy per-field filter (e.g., `filter.estado=activo`). Prefer `filters` for compound logic. |
 
 **Response:**
 
@@ -4880,15 +5598,12 @@ GET /api/entities/{entityName}/records
 {
   "success": true,
   "data": {
-    "data": [
+    "items": [
       {
         "id": "uuid",
         "entityId": "uuid",
-        "name": "Juan Perez",
-        "data": {
-          "nombre": "Juan Perez",
-          "email": "juan@example.com"
-        },
+        "nombre": "Juan Perez",
+        "email": "juan@example.com",
         "createdAt": "2026-02-03T12:51:15.352Z",
         "updatedAt": "2026-02-03T12:51:15.352Z"
       }
@@ -4907,29 +5622,40 @@ GET /api/entities/{entityName}/records
 GET /api/entities/{entityName}/records/{id}
 ```
 
+```bash
+curl -H "Authorization: Bearer JWT_TOKEN" \
+  -H "X-Tenant-ID: my-company-abc123" \
+  "https://api.fyso.dev/api/entities/clientes/records/{id}"
+```
+
 **Query params:** `resolve` (boolean)
 
 ### Create a Record
 
 ```
 POST /api/entities/{entityName}/records
-Content-Type: application/json
+```
 
-{
-  "nombre": "Juan Perez",
-  "email": "juan@example.com"
-}
+```bash
+curl -X POST -H "Authorization: Bearer JWT_TOKEN" \
+  -H "X-Tenant-ID: my-company-abc123" \
+  -H "Content-Type: application/json" \
+  -d '{"nombre": "Juan Perez", "email": "juan@example.com"}' \
+  "https://api.fyso.dev/api/entities/clientes/records"
 ```
 
 ### Update a Record
 
 ```
 PUT /api/entities/{entityName}/records/{id}
-Content-Type: application/json
+```
 
-{
-  "email": "juan.nuevo@example.com"
-}
+```bash
+curl -X PUT -H "Authorization: Bearer JWT_TOKEN" \
+  -H "X-Tenant-ID: my-company-abc123" \
+  -H "Content-Type: application/json" \
+  -d '{"email": "juan.nuevo@example.com"}' \
+  "https://api.fyso.dev/api/entities/clientes/records/{id}"
 ```
 
 Supports partial updates.
@@ -4938,6 +5664,12 @@ Supports partial updates.
 
 ```
 DELETE /api/entities/{entityName}/records/{id}
+```
+
+```bash
+curl -X DELETE -H "Authorization: Bearer JWT_TOKEN" \
+  -H "X-Tenant-ID: my-company-abc123" \
+  "https://api.fyso.dev/api/entities/clientes/records/{id}"
 ```
 
 ## Views
@@ -5009,11 +5741,65 @@ Returns `404` if the record does not match the view's filter.
 
 ## Record Structure
 
-Entity fields are inside `record.data`:
+Records use a flat format introduced in v1.26.0. Entity fields are at the top level of the record object alongside system fields:
+
+```json
+{
+  "id": "uuid",
+  "entityId": "uuid",
+  "nombre": "Juan Perez",
+  "email": "juan@example.com",
+  "createdAt": "2026-03-01T12:00:00.000Z",
+  "updatedAt": "2026-03-01T12:00:00.000Z"
+}
+```
 
 ```
-record.data.email     -- CORRECT
-record.email          -- INCORRECT
+record.email          -- CORRECT (flat)
+record.nombre         -- CORRECT (flat)
+record.data.email     -- WRONG (old nested format, removed in v1.26.0)
+```
+
+**Response envelope for lists:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "items": [...],
+    "total": 42,
+    "page": 1,
+    "limit": 20,
+    "totalPages": 3
+  }
+}
+```
+
+### Reserved field names
+
+The following names cannot be used as custom field keys — they are system fields always present at the top level:
+
+`id`, `entityId`, `name`, `createdAt`, `updatedAt`, `createdBy`, `updatedBy`
+
+Attempting to create an entity field with one of these names returns a `400 VALIDATION_ERROR`.
+
+### Filtering examples
+
+```bash
+# Simple equality filter
+curl -H "Authorization: Bearer JWT_TOKEN" \
+  -H "X-Tenant-ID: my-company" \
+  "https://api.fyso.dev/api/entities/clientes/records?filters=status%20%3D%20activo"
+
+# Compound AND filter
+curl -H "Authorization: Bearer JWT_TOKEN" \
+  -H "X-Tenant-ID: my-company" \
+  "https://api.fyso.dev/api/entities/tickets/records?filters=status%20%3D%20open%20AND%20priority%20%3D%20high"
+
+# Resolve relations (depth 1)
+curl -H "Authorization: Bearer JWT_TOKEN" \
+  -H "X-Tenant-ID: my-company" \
+  "https://api.fyso.dev/api/entities/pedidos/records?resolve_depth=1"
 ```
 
 ## Error Codes
@@ -5264,23 +6050,21 @@ Tool profiles control which MCP tools are exposed to the agent. Fyso uses a 3-ti
 
 The standard profile for everyday use. Includes all tools needed to build and operate applications.
 
-Includes: tenant selection, entity management, records CRUD, business rules, RBAC, users, files, PDF, static sites, apps, scheduling, Knowledge Base, API spec, metadata import/export.
+Includes: `fyso_data` (records CRUD, scheduling), `fyso_schema` (entity management), `fyso_rules` (business rules), `fyso_auth` (users, roles, tenants), `fyso_views` (entity views), `fyso_knowledge` (search), `fyso_deploy` (static sites), `fyso_meta` (API spec, metadata, secrets, usage).
 
-**~60 tools**
+**8 grouped tools** (each with multiple actions)
 
 ### `advanced`
 
-Everything in `core` plus destructive operations, testing tools, flows, secrets, webhooks, deploy tokens, and execution logs.
+Everything in `core` plus all actions within the grouped tools. The `core` and `advanced` distinction now applies to which _actions_ within grouped tools are available, rather than separate tool names. Destructive actions (delete entity, delete record) and testing/debugging actions (test rule, rule logs, manage custom fields, entity change history) are gated behind `advanced`.
 
-Adds: `delete_entity`, `delete_record`, `test_business_rule`, `delete_business_rule`, `get_rule_logs`, `delete_static_site`, `generate_deploy_token`, `set_custom_domain`, `set_secret`, `delete_secret`, `create_flow`, `list_flows`, `update_flow`, `delete_flow`, `toggle_flow`, `create_webhook`, `list_webhooks`, `delete_webhook`, `delete_document`, `tenant_login`, `manage_custom_fields`, `list_entity_changes`.
-
-**~76 tools**
+**8 grouped tools** (full action set)
 
 ### `all`
 
-Everything in `advanced` plus channel and bot management tools.
+Everything in `advanced` plus channel management, bot identity, and invitation tools as individual tools.
 
-**~91 tools**
+**8 grouped + ~24 individual tools**
 
 ## Profile Resolution Order
 
@@ -5321,7 +6105,7 @@ In `claude_desktop_config.json` or equivalent MCP client config:
 | Use case | Recommended profile |
 |----------|-------------------|
 | Building apps, managing data | `core` |
-| CI/CD, flows, advanced debugging | `advanced` |
+| CI/CD, advanced debugging, destructive ops | `advanced` |
 | Bot/channel management | `all` |
 
 
@@ -7693,84 +8477,200 @@ Go to **Platform → Invitations** in the admin panel to manage invitations:
 
 # n8n Integration
 
-Fyso provides an official n8n community node package (`n8n-nodes-fyso`) with full CRUD support and webhook-based triggers.
+The `n8n-nodes-fyso` community node lets you read and write Fyso entity records from n8n workflows, and trigger workflows in response to Fyso events.
+
+**Package:** [`n8n-nodes-fyso`](https://www.npmjs.com/package/n8n-nodes-fyso)
+
+---
 
 ## Installation
 
-In your n8n instance, go to **Settings → Community Nodes** and install:
+### Via Community Nodes panel (recommended)
 
-```
-n8n-nodes-fyso
-```
+1. Open your n8n instance.
+2. Go to **Settings** → **Community Nodes**.
+3. Click **Install**.
+4. Enter `n8n-nodes-fyso` and confirm.
 
-Or install manually in your n8n directory:
+n8n will restart and the Fyso node will be available in the node palette.
+
+### Via npm (self-hosted)
 
 ```bash
+cd ~/.n8n
 npm install n8n-nodes-fyso
 ```
 
-## Credentials
+Restart n8n after installation.
 
-Create **Fyso API** credentials in n8n:
+---
 
-| Field | Description |
-|-------|-------------|
-| **API Key** | Your Fyso admin API key (`fyso_adm_*`) or tenant token |
-| **API URL** | Your Fyso API base URL (e.g., `https://api.fyso.dev`) |
+## Credential setup
+
+The node authenticates using a Fyso API key. The API key is scoped to a specific tenant — you do not need to pass a tenant ID separately.
+
+**Steps:**
+
+1. In Fyso admin panel, go to **Settings** → **API Keys** and create a new key.
+2. In n8n, go to **Credentials** → **New** → search for **Fyso API**.
+3. Fill in:
+
+| Field | Value |
+|-------|-------|
+| **API Key** | Your `fyso_ak_...` key |
+| **API URL** | `https://api.fyso.dev` (or your self-hosted URL) |
+
+---
 
 ## Fyso Node
 
-The **Fyso** node supports 7 operations:
+The **Fyso** node performs CRUD operations on entity records. It also provides tenant and entity listing operations.
+
+### Operations
 
 | Operation | Description |
 |-----------|-------------|
-| `List Tenants` | List all tenants accessible with the API key |
-| `List Entities` | List metadata entities for a tenant |
-| `Create Record` | Create a new record in an entity |
-| `Get Record` | Fetch a single record by ID |
-| `List Records` | List records for an entity (with filters) |
-| `Update Record` | Update a record by ID |
-| `Delete Record` | Delete a record by ID |
+| **List Tenants** | List all tenants accessible to the API key |
+| **List Entities** | List entity metadata for a specific tenant |
+| **Create Record** | Create a new record in an entity |
+| **Get Record** | Fetch a single record by ID |
+| **List Records** | Fetch all records in an entity |
+| **Update Record** | Update an existing record by ID |
+| **Delete Record** | Delete a record by ID |
 
-### Example: Create a record
+### Parameters by operation
 
-1. Add a **Fyso** node to your workflow
-2. Select **Create Record** operation
-3. Set **Entity** to `contacts`
-4. Set **Record Data** to `{{ { "name": $json.name, "email": $json.email } }}`
+**List Entities**
 
-## Fyso Trigger Node
+| Parameter | Description |
+|-----------|-------------|
+| `Tenant ID` | The tenant ID to list entities for |
 
-The **Fyso Trigger** node listens for entity events via Fyso webhooks.
+**Create Record / Update Record**
 
-| Event | Description |
-|-------|-------------|
-| `record.created` | Fires when a record is created in the entity |
-| `record.updated` | Fires when a record is updated |
-| `record.deleted` | Fires when a record is deleted |
+| Parameter | Description |
+|-----------|-------------|
+| `Entity` | The entity name or slug (e.g., `contacts`, `invoices`) |
+| `Record Data (JSON)` | Record fields as a JSON object |
 
-### Setup
+**Get Record / Delete Record**
 
-1. Add a **Fyso Trigger** node to start your workflow
-2. Select the **Event** (e.g., `Record Created`)
-3. Set the **Entity** to watch (e.g., `orders`)
-4. Activate the workflow — n8n automatically registers a webhook subscription in Fyso
+| Parameter | Description |
+|-----------|-------------|
+| `Entity` | Entity name or slug |
+| `Record ID` | The record UUID |
 
-When activated, n8n calls `POST /api/webhooks/subscriptions` to register the webhook. On deactivation, the subscription is removed automatically.
+**List Records**
 
-### Example workflow: sync new contacts to a CRM
+| Parameter | Description |
+|-----------|-------------|
+| `Entity` | Entity name or slug |
 
+### Example — Create a record
+
+Configure the Fyso node with:
+
+- **Operation:** Create Record
+- **Entity:** `contacts`
+- **Record Data (JSON):**
+
+```json
+{
+  "name": "{{ $json.name }}",
+  "email": "{{ $json.email }}",
+  "source": "n8n-workflow"
+}
 ```
-[Fyso Trigger: record.created on contacts]
-  → [Transform: map Fyso fields to CRM format]
-  → [HTTP Request: POST to CRM API]
+
+The node returns the created record from the Fyso API.
+
+### Example — List records and pass to the next node
+
+- **Operation:** List Records
+- **Entity:** `appointments`
+
+The output items each contain a Fyso record in the `json` field, ready to map into subsequent nodes (Slack, Google Sheets, etc.).
+
+---
+
+## Fyso Trigger
+
+The **Fyso Trigger** node starts a workflow when a record event occurs in Fyso. It automatically registers a webhook when the workflow is activated and removes it when the workflow is deactivated.
+
+### Events
+
+| Event | Fires when |
+|-------|-----------|
+| `Record Created` | A new record is created in the entity |
+| `Record Updated` | An existing record is updated |
+| `Record Deleted` | A record is deleted |
+
+### Parameters
+
+| Parameter | Description |
+|-----------|-------------|
+| `Event` | The event type to listen for |
+| `Entity` | The entity slug to watch (e.g., `patients`, `orders`) |
+
+### Requirements
+
+The n8n instance must be publicly reachable over HTTPS. Fyso will POST the event payload to the webhook URL that n8n generates. Localhost or private network URLs will not work.
+
+### Output
+
+The trigger node outputs the raw event payload from Fyso:
+
+```json
+{
+  "event": "record.created",
+  "entity": "patients",
+  "record": {
+    "id": "uuid",
+    "name": "Jane Smith",
+    "created_at": "2026-03-12T10:00:00Z"
+  }
+}
 ```
 
-## Notes
+---
 
-- The Fyso Trigger node requires your Fyso tenant to support webhooks (available on all plans)
-- Use an admin API key (`fyso_adm_*`) for management operations, or a tenant user token for tenant-scoped operations
-- For public read-only access, use a [public key](./anonymous-keys.md) with `records:read` scope
+## Example workflows
+
+### New record → Slack notification
+
+1. **Fyso Trigger** — Event: `Record Created`, Entity: `leads`
+2. **Slack** — Send message: `New lead: {{ $json.record.name }}`
+
+### Record updated → Google Sheets row
+
+1. **Fyso Trigger** — Event: `Record Updated`, Entity: `appointments`
+2. **Google Sheets** — Append row with `{{ $json.record }}`
+
+### Scheduled sync → Fyso records
+
+1. **Schedule Trigger** — every hour
+2. **HTTP Request** — fetch data from external API
+3. **Fyso** — Operation: Create Record, Entity: `inventory`, Record Data: `{{ $json }}`
+
+---
+
+## Troubleshooting
+
+**"Unauthorized" error**
+
+The API key is invalid or has been revoked. Check the key in Fyso admin panel under **Settings** → **API Keys**.
+
+**Trigger not firing**
+
+The webhook URL must be publicly accessible. Verify your n8n instance has a public URL configured (`N8N_WEBHOOK_URL` environment variable for self-hosted). Fyso cannot reach `localhost` or private IPs.
+
+**Trigger fires but workflow errors**
+
+Check the payload shape using an n8n **Code** node after the trigger to inspect `$json`. Entity fields vary by entity definition.
+
+**"Entity not found" error**
+
+The entity slug is case-sensitive and must match the slug shown in the Fyso admin panel (e.g., `patients`, not `Patients`).
 
 
 
@@ -8747,6 +9647,205 @@ Required environment variables:
 | `STRIPE_PRICE_ID` | Price ID for the Pro plan |
 
 
+
+---
+
+## v1.33.2 — 2026-03-15
+
+### Security
+- **AI debug payload gated** — `debug_payload` in AI responses is now hidden behind the `ai.debug` tenant setting. Disabled by default in production.
+
+### Fixes
+- **REST API filters** — `?filters=field = value` now correctly filters records on list endpoints. AND compound filters also work.
+- **REST API resolve_depth** — `?resolve_depth=1` correctly resolves relations on list endpoints.
+- **Business rule field validation** — Field references in rule DSL are validated against the entity schema at publish time, preventing silent failures.
+
+---
+
+## v1.33.1 — 2026-03-15
+
+### Features
+- **Agent editor** — Agents editor now manages channels 1:N, prompt history with rollback, and multiple AI providers per agent.
+- **AI cost dashboard** — New admin page showing AI spending by provider, model, and agent over time.
+- **Prompt templates CRUD** — Create, edit, and delete reusable prompt templates from the admin panel.
+- **Bulk document upload** — Drag-and-drop multiple files to upload to the knowledge base in one operation.
+- **Integrations management page** — New admin page to manage registered integration instances (credentials, status, re-auth).
+- **Visual business rules editor** — Drag-and-drop rule builder with support for AI call actions.
+
+---
+
+## v1.33.0 — 2026-03-15
+
+### Breaking changes
+- **Pure RBAC — legacy roles dropped** — Built-in role names are removed. Roles are now fully editable templates. One role per tenant can be flagged as `is_owner`. Existing role assignments are migrated automatically; custom role configurations are preserved.
+
+### Features
+- **Agent channels 1:N** — Each agent can be connected to multiple channels simultaneously (web widget, Telegram, etc.).
+- **AI rate limiting and budget enforcement** — Tenant-level and agent-level token budgets with hard limits and soft alerts.
+- **Prompt versioning with rollback** — Every prompt change is saved as a version. Roll back to any previous version from the agent editor.
+- **SSE streaming for channels** — Agent replies stream token-by-token via Server-Sent Events. Telegram shows typing indicators.
+- **Multiple AI providers per tenant** — Add multiple provider configurations (OpenAI, Anthropic, or any OpenAI-compatible endpoint). The first active provider is used; configure priority/fallback chains.
+- **Reusable prompt templates** — Define shared prompt templates across agents. Templates support field substitution via `{{field}}` syntax.
+- **Industry presets** — One-click starter configurations for common business types: workshop (`taller`), clinic (`clínica`), store (`tienda`).
+- **AI cost dashboard** — Real-time spend tracking by provider, model, and agent.
+- **Telegram integration** — Telegram bot as a first-class integration plugin. Configure via the integrations page.
+- **Bulk knowledge indexing** — Upload multiple documents at once; indexing runs in parallel with progress reporting.
+
+---
+
+## v1.32.0 — 2026-03-14
+
+### Features
+- **Integration SDK** — Third-party integrations can be built with `defineAction` / `validateManifest`. Integrations register with a credential store, a manifest registry, and a runtime executor.
+- **Discord webhook integration** — Built-in integration to send messages to Discord channels. Configure once, use in business rules.
+- **Agent MCP tools** — `fyso_agents` tool group: `list`, `create`, `update`, `delete`, `run`, `test`, `list_runs`, `list_versions`, `rollback`, `list_templates`, `from_template`.
+- **Agent Runner** — Run agents programmatically with session tracking, run history, and version snapshots.
+- **Knowledge base in Agent Runner** — Agents automatically use the tenant knowledge base for RAG retrieval during runs.
+- **`create_tenant` MCP action** — Provision new tenants from an MCP session (superadmin).
+- **`report_feedback` MCP tool** — Submit structured feedback from within an agent session.
+
+---
+
+## v1.31.0 — 2026-03-14
+
+### Features
+- **AI engine** — Fyso now includes a built-in AI engine. Configure AI provider adapters (OpenAI-compatible endpoints, Anthropic) from the admin panel. All AI calls are logged with model, tokens, latency, and cost.
+- **AI budget and rate limiting** — Set monthly token budgets and per-minute rate limits per tenant. Budget estimator shows projected spend before enabling.
+- **Execution context (`$ctx`)** — Business rules and AI actions share an inter-action variable context (`$ctx`). Pass data between rule steps without external storage.
+- **Template engine** — Field substitution in prompts and rule actions using `{{field}}` syntax.
+- **`ai_call` action type** — Business rules can now invoke an AI model as a rule action, with the response available in `$ctx`.
+- **`webhook_send` action type** — Business rules can send HTTP webhooks as a rule action.
+- **`test_ai_call` MCP tool** — Prompt playground: test any prompt against any configured provider and see full token/cost breakdown.
+- **Agent runner infrastructure** — Internal agent sessions, runs, and tool-call tables. Foundation for v1.32 Agent Runner.
+- **Semantic tool generator** — Agents auto-generate semantic descriptions of available tools from their `tools_scope` definition.
+- **Agent test panel** — Live chat interface to test agents at `/agents/:id/test`, with run inspector (Summary, Flow, Steps, Raw tabs).
+- **Agent memory** — Enable `memory_enabled: true` on an agent to extract and persist facts across conversations. Facts are injected into the system prompt on subsequent sessions.
+- **GDPR compliance** — DPA acceptance, per-session AI consent, data suppression, and consent audit log. Endpoints: `POST /api/auth/tenants/:id/dpa-accept`, `POST /api/rgpd/sessions/:sessionId/consent`, `DELETE /api/rgpd/users/:externalRef/ai-data`.
+- **Web widget** — Embed an agent as a floating chat bubble with a single `<script>` tag. Configurable title, color, and position.
+- **Visual rules editor** — Drag-and-drop business rules editor at `/agents/:slug/rules` with template variable chips.
+- **AI logs viewer** — `/agents/:slug/logs` shows run history with stats bar, filter panel, and per-run detail dialog.
+
+---
+
+## v1.30.0 — 2026-03-12
+
+### Features
+- **Bot identity — JWT with entity permissions** — `POST /api/auth/bots/identify` now returns a JWT carrying scoped entity permissions. The JWT is accepted by entity record endpoints (`requireTenantContext` middleware), with permissions enforced on every request — no admin bypass. Bots are revocation-checked on each request against `bot_identities`. (#953, #957)
+- **Bot identity — extended schema** — `bot_identities` table gains `permissions`, `createdByUserId`, `createdByType` columns to support user-created bots with scoped permissions. (#954)
+- **Bot self-registration by tenant users** — Tenant users can register bots scoped to their own tenant without admin involvement. Bot permissions must be a strict subset of the registering user's own permissions. Per-user limit: 5 active bots. (#959)
+
+### Fixes
+- **Paddle checkout returns transactionId** — Checkout response now includes `transactionId` for Paddle.js overlay flow. (#958)
+- **Paddle CSP headers** — Added Paddle domains to Content-Security-Policy `connect-src` and `frame-src`. (#964)
+- **Paddle.js overlay** — Checkout now uses the Paddle.js overlay instead of redirect, keeping users on the billing page. (#956)
+
+---
+
+## v1.29.0 — 2026-03-09
+
+### Features
+- **`fyso_welcome` MCP onboarding tool** — New MCP tool that proposes entity structures based on business type. Called by the Claude Code plugin on first connect to guide new users through setup. (#942)
+- **Onboarding-first dashboard** — Dashboard now shows an MCP connection banner for new accounts that haven't connected an MCP client yet. (#941)
+- **Single-tenant shortcut** — Users with access to only one tenant skip the tenant selector and are taken directly to their workspace. (#939)
+- **Google login auto-provisioning** — First Google login now automatically creates an account and tenant, removing the need for a separate sign-up step. (#935)
+
+### Fixes
+- **Open registration** — Removed closed beta requirement; removed deprecated MCP tools. (#938)
+- **`add_field` tool validation** — MCP tool now validates `fieldKey` and `fieldType` before sending to the API. (#927)
+
+---
+
+## v1.28.1 — 2026-03-08
+
+### Fixes
+- **PgListener crash loop** — `postgres.js .listen()` does not accept a third callback; the spurious argument triggered `handleConnectionLost()` immediately on connect, causing an infinite reconnect loop that crashed the container. Fixed using the `onclose` connection option. (#911)
+- **Platform invitation links** — `window.location.origin` produced `fyso.dev` links when admin was on that domain. Now uses `VITE_APP_URL`, defaulting to `https://app.fyso.dev`. (#911)
+- **Invitation accept pages** — Relative `/api/...` fetch paths don't resolve on Cloudflare Pages. Changed to `getApiUrl()`. (#911)
+- **CSP blocking API calls** — Added `https://*.amazonlightsail.com`, `wss://*.amazonlightsail.com`, `wss://*.fyso.dev`, and `https://cloudflareinsights.com` to `connect-src`. (#911)
+- **WebSocket platform key auth** — Platform API keys (`fyso_pkey_*`) now work for WebSocket connections with full RBAC enforcement (field and row filtering on broadcast). (#911)
+
+---
+
+## v1.28.0 — 2026-03-07
+
+### Features
+- **Real-time records via WebSocket** — Live table updates in the browser. PostgreSQL `pg_notify` triggers fire on INSERT/UPDATE/DELETE for all entity tables. A PgListener service subscribes on a dedicated connection; a SubscriptionManager routes events to WebSocket clients with RBAC field/row filtering. The `useRealtimeRecords` React hook handles reconnection with exponential backoff and React Query cache invalidation. Admins can enable/disable real-time per entity from settings. WebSocket endpoint: `wss://api.fyso.dev/ws`. See [WebSocket reference](/api/websocket). (#891–#909)
+
+---
+
+## v1.27.0 — 2026-03-07
+
+### Features
+- **Paddle payment provider** — Alternative to Stripe, switchable via `PAYMENT_PROVIDER=paddle`. Full implementation with HMAC-SHA256 webhook verification at `POST /api/webhooks/paddle`. (#883, #884)
+
+### Refactoring
+- **MCP tools consolidated** — 48 individual MCP tools replaced by 8 grouped tools (`fyso_data`, `fyso_schema`, `fyso_rules`, `fyso_auth`, `fyso_views`, `fyso_knowledge`, `fyso_deploy`, `fyso_meta`). Backward-compatible handlers retained. (#867, #868)
+- **Channel/bot MCP tools removed** — Obsolete tools pruned; invitations grouped into `fyso_auth`. (#874)
+
+### Security
+- **API key TTL validation** — Reject NaN, Infinity, negative, and zero TTL values with 400 errors. (#889)
+- **HTTP security headers** — CSP, X-Frame-Options, HSTS for Cloudflare Pages. (#870)
+
+---
+
+## v1.26.0 — 2026-03-04
+
+### Breaking changes
+- **REST API response format simplified** — Record data is now flat: `response.data.items[n].campo` instead of `response.data.data[n].data.campo`. `PaginatedResult.data` renamed to `PaginatedResult.items`. System fields (`id`, `entityId`, `createdAt`, etc.) are always present at the top level. Reserved field names (`id`, `entityId`, `name`, `createdAt`, `updatedAt`, `createdBy`, `updatedBy`) are rejected when creating entity fields.
+
+### Fixes
+- **`get_rest_api_spec` base URL** — MCP tool now uses `new URL().origin` instead of string replace; all curl examples include `X-Tenant-ID`. (#862)
+
+---
+
+## v1.25.0 — 2026-03-03
+
+### Features
+- **`$currentUser.email` and `$currentUser.name` in filterDsl** — Row-level filter conditions can now reference the authenticated user's email and name. Audit fields `created_by` and `updated_by` are set on record create/update. (#856)
+- **`fyso_knowledge` search_docs action** — MCP agents can search Fyso platform documentation directly via the knowledge tool. (#859)
+
+### Fixes
+- **Record timestamps** — `created_at`/`updated_at` set explicitly on insert; no longer return null. (#855)
+- **View slug reuse** — Deleted view slugs can now be reused. (#857)
+- **Views routes error handling** — Routes wrapped in try-catch with DB connection safeguards. (#858)
+
+---
+
+## v1.24.0 — 2026-03-03
+
+### Security
+A hardening wave addressing 56 bugs found during an internal security review. Key fixes:
+
+- **SQL row filter** — `== null` now generates `IS NULL`; rejects trailing tokens, unknown characters (semicolons, backticks), and undefined `$currentTenant`. (#811, #814, #816, #818)
+- **RBAC** — Wildcard action `*` expands to all actions; multiple row filters from multiple roles are OR'd; `excludeFields` union follows correct union semantics. (#819, #821, #822)
+- **Authorization** — Unknown required access level fails closed. (#823)
+- **File storage** — Path traversal protection (rejects `..` and null bytes); cross-tenant access prevention. (#833, #834)
+- **Session** — Deactivated users blocked at `validateSession`. (#826)
+- **Audit logger** — Passwords, tokens, and secrets redacted from logs. (#836)
+- **Billing** — SQL injection guard on tenant schema interpolation. (#825)
+
+---
+
+## v1.23.0 — 2026-03-02
+
+### Security
+- **SQL injection** — Parameterized queries in `metadata.service.ts`. (#720)
+- **Secrets** — Removed hardcoded encryption key fallback. (#721)
+
+### Features
+- **Knowledge indexing observability** — Stats dashboard, reindex trigger, and worker status. (#679)
+
+---
+
+## v1.22.0 — 2026-03-01
+
+### Features
+- **Entity views UI** — Admin panel CRUD for views, plus a view records page with DynamicTable. (#740)
+- **Configurable title field** — Entities can define which field appears as the record display name, with smart fallback. (#749)
+
+### Fixes
+- **MCP URL** — Fixed hardcoded URL; now uses `mcp.fyso.dev/mcp`. (#747)
+- **MCP cleanup** — Removed dead public-keys MCP tools. (#746)
 
 ---
 

@@ -6,7 +6,7 @@ sidebar_position: 2
 
 Complete reference of all available MCP tools.
 
-The MCP server exposes **8 grouped tools** (each with an `action` enum parameter), plus `fyso_welcome` for onboarding. Configure which tools are exposed with the `FYSO_TOOLS` environment variable. See [Tool Profiles](tool-profiles.md).
+The MCP server exposes **10 grouped tools** (each with an `action` enum parameter), plus `fyso_welcome` for onboarding. Configure which tools are exposed with the `FYSO_TOOLS` environment variable. See [Tool Profiles](tool-profiles.md).
 
 Channels, bots, flows, webhooks, and other features are available via the [REST API](/api/rest-api) but not as MCP tools.
 
@@ -282,6 +282,75 @@ API spec, client generation, metadata import/export, secrets, and usage metrics.
 | `tenantId` | string | export, import | Tenant ID/slug override |
 | `key` | string | set_secret, delete_secret | Secret name |
 | `value` | string | set_secret | Secret value (encrypted at rest) |
+
+---
+
+## `fyso_agents` — Agent management
+
+Create, configure, and run AI agents. Manage versions, runs, and templates.
+
+| Action | Description | Required params |
+|--------|-------------|-----------------|
+| `list` | List all agents | — |
+| `create` | Create a new agent | `name` |
+| `update` | Modify an agent | `agentId` |
+| `delete` | Delete an agent | `agentId` |
+| `run` | Execute an agent with input | `agentId`, `input` |
+| `test` | Run agent in sandbox mode | `agentId`, `input` |
+| `list_runs` | List agent run history | `agentId` |
+| `list_versions` | List prompt versions | `agentId` |
+| `rollback` | Revert to a previous version | `agentId`, `versionId` |
+| `list_templates` | List industry preset templates | — |
+| `from_template` | Create agent from template | `templateId`, `name` |
+
+### Parameters
+
+| Param | Type | Used by | Description |
+|-------|------|---------|-------------|
+| `action` | string (enum) | all | Operation to perform |
+| `agentId` | string | update, delete, run, test, list_runs, list_versions, rollback | Agent ID |
+| `name` | string | create, from_template | Agent name |
+| `input` | string | run, test | User message or prompt |
+| `versionId` | string | rollback | Version ID to restore |
+| `templateId` | string | from_template | Template ID |
+| `memory_enabled` | boolean | create, update | Enable cross-session memory extraction |
+| `tools_scope` | string[] | create, update | List of tool names available to the agent |
+| `system_prompt` | string | create, update | Agent system prompt |
+| `channels` | object[] | create, update | Channel configurations (web, telegram, etc.) |
+
+---
+
+## `fyso_ai` — AI providers and calls
+
+Configure AI providers, manage prompts, test calls, and view logs.
+
+| Action | Description | Required params |
+|--------|-------------|-----------------|
+| `configure_provider` | Set default AI provider config | `provider`, `apiKey` |
+| `list_providers` | List configured providers | — |
+| `add_provider` | Add an additional provider | `provider`, `apiKey` |
+| `remove_provider` | Remove a provider | `providerId` |
+| `test_call` | Test a prompt against a provider | `prompt` |
+| `call_logs` | View AI call history | — |
+| `debug_log` | Get debug payload for a call | `callId` |
+| `create_template` | Create a reusable prompt template | `name`, `prompt` |
+| `list_templates` | List prompt templates | — |
+| `update_template` | Modify a prompt template | `templateId` |
+
+### Parameters
+
+| Param | Type | Used by | Description |
+|-------|------|---------|-------------|
+| `action` | string (enum) | all | Operation to perform |
+| `provider` | string | configure_provider, add_provider | Provider type: `openai`, `anthropic`, or any OpenAI-compatible base URL |
+| `apiKey` | string | configure_provider, add_provider | API key for the provider |
+| `providerId` | string | remove_provider | Provider configuration ID |
+| `model` | string | configure_provider, add_provider, test_call | Model name (e.g. `gpt-4o`, `claude-3-5-sonnet-20241022`) |
+| `prompt` | string | test_call, create_template | Prompt text |
+| `name` | string | create_template | Template name |
+| `templateId` | string | update_template | Template ID |
+| `callId` | string | debug_log | AI call ID (requires `ai.debug` tenant setting) |
+| `limit` | number | call_logs | Max log entries |
 
 ---
 

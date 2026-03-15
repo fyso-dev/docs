@@ -1,3 +1,80 @@
+## v1.33.2 — 2026-03-15
+
+### Security
+- **AI debug payload gated** — `debug_payload` in AI responses is now hidden behind the `ai.debug` tenant setting. Disabled by default in production.
+
+### Fixes
+- **REST API filters** — `?filters=field = value` now correctly filters records on list endpoints. AND compound filters also work.
+- **REST API resolve_depth** — `?resolve_depth=1` correctly resolves relations on list endpoints.
+- **Business rule field validation** — Field references in rule DSL are validated against the entity schema at publish time, preventing silent failures.
+
+---
+
+## v1.33.1 — 2026-03-15
+
+### Features
+- **Agent editor** — Agents editor now manages channels 1:N, prompt history with rollback, and multiple AI providers per agent.
+- **AI cost dashboard** — New admin page showing AI spending by provider, model, and agent over time.
+- **Prompt templates CRUD** — Create, edit, and delete reusable prompt templates from the admin panel.
+- **Bulk document upload** — Drag-and-drop multiple files to upload to the knowledge base in one operation.
+- **Integrations management page** — New admin page to manage registered integration instances (credentials, status, re-auth).
+- **Visual business rules editor** — Drag-and-drop rule builder with support for AI call actions.
+
+---
+
+## v1.33.0 — 2026-03-15
+
+### Breaking changes
+- **Pure RBAC — legacy roles dropped** — Built-in role names are removed. Roles are now fully editable templates. One role per tenant can be flagged as `is_owner`. Existing role assignments are migrated automatically; custom role configurations are preserved.
+
+### Features
+- **Agent channels 1:N** — Each agent can be connected to multiple channels simultaneously (web widget, Telegram, etc.).
+- **AI rate limiting and budget enforcement** — Tenant-level and agent-level token budgets with hard limits and soft alerts.
+- **Prompt versioning with rollback** — Every prompt change is saved as a version. Roll back to any previous version from the agent editor.
+- **SSE streaming for channels** — Agent replies stream token-by-token via Server-Sent Events. Telegram shows typing indicators.
+- **Multiple AI providers per tenant** — Add multiple provider configurations (OpenAI, Anthropic, or any OpenAI-compatible endpoint). The first active provider is used; configure priority/fallback chains.
+- **Reusable prompt templates** — Define shared prompt templates across agents. Templates support field substitution via `{{field}}` syntax.
+- **Industry presets** — One-click starter configurations for common business types: workshop (`taller`), clinic (`clínica`), store (`tienda`).
+- **AI cost dashboard** — Real-time spend tracking by provider, model, and agent.
+- **Telegram integration** — Telegram bot as a first-class integration plugin. Configure via the integrations page.
+- **Bulk knowledge indexing** — Upload multiple documents at once; indexing runs in parallel with progress reporting.
+
+---
+
+## v1.32.0 — 2026-03-14
+
+### Features
+- **Integration SDK** — Third-party integrations can be built with `defineAction` / `validateManifest`. Integrations register with a credential store, a manifest registry, and a runtime executor.
+- **Discord webhook integration** — Built-in integration to send messages to Discord channels. Configure once, use in business rules.
+- **Agent MCP tools** — `fyso_agents` tool group: `list`, `create`, `update`, `delete`, `run`, `test`, `list_runs`, `list_versions`, `rollback`, `list_templates`, `from_template`.
+- **Agent Runner** — Run agents programmatically with session tracking, run history, and version snapshots.
+- **Knowledge base in Agent Runner** — Agents automatically use the tenant knowledge base for RAG retrieval during runs.
+- **`create_tenant` MCP action** — Provision new tenants from an MCP session (superadmin).
+- **`report_feedback` MCP tool** — Submit structured feedback from within an agent session.
+
+---
+
+## v1.31.0 — 2026-03-14
+
+### Features
+- **AI engine** — Fyso now includes a built-in AI engine. Configure AI provider adapters (OpenAI-compatible endpoints, Anthropic) from the admin panel. All AI calls are logged with model, tokens, latency, and cost.
+- **AI budget and rate limiting** — Set monthly token budgets and per-minute rate limits per tenant. Budget estimator shows projected spend before enabling.
+- **Execution context (`$ctx`)** — Business rules and AI actions share an inter-action variable context (`$ctx`). Pass data between rule steps without external storage.
+- **Template engine** — Field substitution in prompts and rule actions using `{{field}}` syntax.
+- **`ai_call` action type** — Business rules can now invoke an AI model as a rule action, with the response available in `$ctx`.
+- **`webhook_send` action type** — Business rules can send HTTP webhooks as a rule action.
+- **`test_ai_call` MCP tool** — Prompt playground: test any prompt against any configured provider and see full token/cost breakdown.
+- **Agent runner infrastructure** — Internal agent sessions, runs, and tool-call tables. Foundation for v1.32 Agent Runner.
+- **Semantic tool generator** — Agents auto-generate semantic descriptions of available tools from their `tools_scope` definition.
+- **Agent test panel** — Live chat interface to test agents at `/agents/:id/test`, with run inspector (Summary, Flow, Steps, Raw tabs).
+- **Agent memory** — Enable `memory_enabled: true` on an agent to extract and persist facts across conversations. Facts are injected into the system prompt on subsequent sessions.
+- **GDPR compliance** — DPA acceptance, per-session AI consent, data suppression, and consent audit log. Endpoints: `POST /api/auth/tenants/:id/dpa-accept`, `POST /api/rgpd/sessions/:sessionId/consent`, `DELETE /api/rgpd/users/:externalRef/ai-data`.
+- **Web widget** — Embed an agent as a floating chat bubble with a single `<script>` tag. Configurable title, color, and position.
+- **Visual rules editor** — Drag-and-drop business rules editor at `/agents/:slug/rules` with template variable chips.
+- **AI logs viewer** — `/agents/:slug/logs` shows run history with stats bar, filter panel, and per-run detail dialog.
+
+---
+
 ## v1.30.0 — 2026-03-12
 
 ### Features
