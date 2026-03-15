@@ -212,6 +212,7 @@
 ## v1.31.0 — 2026-03-14
 
 ### Features
+
 - **AI engine** — Fyso now includes a built-in AI engine. Configure AI provider adapters (OpenAI-compatible endpoints, Anthropic) from the admin panel. All AI calls are logged with model, tokens, latency, and cost.
 - **AI budget and rate limiting** — Set monthly token budgets and per-minute rate limits per tenant. Budget estimator shows projected spend before enabling.
 - **Execution context (`$ctx`)** — Business rules and AI actions share an inter-action variable context (`$ctx`). Pass data between rule steps without external storage.
@@ -221,12 +222,24 @@
 - **`test_ai_call` MCP tool** — Prompt playground: test any prompt against any configured provider and see full token/cost breakdown.
 - **Agent runner infrastructure** — Internal agent sessions, runs, and tool-call tables. Foundation for v1.32 Agent Runner.
 - **Semantic tool generator** — Agents auto-generate semantic descriptions of available tools from their `tools_scope` definition.
-- **Agent test panel** — Live chat interface to test agents at `/agents/:id/test`, with run inspector (Summary, Flow, Steps, Raw tabs).
-- **Agent memory** — Enable `memory_enabled: true` on an agent to extract and persist facts across conversations. Facts are injected into the system prompt on subsequent sessions.
-- **GDPR compliance** — DPA acceptance, per-session AI consent, data suppression, and consent audit log. Endpoints: `POST /api/auth/tenants/:id/dpa-accept`, `POST /api/rgpd/sessions/:sessionId/consent`, `DELETE /api/rgpd/users/:externalRef/ai-data`.
-- **Web widget** — Embed an agent as a floating chat bubble with a single `<script>` tag. Configurable title, color, and position.
-- **Visual rules editor** — Drag-and-drop business rules editor at `/agents/:slug/rules` with template variable chips.
-- **AI logs viewer** — `/agents/:slug/logs` shows run history with stats bar, filter panel, and per-run detail dialog.
+- **Agent test panel** — New `/agents/:id/test` page provides a live chat interface to test agents before deploying them. Click any run to open the inspector modal with four tabs: Summary (tokens, latency, run/session IDs), Flow (n8n-style diagram showing User → Agent → tools → Response), Steps (full message history with tool call details), and Raw (complete JSON payload). The agent list and edit pages gain Test (flask) and Rules quick-action buttons. (#1109)
+- **Agent memory** — Agents can now extract and retain facts across conversations. Enable with `memory_enabled: true` on the agent config. After a session reaches 3 user turns, an LLM-based extraction pass runs in the background and stores deduplicated facts in `_fyso_agent_memory` per agent+client pair. Facts are injected into the system prompt on subsequent turns. Off by default; existing agents are unaffected. Requires migration 0068. (#1082)
+- **RGPD / GDPR compliance** — Data Processing Agreement (DPA) acceptance, per-session AI consent, data suppression, and consent audit log. Builder-facing: `POST /api/auth/tenants/:id/dpa-accept` and `GET /api/auth/tenants/:id/dpa-status`. End-user consent: `POST /api/rgpd/sessions/:sessionId/consent`. Data suppression: `DELETE /api/rgpd/users/:externalRef/ai-data`. Audit log: `GET /api/rgpd/audit-log`. Sessions with `ai_consent: false` receive a refusal response without any LLM call. Requires migration 0067. (#1081)
+- **Web widget** — Embed an agent as a floating chat bubble on any website with a single `<script>` tag. The widget serves from public endpoints (no tenant auth required). Sessions persist across page loads via `localStorage`. Supports SSE streaming for replies. Configurable title, primary color, position (`bottom-right` / `bottom-left`), and welcome message via the agent's web channel config. (#1080)
+- **Visual rules editor** — `/agents/:slug/rules` provides a drag-and-drop sortable list of deterministic rules. Match types: exact, contains, starts_with, regex. Template variable chips for dynamic responses. Add/edit/delete via dialog with live preview. Rules are persisted via `PUT /api/agents-config/:id`. (#1079)
+- **AI logs viewer** — `/agents/:slug/logs` shows a table of agent runs with a stats bar (total / success / error / tokens), a filter panel (path × status × time range), and a detail dialog per run showing input, output, tokens, steps, and latency. (#1079)
+
+### Fixes
+
+- **Column names in readEntityFields** — Corrected column names in the `readEntityFields` query. (#1103)
+- **Orphaned tool messages** — Tool messages with no corresponding tool-call entry are now sanitized from session history before sending to the LLM, preventing malformed context errors. (#1104, #1099)
+- **Default model placeholder** — UI placeholder updated from `gpt-4o-mini` to `gpt-4.1`. (#1107)
+- **AI provider i18n** — Fixed interpolation errors and contrast issues in AI provider labels. (#1102)
+- **`max_completion_tokens` for gpt-4o / o1 / o3** — These models require `max_completion_tokens` instead of `max_tokens`; the runner now sends the correct parameter. (#1099)
+- **Rate limit error shape** — 429 responses now return a consistent `{ error, retryAfter }` shape instead of a raw string. (#1097)
+- **Agents list double-unwrap** — Fixed a double `.data.data` unwrap in the agents list API call. (#1096)
+- **Layout scroll** — Corrected a scroll overflow bug in the main layout. (#1098)
+- **Landing animation** — Fixed animation plugin step sequencing on the landing page. (#1106)
 
 ---
 

@@ -48,11 +48,14 @@ See [REST API](/docs/api/rest-api) for endpoint reference.
 | Area | What you can do |
 |------|----------------|
 | **Data** | Define entities (tables), create/read/update/delete records, create filtered views, compound filters (AND/OR), semantic search across records |
-| **Logic** | Business rules (event-driven or scheduled), automation flows, webhook subscriptions |
+| **Logic** | Business rules (event-driven or scheduled), automation flows, webhook subscriptions, [visual rule editor](./building-a-site.md) |
 | **Users** | Create tenant users, define roles with entity-level permissions, assign/revoke roles, invitation codes |
 | **Content** | Knowledge base with RAG (upload PDFs, HTML, URLs — then semantic search), PDF generation from templates |
 | **Deploy** | Static sites on `*.sites.fyso.dev`, custom domains (Pro), persistent deploy tokens for CI/CD |
-| **Integration** | Channels (custom MCP tools for bots), bot identity system, publishable apps catalog, n8n community node |
+| **Integration** | Channels (custom MCP tools for bots), [web widget](./web-widget.md), bot identity system, publishable apps catalog, n8n community node |
+| **Memory** | [Agent memory](./agent-memory.md) — fact extraction and retrieval across conversations per end user |
+| **Compliance** | [RGPD / GDPR](./rgpd-compliance.md) — DPA acceptance, session AI consent, data suppression, audit log |
+| **Testing** | [Test panel](./test-panel.md) — live chat with inspector modal (Flow, Steps, Summary, Raw) |
 
 ---
 
