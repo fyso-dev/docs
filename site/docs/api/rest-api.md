@@ -149,7 +149,9 @@ curl -H "Authorization: Bearer JWT_TOKEN" \
 | `order` | string | `asc` | Direction: `asc` or `desc` |
 | `search` | string | - | Full-text search across text fields |
 | `resolve` | boolean | - | Expand relations to full objects |
-| `filter.{fieldKey}` | string | - | Filter by field (e.g., `filter.estado=activo`) |
+| `resolve_depth` | number | - | Relation resolution depth (max 2 on list endpoints, max 3 on single record). Example: `?resolve_depth=1` |
+| `filters` | string | - | Filter expression. Example: `?filters=status = active`. Operators: `=`, `!=`, `>`, `<`, `>=`, `<=`, `contains`. Combine with `AND`: `?filters=status = active AND role = admin` |
+| `filter.{fieldKey}` | string | - | Legacy per-field filter (e.g., `filter.estado=activo`). Prefer `filters` for compound logic. |
 
 **Response:**
 
@@ -300,11 +302,65 @@ Returns `404` if the record does not match the view's filter.
 
 ## Record Structure
 
-Entity fields are at the top level of the record object:
+Records use a flat format introduced in v1.26.0. Entity fields are at the top level of the record object alongside system fields:
+
+```json
+{
+  "id": "uuid",
+  "entityId": "uuid",
+  "nombre": "Juan Perez",
+  "email": "juan@example.com",
+  "createdAt": "2026-03-01T12:00:00.000Z",
+  "updatedAt": "2026-03-01T12:00:00.000Z"
+}
+```
 
 ```
-record.email          -- CORRECT
-record.nombre         -- CORRECT
+record.email          -- CORRECT (flat)
+record.nombre         -- CORRECT (flat)
+record.data.email     -- WRONG (old nested format, removed in v1.26.0)
+```
+
+**Response envelope for lists:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "items": [...],
+    "total": 42,
+    "page": 1,
+    "limit": 20,
+    "totalPages": 3
+  }
+}
+```
+
+### Reserved field names
+
+The following names cannot be used as custom field keys — they are system fields always present at the top level:
+
+`id`, `entityId`, `name`, `createdAt`, `updatedAt`, `createdBy`, `updatedBy`
+
+Attempting to create an entity field with one of these names returns a `400 VALIDATION_ERROR`.
+
+### Filtering examples
+
+```bash
+# Simple equality filter
+curl -H "Authorization: Bearer JWT_TOKEN" \
+  -H "X-Tenant-ID: my-company" \
+  "https://api.fyso.dev/api/entities/clientes/records?filters=status%20%3D%20activo"
+
+# Compound AND filter
+curl -H "Authorization: Bearer JWT_TOKEN" \
+  -H "X-Tenant-ID: my-company" \
+  "https://api.fyso.dev/api/entities/tickets/records?filters=status%20%3D%20open%20AND%20priority%20%3D%20high"
+
+# Resolve relations (depth 1)
+curl -H "Authorization: Bearer JWT_TOKEN" \
+  -H "X-Tenant-ID: my-company" \
+  "https://api.fyso.dev/api/entities/pedidos/records?resolve_depth=1"
 ```
 
 ## Error Codes

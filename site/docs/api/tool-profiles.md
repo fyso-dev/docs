@@ -12,21 +12,21 @@ Tool profiles control which MCP tools are exposed to the agent. Fyso uses a 3-ti
 
 The standard profile for everyday use. Includes all tools needed to build and operate applications.
 
-Includes: `fyso_data` (records CRUD, scheduling), `fyso_schema` (entity management), `fyso_rules` (business rules), `fyso_auth` (users, roles, tenants), `fyso_views` (entity views), `fyso_knowledge` (search), `fyso_deploy` (static sites), `fyso_meta` (API spec, metadata, secrets, usage).
+Includes: `fyso_data` (records CRUD, scheduling), `fyso_schema` (entity management), `fyso_rules` (business rules), `fyso_auth` (users, roles, tenants), `fyso_views` (entity views), `fyso_knowledge` (search), `fyso_deploy` (static sites), `fyso_meta` (API spec, metadata, secrets, usage), `fyso_agents` (agent management), `fyso_ai` (AI providers and calls).
 
-**8 grouped tools** (each with multiple actions)
+**10 grouped tools** (each with multiple actions)
 
 ### `advanced`
 
 Everything in `core` plus all actions within the grouped tools. The `core` and `advanced` distinction now applies to which _actions_ within grouped tools are available, rather than separate tool names. Destructive actions (delete entity, delete record) and testing/debugging actions (test rule, rule logs, manage custom fields, entity change history) are gated behind `advanced`.
 
-**8 grouped tools** (full action set)
+**10 grouped tools** (full action set)
 
 ### `all`
 
 Everything in `advanced` plus channel management, bot identity, and invitation tools as individual tools.
 
-**8 grouped + ~24 individual tools**
+**10 grouped + individual tools**
 
 ## Profile Resolution Order
 

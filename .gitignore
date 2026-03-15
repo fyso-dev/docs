@@ -2,3 +2,4 @@ site/node_modules/
 site/build/
 site/.docusaurus/
 app.log
+.claude/

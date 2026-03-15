@@ -1,3 +1,7 @@
+---
+sidebar_position: 10
+---
+
 # MCP vs REST API
 
 Fyso offers two integration paths: **MCP** (Model Context Protocol) for AI agents, and a **REST API** for traditional HTTP clients. This guide compares both approaches.

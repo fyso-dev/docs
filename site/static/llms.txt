@@ -34,6 +34,7 @@
 - [Quick Start](https://docs.fyso.dev/docs/getting-started/quick-start): 5-minute intro — tenant, entity, records, rules
 - [Key Concepts](https://docs.fyso.dev/docs/getting-started/concepts): Tenants, entities, fields, records, rules, RBAC, tool profiles
 - [Configure MCP](https://docs.fyso.dev/docs/getting-started/mcp-setup): Claude Desktop, Smithery, env vars, compatible clients
+- [Claude Plugin](https://docs.fyso.dev/docs/getting-started/claude-plugin): Install and configure the Fyso Claude Code plugin
 
 ## Entities
 
@@ -58,8 +59,9 @@
 
 ## API Reference
 
-- [MCP Tools Reference](https://docs.fyso.dev/docs/api/mcp-tools): All 88 MCP tools by category and profile
+- [MCP Tools Reference](https://docs.fyso.dev/docs/api/mcp-tools): 10 grouped tools (fyso_data, fyso_schema, fyso_rules, fyso_auth, fyso_views, fyso_knowledge, fyso_deploy, fyso_meta, fyso_agents, fyso_ai) plus fyso_welcome
 - [REST API](https://docs.fyso.dev/docs/api/rest-api): CRUD endpoints, auth, views API, error codes, curl examples
+- [WebSocket](https://docs.fyso.dev/docs/api/websocket): Real-time record updates via WebSocket, subscribe/unsubscribe, per-entity toggle
 - [Tool Profiles](https://docs.fyso.dev/docs/api/tool-profiles): core (~60), advanced (~76), all (~91), per-user override
 
 ## Admin
@@ -101,4 +103,4 @@
 
 ## Optional
 
-- [Changelog](https://docs.fyso.dev/docs/changelog): Platform release notes (v1.16.0 — v1.21.0)
+- [Changelog](https://docs.fyso.dev/docs/changelog): Platform release notes (v1.16.0 — v1.33.2)

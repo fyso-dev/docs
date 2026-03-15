@@ -1,3 +1,7 @@
+---
+sidebar_position: 9
+---
+
 # Auth for Static Sites
 
 This guide covers authentication strategies for static sites deployed on Fyso. Choose the method that fits your use case.
