@@ -47,6 +47,7 @@ const FILES = [
   // API reference
   'api/mcp-tools.md',
   'api/rest-api.md',
+  'api/websocket.md',
   'api/tool-profiles.md',
   // Admin
   'admin/users.md',

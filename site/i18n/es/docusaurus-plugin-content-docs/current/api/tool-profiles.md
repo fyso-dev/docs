@@ -12,21 +12,21 @@ Los perfiles de herramientas controlan que herramientas MCP se exponen al agente
 
 El perfil estandar para uso diario. Incluye todas las herramientas necesarias para construir y operar aplicaciones.
 
-Incluye: `fyso_data` (CRUD de registros, scheduling), `fyso_schema` (gestion de entidades), `fyso_rules` (reglas de negocio), `fyso_auth` (usuarios, roles, tenants, invitaciones), `fyso_views` (vistas de entidades), `fyso_knowledge` (busqueda), `fyso_deploy` (sitios estaticos), `fyso_meta` (spec de API, metadata, secretos, uso).
+Incluye: `fyso_data` (CRUD de registros, scheduling), `fyso_schema` (gestión de entidades), `fyso_rules` (reglas de negocio), `fyso_auth` (usuarios, roles, tenants, invitaciones), `fyso_views` (vistas de entidades), `fyso_knowledge` (búsqueda), `fyso_deploy` (sitios estáticos), `fyso_meta` (spec de API, metadata, secretos, uso), `fyso_agents` (gestión de agentes), `fyso_ai` (proveedores de IA y llamadas).
 
-**8 herramientas agrupadas** (cada una con multiples acciones)
+**10 herramientas agrupadas** (cada una con multiples acciones)
 
 ### `advanced`
 
 Todo lo de `core` mas todas las acciones dentro de las herramientas agrupadas. La distincion `core`/`advanced` ahora aplica a que _acciones_ dentro de las herramientas agrupadas estan disponibles, en vez de herramientas separadas. Las acciones destructivas (eliminar entidad, eliminar registro) y las de testing/debugging (testear regla, logs de reglas, gestionar campos personalizados, historial de cambios) estan protegidas detras de `advanced`.
 
-**8 herramientas agrupadas** (set completo de acciones)
+**10 herramientas agrupadas** (set completo de acciones)
 
 ### `all`
 
 Igual que `advanced`. Toda la funcionalidad MCP esta cubierta por las 8 herramientas agrupadas.
 
-**8 herramientas agrupadas** (set completo de acciones)
+**10 herramientas agrupadas** (set completo de acciones)
 
 ## Orden de resolucion del perfil
 

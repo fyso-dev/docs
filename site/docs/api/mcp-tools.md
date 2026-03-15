@@ -43,14 +43,14 @@ CRUD operations on records and scheduling.
 | `entity` | string | create, query, update, delete | Entity name |
 | `data` | object | create, update | Record data |
 | `id` | string | update, delete | Record ID |
-| `filters` | string | query | Filter expression. Operators: `=`, `!=`, `>`, `<`, `>=`, `<=`, `contains`. Combine with `AND`/`OR`. Example: `status = active AND date >= 2026-01-01` |
+| `filters` | string | query | Filter expression. Operators: `=`, `!=`, `>`, `<`, `>=`, `<=`, `contains`. Combine with `AND` (OR not supported server-side). Example: `status = active AND date >= 2026-01-01` |
 | `sort` | string | query | Field to sort by |
 | `order_dir` | `asc` \| `desc` | query | Sort direction |
 | `limit` | number | query | Max records (default: 50, max: 200) |
 | `offset` | number | query | Pagination offset |
 | `semantic` | string | query | Natural language semantic search |
 | `min_similarity` | number | query | Similarity threshold 0-1 for semantic search |
-| `resolve_depth` | number | query | Relation resolution depth 1-3 (default: 1) |
+| `resolve_depth` | number | query | Relation resolution depth 1-2 (default: 1, list endpoints only) |
 | `professional_id` | string | create_booking, get_slots | Professional UUID |
 | `patient_id` | string | create_booking | Patient/client UUID |
 | `date` | string | create_booking, get_slots | Date YYYY-MM-DD |
@@ -267,6 +267,7 @@ API spec, client generation, metadata import/export, secrets, and usage metrics.
 | `usage` | Billing metrics | — |
 | `set_secret` | Store encrypted secret | `key`, `value` |
 | `delete_secret` | Delete a secret | `key` |
+| `feedback` | Report feedback or bug | `feedback_type`, `title` |
 
 ### Parameters
 
@@ -351,8 +352,6 @@ Configure AI providers, manage prompts, test calls, and view logs.
 | `templateId` | string | update_template | Template ID |
 | `callId` | string | debug_log | AI call ID (requires `ai.debug` tenant setting) |
 | `limit` | number | call_logs | Max log entries |
-
----
 
 ---
 

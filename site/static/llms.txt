@@ -60,6 +60,7 @@
 
 - [MCP Tools Reference](https://docs.fyso.dev/docs/api/mcp-tools): 10 grouped tools (fyso_data, fyso_schema, fyso_rules, fyso_auth, fyso_views, fyso_knowledge, fyso_deploy, fyso_meta, fyso_agents, fyso_ai) plus fyso_welcome
 - [REST API](https://docs.fyso.dev/docs/api/rest-api): CRUD endpoints, auth, views API, error codes, curl examples
+- [WebSocket](https://docs.fyso.dev/docs/api/websocket): Real-time record updates via WebSocket, subscribe/unsubscribe, per-entity toggle
 - [Tool Profiles](https://docs.fyso.dev/docs/api/tool-profiles): core (~60), advanced (~76), all (~91), per-user override
 
 ## Admin
