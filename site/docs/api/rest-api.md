@@ -357,6 +357,16 @@ curl -H "Authorization: Bearer JWT_TOKEN" \
   -H "X-Tenant-ID: my-company" \
   "https://api.fyso.dev/api/entities/tickets/records?filters=status%20%3D%20open%20AND%20priority%20%3D%20high"
 
+# Contains filter (text search)
+curl -H "Authorization: Bearer JWT_TOKEN" \
+  -H "X-Tenant-ID: my-company" \
+  "https://api.fyso.dev/api/entities/clientes/records?filters=nombre%20contains%20juan"
+
+# Combine contains with AND
+curl -H "Authorization: Bearer JWT_TOKEN" \
+  -H "X-Tenant-ID: my-company" \
+  "https://api.fyso.dev/api/entities/clientes/records?filters=nombre%20contains%20juan%20AND%20estado%20%3D%20activo"
+
 # Resolve relations (depth 1)
 curl -H "Authorization: Bearer JWT_TOKEN" \
   -H "X-Tenant-ID: my-company" \

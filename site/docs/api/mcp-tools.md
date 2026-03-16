@@ -43,7 +43,7 @@ CRUD operations on records and scheduling.
 | `entity` | string | create, query, update, delete | Entity name |
 | `data` | object | create, update | Record data |
 | `id` | string | update, delete | Record ID |
-| `filters` | string | query | Filter expression. Operators: `=`, `!=`, `>`, `<`, `>=`, `<=`, `contains`. Combine with `AND` (OR not supported server-side). Example: `status = active AND date >= 2026-01-01` |
+| `filters` | string | query | Filter expression. Operators: `=`, `!=`, `>`, `<`, `>=`, `<=`, `contains`. Combine with `AND` (OR not supported server-side). Example: `status = active AND nombre contains juan` |
 | `sort` | string | query | Field to sort by |
 | `order_dir` | `asc` \| `desc` | query | Sort direction |
 | `limit` | number | query | Max records (default: 50, max: 200) |

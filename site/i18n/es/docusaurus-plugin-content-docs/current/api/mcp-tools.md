@@ -41,7 +41,7 @@ Operaciones CRUD sobre registros y scheduling.
 | `entity` | string | create, query, update, delete | Nombre de la entidad |
 | `data` | object | create, update | Datos del registro |
 | `id` | string | update, delete | ID del registro |
-| `filters` | string | query | Expresion de filtro. Operadores: `=`, `!=`, `>`, `<`, `>=`, `<=`, `contains`. Combinar con `AND`/`OR` |
+| `filters` | string | query | Expresion de filtro. Operadores: `=`, `!=`, `>`, `<`, `>=`, `<=`, `contains`. Combinar con `AND` (OR no soportado en servidor). Ejemplo: `estado = activo AND nombre contains juan` |
 | `sort` | string | query | Campo para ordenar |
 | `order_dir` | `asc` \| `desc` | query | Direccion de orden |
 | `limit` | number | query | Max registros (default: 50, max: 200) |

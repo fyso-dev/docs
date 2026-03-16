@@ -196,6 +196,35 @@ record.data.email     -- CORRECTO
 record.email          -- INCORRECTO
 ```
 
+### Ejemplos de filtrado
+
+```bash
+# Filtro de igualdad simple
+curl -H "Authorization: Bearer JWT_TOKEN" \
+  -H "X-Tenant-ID: mi-empresa" \
+  "https://api.fyso.dev/api/entities/clientes/records?filters=estado%20%3D%20activo"
+
+# Filtro AND compuesto
+curl -H "Authorization: Bearer JWT_TOKEN" \
+  -H "X-Tenant-ID: mi-empresa" \
+  "https://api.fyso.dev/api/entities/tickets/records?filters=estado%20%3D%20abierto%20AND%20prioridad%20%3D%20alta"
+
+# Filtro contains (busqueda de texto)
+curl -H "Authorization: Bearer JWT_TOKEN" \
+  -H "X-Tenant-ID: mi-empresa" \
+  "https://api.fyso.dev/api/entities/clientes/records?filters=nombre%20contains%20juan"
+
+# Combinar contains con AND
+curl -H "Authorization: Bearer JWT_TOKEN" \
+  -H "X-Tenant-ID: mi-empresa" \
+  "https://api.fyso.dev/api/entities/clientes/records?filters=nombre%20contains%20juan%20AND%20estado%20%3D%20activo"
+
+# Resolver relaciones (profundidad 1)
+curl -H "Authorization: Bearer JWT_TOKEN" \
+  -H "X-Tenant-ID: mi-empresa" \
+  "https://api.fyso.dev/api/entities/pedidos/records?resolve_depth=1"
+```
+
 ## Codigos de error
 
 | Codigo | HTTP | Descripcion |
