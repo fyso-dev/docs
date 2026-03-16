@@ -20,7 +20,7 @@ field operator value
 | `<` | Less than (numeric) | `stock < 10` |
 | `>=` | Greater than or equal | `total >= 500` |
 | `<=` | Less than or equal | `descuento <= 20` |
-| `contains` | Contains text (case-insensitive) | `nombre contains juan` |
+| `contains` | Contains text (case-insensitive, accent-sensitive) | `nombre contains juan` |
 
 ### Examples
 
@@ -30,11 +30,21 @@ query_records({ entityName: "clientes", filter: "nombre contains perez" })
 query_records({ entityName: "facturas", filter: "estado = pagada" })
 ```
 
+### `contains` behavior
+
+`contains` is implemented as a PostgreSQL `ILIKE` query against the stored field value.
+
+**Case sensitivity:** `contains cafe` matches `Cafe`, `CAFE`, and `cafe`. Case is ignored.
+
+**Accent sensitivity:** `ILIKE` does not normalize Unicode. `contains cafe` does **not** match `Café`. To match records with accents, include the accent in the search value: `nombre contains Café`.
+
+**Partial matches:** the value is matched anywhere in the field. `contains an` matches `Juan`, `Ana`, and `Mariana`.
+
 ### Notes
 
-- The filter is applied in memory after fetching the records (except for semantic search)
 - String values do not need quotes, but they are supported: `nombre = "Juan Perez"`
 - Numeric comparisons (`>`, `<`, `>=`, `<=`) convert values to numbers
+- `contains` and `startsWith` filters run as database queries (server-side). All other operators also run server-side when using the `filters=` expression syntax
 
 ## Filters in REST API
 
