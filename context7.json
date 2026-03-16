@@ -1,4 +1,5 @@
 {
+  "public_key": "pk_jUaadn3AvQEAcjYFIo7Ou",
   "projectTitle": "Fyso Documentation",
   "description": "Fyso is an agent-first platform for building business applications. Define entities, business rules, RBAC, and automations — integrate via MCP (10 grouped tools) or REST API. No infrastructure to manage.",
   "branch": "main",
