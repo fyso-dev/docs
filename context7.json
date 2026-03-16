@@ -1,0 +1,41 @@
+{
+  "projectTitle": "Fyso Documentation",
+  "description": "Fyso is an agent-first platform for building business applications. Define entities, business rules, RBAC, and automations — integrate via MCP (10 grouped tools) or REST API. No infrastructure to manage.",
+  "branch": "main",
+  "folders": [
+    "site/docs",
+    "site/static"
+  ],
+  "excludeFolders": [
+    "site/build",
+    "site/node_modules",
+    "site/.docusaurus",
+    "site/i18n",
+    "site/src"
+  ],
+  "excludeFiles": [
+    "package-lock.json",
+    "tsconfig.json",
+    "*.css",
+    "*.tsx",
+    "*.js",
+    "*.mjs"
+  ],
+  "rules": [
+    "Fyso is agent-first. Prefer MCP tools over REST API when integrating from an AI agent.",
+    "Always call `select_tenant` (via fyso_auth) before any tenant-specific operation.",
+    "There are 10 grouped MCP tools: fyso_auth, fyso_schema, fyso_rules, fyso_data, fyso_views, fyso_knowledge, fyso_deploy, fyso_meta, fyso_agents, fyso_ai. Each uses an `action` parameter.",
+    "REST API base URL: https://app.fyso.dev/api — tenant isolation via `X-Tenant-ID` header, auth via `X-API-Key` header.",
+    "REST API responses use a `{ success, data }` envelope. List endpoints return `data.items[]`. Records are flat (no `.data` nesting) since v1.26.0.",
+    "Never create entity fields with reserved names: id, entityId, name, createdAt, updatedAt, createdBy, updatedBy.",
+    "Use `generate_entity` with `auto_publish: true` for prototyping. Use draft/publish cycle for production.",
+    "Filter syntax: `\"field operator value\"` with operators =, !=, >, <, >=, <=, contains. Compound with AND only (OR not supported server-side).",
+    "Relations store UUIDs. Use `resolve_depth` to auto-resolve: max 2 on REST list endpoints, max 3 on REST single record and MCP.",
+    "Static sites deploy to `{subdomain}-sites.fyso.dev`. Use `generate_deploy_token` for CI/CD.",
+    "For REST API access, prefer platform keys (`fyso_pkey_*`) with RBAC over admin keys (`fyso_ak_*`).",
+    "Default tool profile is `core` (10 grouped tools). Set `FYSO_TOOLS=advanced` for destructive operations and debugging.",
+    "Business rules DSL supports compute (formula, conditional), validate, and transform. Trigger types: field_change, before_save, after_save, on_query.",
+    "AI actions in rules: `ai_call` invokes a configured AI provider, `webhook_send` fires HTTP webhooks. Results available in `$ctx`.",
+    "Bot identity: register bots via POST /api/auth/bots/register, authenticate via POST /api/auth/bots/identify to get a JWT with entity permissions."
+  ]
+}
