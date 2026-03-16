@@ -29,3 +29,12 @@ jobs:
           curl -sf -X POST https://api.fyso.dev/api/sites/docs/deploy \
             -H "Authorization: Bearer ${{ secrets.FYSO_DEPLOY_TOKEN }}" \
             -F "file=@build.zip"
+
+      - name: Re-index on Context7
+        if: success()
+        run: |
+          curl -sf -X POST https://context7.com/api/v2/add/website \
+            -H "Authorization: Bearer ${{ secrets.CONTEXT7_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{"websiteUrl": "https://docs.fyso.dev", "websiteBaseUrl": "https://docs.fyso.dev/docs/"}'
+        continue-on-error: true
