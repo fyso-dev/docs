@@ -64,8 +64,12 @@ const FILES = [
   'admin/apps.md',
   'admin/import-export.md',
   'admin/platform-invitations.md',
+  'admin/ai-agents.md',
+  'admin/channels.md',
+  'admin/gdpr.md',
   // Integrations
   'integrations/n8n.md',
+  'integrations/sdk.md',
   // Deployment
   'deployment/static-sites.md',
   'deployment/github-actions.md',

@@ -28,7 +28,7 @@ Despues de subir, el documento se fragmenta e indexa automaticamente. El estado 
 
 ### Ingesta por URL
 
-Podes ingestar contenido desde una URL. Fyso descarga la pagina, extrae texto limpio (eliminando navegacion/chrome del HTML), y lo indexa:
+Se puede ingestar contenido desde una URL. Fyso descarga la pagina, extrae texto limpio (eliminando navegacion/chrome del HTML), y lo indexa:
 
 ```
 upload_document({
@@ -77,6 +77,53 @@ curl -X POST https://api.fyso.dev/api/knowledge/documents/upload \
 
 Retorna `201` en caso de exito con los metadatos del documento.
 
+**Errores:**
+
+| Codigo | Descripcion |
+|--------|-------------|
+| `400` | Campo `file` faltante o tipo MIME no soportado (solo PDF aceptado) |
+| `403` | Limite de documentos o almacenamiento del plan alcanzado |
+
+### Indexacion masiva de URLs
+
+Indexar multiples URLs en una sola solicitud (max 50):
+
+```bash
+curl -X POST https://api.fyso.dev/api/knowledge/documents/bulk \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "documents": [
+      { "title": "FAQ", "content": "https://example.com/faq", "source_type": "url" },
+      { "title": "Pricing", "content": "https://example.com/pricing", "source_type": "url" }
+    ]
+  }'
+```
+
+### Subida masiva de archivos
+
+Subir multiples archivos en una sola solicitud (max 50):
+
+```bash
+curl -X POST https://api.fyso.dev/api/knowledge/documents/upload/bulk \
+  -H "Authorization: Bearer <token>" \
+  -F "files=@manual1.pdf" \
+  -F "files=@manual2.pdf"
+```
+
+Ambos endpoints masivos retornan una respuesta `207` con exito/error por cada elemento:
+
+```json
+{
+  "results": [
+    { "title": "FAQ", "status": "success", "document_id": "uuid" },
+    { "title": "Pricing", "status": "error", "error": "URL fetch timeout" }
+  ]
+}
+```
+
+Los limites del plan se verifican antes de procesar. Si el lote excede la cuota del plan, la solicitud completa se rechaza.
+
 ### Limites por plan
 
 | Plan | Documentos | Almacenamiento |
@@ -110,7 +157,7 @@ Retorna fragmentos coincidentes con documento fuente, puntaje de relevancia y ex
 | `document_ids` | string[] | todos | Restringir busqueda a documentos especificos |
 
 :::tip Tips de busqueda
-La busqueda funciona por significado, no por palabras exactas. En vez de buscar una sola palabra como "precio", intenta buscar algo como "cual es el precio del producto" o "informacion sobre precios". Cuanto mas describas lo que buscas, mejores resultados vas a obtener.
+La busqueda funciona por significado, no por palabras exactas. En vez de buscar una sola palabra como "precio", intenta buscar algo como "cual es el precio del producto" o "informacion sobre precios". Cuanto mas describas lo que buscas, mejores resultados se obtienen.
 :::
 
 **API REST:**
@@ -135,7 +182,7 @@ Respuesta:
   "data": {
     "results": [
       {
-        "content": "Para reiniciar, mantene presionado el boton de encendido 10 segundos...",
+        "content": "Para reiniciar, mantenga presionado el boton de encendido 10 segundos...",
         "score": 0.92,
         "document": { "id": "...", "title": "Manual de producto 2026", "source_type": "file" },
         "chunk_index": 3,
@@ -295,6 +342,6 @@ Desde el panel de admin, anda a **Conocimiento** en la barra lateral para gestio
 ## Casos de uso
 
 - **Chatbots de soporte**: Indexa documentos de FAQ, responde preguntas con `search_knowledge`
-- **Wikis internas**: Subi politicas y procedimientos, deja que los agentes encuentren contenido relevante
+- **Wikis internas**: Suba politicas y procedimientos, permita que los agentes encuentren contenido relevante
 - **Documentacion de producto**: Complementa reglas de negocio con conocimiento externo
 - **Contenido web**: Ingesta paginas via URL, limpiadas automaticamente de navegacion/chrome

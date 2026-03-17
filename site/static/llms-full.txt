@@ -4588,7 +4588,7 @@ field operator value
 | `<` | Less than (numeric) | `stock < 10` |
 | `>=` | Greater than or equal | `total >= 500` |
 | `<=` | Less than or equal | `descuento <= 20` |
-| `contains` | Contains text (case-insensitive) | `nombre contains juan` |
+| `contains` | Contains text (case-insensitive, accent-sensitive) | `nombre contains juan` |
 
 ### Examples
 
@@ -4598,11 +4598,21 @@ query_records({ entityName: "clientes", filter: "nombre contains perez" })
 query_records({ entityName: "facturas", filter: "estado = pagada" })
 ```
 
+### `contains` behavior
+
+`contains` is implemented as a PostgreSQL `ILIKE` query against the stored field value.
+
+**Case sensitivity:** `contains cafe` matches `Cafe`, `CAFE`, and `cafe`. Case is ignored.
+
+**Accent sensitivity:** `ILIKE` does not normalize Unicode. `contains cafe` does **not** match `Café`. To match records with accents, include the accent in the search value: `nombre contains Café`.
+
+**Partial matches:** the value is matched anywhere in the field. `contains an` matches `Juan`, `Ana`, and `Mariana`.
+
 ### Notes
 
-- The filter is applied in memory after fetching the records (except for semantic search)
 - String values do not need quotes, but they are supported: `nombre = "Juan Perez"`
 - Numeric comparisons (`>`, `<`, `>=`, `<=`) convert values to numbers
+- `contains` and `startsWith` filters run as database queries (server-side). All other operators also run server-side when using the `filters=` expression syntax
 
 ## Filters in REST API
 
@@ -5126,7 +5136,11 @@ Transforms field values:
 
 ## Actions
 
-Side effects that execute after saving:
+Side effects that execute after saving. Actions run sequentially and can share data through the [execution context](#execution-context).
+
+### `update_related`
+
+Updates a record in a different entity:
 
 ```json
 {
@@ -5148,6 +5162,129 @@ Side effects that execute after saving:
   ]
 }
 ```
+
+### `update_record`
+
+Updates fields on the current record. Unlike `update_related`, this does not require `entity` or `recordId` — it targets the record that triggered the rule.
+
+```json
+{
+  "type": "update_record",
+  "fields": {
+    "estado": "aprobado",
+    "aprobado_por": "$ctx.approver_name"
+  }
+}
+```
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| `fields` | object | Yes | Field→value pairs to set on the current record |
+
+Values can reference execution context variables using `$ctx.*` syntax. This is useful for chaining actions — for example, storing an AI classification result and then writing it back to the record.
+
+### `ai_call`
+
+Invokes an AI model as a rule action. Useful for classification, extraction, summarization, or any text generation task triggered by record changes.
+
+```json
+{
+  "type": "ai_call",
+  "prompt": "Classify this support ticket: {{descripcion}}",
+  "system_prompt": "You are a ticket classifier. Respond with exactly one of: bug, feature, question",
+  "model": "gpt-4o-mini",
+  "temperature": 0.3,
+  "max_tokens": 100,
+  "store_result_as": "$ctx.classification"
+}
+```
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| `prompt` | string | Yes (unless `prompt_template`) | The prompt to send. Supports `{{field}}` substitution from the current record. |
+| `prompt_template` | string | No | Slug of a reusable prompt template (resolves from `_fyso_ai_templates`) |
+| `system_prompt` | string | No | System prompt for the AI call |
+| `system_prompt_template` | string | No | Slug of a system prompt template |
+| `model` | string | No | Override model. Uses the tenant default if omitted. |
+| `temperature` | number | No | 0–2. Uses the provider default if omitted. |
+| `max_tokens` | number | No | 1–32000 |
+| `store_result_as` | string | No | Store the AI response in execution context. Must follow the format `$ctx.<identifier>`. |
+
+**Guardrails:**
+
+- A budget check runs before every AI call. If the tenant has exhausted its AI budget, the call is skipped.
+- A rate limit check runs before the budget check.
+- Failures are captured as `error` validations — the pipeline continues with remaining actions.
+- All calls are logged to `_fyso_ai_call_logs`.
+
+### `webhook_send`
+
+Sends an HTTP POST request to an external URL. Useful for notifications, integrations, and event forwarding.
+
+```json
+{
+  "type": "webhook_send",
+  "url": "https://hooks.example.com/notify",
+  "headers": {
+    "X-Api-Key": "my-token"
+  },
+  "payload": {
+    "ticket_id": "id",
+    "status": "estado",
+    "customer": "nombre_cliente"
+  },
+  "timeoutMs": 5000
+}
+```
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| `url` | string | Yes | Destination URL. Supports `{{field}}` templates. SSRF protection enforced. |
+| `headers` | object | No | Custom HTTP headers. Supports `{{field}}` templates. |
+| `payload` | object | No | Key→value payload. Values resolve from the current record at fire time. `_record_id` is injected automatically. |
+| `timeoutMs` | number | No | 100–30000 ms (default: 5000) |
+
+**Behavior:**
+
+- Always sends a `POST` request with a JSON body.
+- 1 automatic retry on failure (fire-and-forget — does not block the rule pipeline).
+- SSRF filter blocks private/internal IPs both at rule save time and at execution time.
+
+## Execution Context
+
+Business rules can share data between actions using the **execution context** (`$ctx`). This is how you chain actions together — for example, calling an AI model and then writing the result back to the record.
+
+The flow:
+
+1. An `ai_call` action stores its result via `store_result_as: "$ctx.classification"`.
+2. A subsequent `update_record` action references `$ctx.classification` in its `fields`.
+
+```json
+{
+  "actions": [
+    {
+      "type": "ai_call",
+      "prompt": "Classify: {{descripcion}}",
+      "system_prompt": "Respond with one of: bug, feature, question",
+      "store_result_as": "$ctx.classification"
+    },
+    {
+      "type": "update_record",
+      "fields": {
+        "categoria": "$ctx.classification"
+      }
+    }
+  ]
+}
+```
+
+Context variables are scoped to a single rule execution. They do not persist across separate rule triggers.
+
+## Optimistic Locking
+
+All records include a `_record_version` field in API responses. When you update a record via the API and include `_record_version` in the payload, the server checks that the version matches the stored value. If it doesn't match (another update happened in between), the request is rejected with a version conflict error.
+
+Actions triggered by business rules (`update_related`, `update_record`) bypass the version check to avoid conflicts during automated processing.
 
 ## Allowed Operators
 
@@ -5444,8 +5581,6 @@ Complete reference of all available MCP tools.
 
 The MCP server exposes **10 grouped tools** (each with an `action` enum parameter), plus `fyso_welcome` for onboarding. Configure which tools are exposed with the `FYSO_TOOLS` environment variable. See [Tool Profiles](tool-profiles.md).
 
-Channels, bots, flows, webhooks, and other features are available via the [REST API](/api/rest-api) but not as MCP tools.
-
 ## How grouped tools work
 
 Each grouped tool accepts an `action` parameter that selects the operation. Additional parameters depend on the action chosen. Example:
@@ -5546,7 +5681,6 @@ Create, test, publish, and manage business rules.
 | `create` | Create rule from DSL | `name`, `triggerType`, `rule` |
 | `get` | Rule details | `ruleId` |
 | `list` | List rules | — |
-| `generate` | Generate from prompt/DSL | `description` or `rule` |
 | `publish` | Activate draft rule | `ruleId` |
 | `delete` | Delete rule | `ruleId` |
 | `test` | Dry-run with test data | `ruleId`, `testData` |
@@ -5560,13 +5694,13 @@ Create, test, publish, and manage business rules.
 | `entityName` | string | all | Entity the rule belongs to |
 | `ruleId` | string | get, publish, delete, test, logs | Rule ID |
 | `name` | string | create | Rule name |
-| `description` | string | create, generate | Rule description or natural language prompt |
+| `description` | string | create | Rule description |
 | `triggerType` | `field_change` \| `before_save` \| `after_save` \| `on_load` | create | When the rule triggers |
 | `triggerFields` | string[] | create | Fields that trigger the rule |
-| `rule` | object | create, generate | Rule DSL with compute/validate/transform/actions |
-| `ruleDsl` | object | create, generate | Alias for `rule` |
+| `rule` | object | create | Rule DSL with compute/validate/transform/actions |
+| `ruleDsl` | object | create | Alias for `rule` |
 | `priority` | number | create | Execution priority, lower = first (default: 100) |
-| `auto_publish` | boolean | create, generate | Auto-publish after create/generate |
+| `auto_publish` | boolean | create | Auto-publish after create |
 | `include_drafts` | boolean | list | Include draft rules |
 | `testData` | object | test | Test record data for dry-run |
 | `limit` | number | logs | Max log entries |
@@ -5589,6 +5723,7 @@ User management, RBAC, and tenant operations.
 | `login` | Authenticate as tenant user | `tenantSlug`, `email`, `password` |
 | `list_tenants` | List accessible tenants | — |
 | `select_tenant` | Select active tenant | `tenantSlug` |
+| `create_tenant` | Create a new tenant (plan quota enforced: free=1, pro=5) | `name` |
 | `generate_invitation` | Generate beta invitation code (FYSO-XXXX-XXXX) | — |
 | `list_invitations` | List invitation codes with usage stats | — |
 
@@ -5604,7 +5739,7 @@ User management, RBAC, and tenant operations.
 | `roleId` | string | assign_role, revoke_role | Role ID |
 | `permissions` | object | create_role | Role permissions object |
 | `description` | string | create_role | Role description |
-| `tenantSlug` | string | create_user, login, select_tenant, update_password | Tenant slug |
+| `tenantSlug` | string | create_user, login, select_tenant, update_password | Tenant slug. `select_tenant` supports prefix matching — if no exact match, auto-selects when one prefix match is found. |
 | `note` | string | generate_invitation | Optional note for the invitation |
 | `maxUses` | number | generate_invitation | Max uses for the code |
 | `expiresAt` | string | generate_invitation | Expiration date (ISO 8601) |
@@ -5719,6 +5854,10 @@ API spec, client generation, metadata import/export, secrets, and usage metrics.
 | `tenantId` | string | export, import | Tenant ID/slug override |
 | `key` | string | set_secret, delete_secret | Secret name |
 | `value` | string | set_secret | Secret value (encrypted at rest) |
+| `feedback_type` | `bug` \| `suggestion` \| `question` | feedback | Feedback category |
+| `title` | string | feedback | Short summary |
+| `description` | string | feedback | Detailed description |
+| `context` | string | feedback | Optional additional context |
 
 ---
 
@@ -5750,9 +5889,13 @@ Create, configure, and run AI agents. Manage versions, runs, and templates.
 | `input` | string | run, test | User message or prompt |
 | `versionId` | string | rollback | Version ID to restore |
 | `templateId` | string | from_template | Template ID |
+| `session_id` | string | run | Continue an existing session (omit to create new) |
 | `memory_enabled` | boolean | create, update | Enable cross-session memory extraction |
-| `tools_scope` | string[] | create, update | List of tool names available to the agent |
+| `knowledge_enabled` | boolean | create, update | Enable RAG retrieval from tenant knowledge base |
+| `schedules_enabled` | boolean | create, update | Enable scheduling tools (slots, bookings) |
+| `tools_scope` | object | create, update | Entity tools: `{ "entity": ["query", "create", "update"] }` |
 | `system_prompt` | string | create, update | Agent system prompt |
+| `fallback_mode` | `llm` \| `message` \| `silent` | create, update | Behavior when no deterministic rule matches |
 | `channels` | object[] | create, update | Channel configurations (web, telegram, etc.) |
 
 ---
@@ -5773,6 +5916,10 @@ Configure AI providers, manage prompts, test calls, and view logs.
 | `create_template` | Create a reusable prompt template | `name`, `prompt` |
 | `list_templates` | List prompt templates | — |
 | `update_template` | Modify a prompt template | `templateId` |
+| `list_presets` | List industry presets (taller, clinica, tienda) | — |
+| `install_preset` | Install an industry preset with entities and agent | `preset` |
+| `rate_limit_status` | Current AI rate limit status | — |
+| `cost_dashboard` | AI spend summary (weekly, monthly, projections) | — |
 
 ### Parameters
 
@@ -5788,6 +5935,10 @@ Configure AI providers, manage prompts, test calls, and view logs.
 | `templateId` | string | update_template | Template ID |
 | `callId` | string | debug_log | AI call ID (requires `ai.debug` tenant setting) |
 | `limit` | number | call_logs | Max log entries |
+| `preset` | string | install_preset | Preset name: `taller`, `clinica`, `tienda` |
+| `system_prompt` | string | test_call | System prompt for test call |
+| `temperature` | number | test_call | Temperature 0–2 |
+| `max_tokens` | number | test_call | Max tokens 1–32000 |
 
 ---
 
@@ -5803,11 +5954,29 @@ This tool does not accept an `action` parameter — it is a single-purpose tool,
 
 ---
 
+## Integration management tools
+
+These standalone tools manage the integration lifecycle (not grouped):
+
+| Tool | Description | Required params |
+|------|-------------|-----------------|
+| `list_integrations` | List available integrations and status | — |
+| `install_integration` | Install an integration | `slug` |
+| `configure_integration` | Update integration config | `slug`, `config` |
+| `activate_integration` | Enable integration tools | `slug` |
+| `test_integration` | Test connectivity | `slug` |
+| `uninstall_integration` | Remove integration | `slug` |
+| `list_integration_logs` | View health logs | `slug` |
+
+Active integrations inject tools into agent runners as `integration:<slug>:<tool-slug>`.
+
+---
+
 ## REST-only features
 
 The following features are available via the [REST API](/api/rest-api) but are not exposed as MCP tools:
 
-- **Channels** — `search_channels`, `get_channel_info`, `get_channel_tools`, `execute_channel_tool`, `publish_channel`, `update_channel`, `unpublish_channel`, `set_channel_permissions`, `define_channel_tool`, `update_channel_tool`, `remove_channel_tool`
+- **Channels** — Agent channel management (Telegram, web widget). See [Channels](/admin/channels).
 - **Bots** — `register_bot`, `identify_bot`, `list_bots`, `whoami_bot`, `revoke_bot` (see [Bot Identity](/agents/bot-identity))
 - **Flows** — `create_flow`, `list_flows`, `update_flow`, `delete_flow`, `toggle_flow`
 - **Webhooks** — `create_webhook`, `list_webhooks`, `delete_webhook`
@@ -5970,7 +6139,7 @@ curl -H "Authorization: Bearer JWT_TOKEN" \
 | `order` | string | `asc` | Direction: `asc` or `desc` |
 | `search` | string | - | Full-text search across text fields |
 | `resolve` | boolean | - | Expand relations to full objects |
-| `resolve_depth` | number | - | Relation resolution depth (max 2 on list endpoints, max 3 on single record). Example: `?resolve_depth=1` |
+| `resolve_depth` | number | - | Relation resolution depth (max 2). `?resolve_depth=1` activates resolution without needing `?resolve=true`. |
 | `filters` | string | - | Filter expression. Example: `?filters=status = active`. Operators: `=`, `!=`, `>`, `<`, `>=`, `<=`, `contains`. Combine with `AND`: `?filters=status = active AND role = admin` |
 | `filter.{fieldKey}` | string | - | Legacy per-field filter (e.g., `filter.estado=activo`). Prefer `filters` for compound logic. |
 
@@ -6966,18 +7135,16 @@ Creates a user within the tenant.
 | `email` | string | Yes | Email (unique within the tenant) |
 | `password` | string | Yes | Password (min 8 characters, hashed) |
 | `name` | string | Yes | Full name |
-| `role` | string | No | Role: `owner`, `admin`, `member`, `viewer`. Default: `member` |
-| `permissions` | object | No | Per-entity permissions |
+| `isOwner` | boolean | No | Grant owner privileges (manage all settings). Default: `false` |
 | `metadata` | object | No | Additional data (phone, department, position, avatar) |
 
-### Roles
+### RBAC Model
 
-| Role | Description |
-|------|-------------|
-| `owner` | Full control. Can manage everything |
-| `admin` | Can manage users and settings |
-| `member` | Can create and edit records |
-| `viewer` | Read only |
+Fyso uses a **pure RBAC model**. There are no built-in fixed roles. Instead, you create custom roles with specific permissions and assign them to users.
+
+Seed roles (admin, editor, viewer) are provided as editable templates — you can rename them, change their permissions, or delete them entirely.
+
+The only special flag is `isOwner`, which grants full administrative access to the tenant (manage users, settings, billing). One or more users per tenant can be flagged as owner.
 
 ### Per-Entity Permissions
 
@@ -7001,7 +7168,6 @@ create_user({
   email: "vendedor@empresa.com",
   password: "password123",
   name: "Carlos Vendedor",
-  role: "member",
   permissions: {
     entities: {
       clientes: ["create", "read", "update"],
@@ -7058,7 +7224,7 @@ list_users({ tenantSlug: "mi-empresa" })
       "id": "uuid",
       "email": "admin@empresa.com",
       "name": "Admin Principal",
-      "role": "owner",
+      "isOwner": true,
       "isActive": true,
       "lastLogin": "2026-02-18T10:00:00Z"
     }
@@ -7112,7 +7278,7 @@ Content-Type: application/json
 }
 ```
 
-Creates a user with role `viewer`. Returns `403` if `selfRegistrationEnabled` is `false`, `409` on duplicate email.
+Creates a user with the default viewer role. Returns `403` if `selfRegistrationEnabled` is `false`, `409` on duplicate email.
 
 Rate-limited to **5 requests per hour** per IP + tenant.
 
@@ -7124,8 +7290,7 @@ Rate-limited to **5 requests per hour** per IP + tenant.
   "data": {
     "id": "uuid",
     "email": "jane@example.com",
-    "name": "Jane Builder",
-    "role": "viewer"
+    "name": "Jane Builder"
   }
 }
 ```
@@ -7194,7 +7359,7 @@ Content-Type: application/json
 { "new_password": "newpassword123" }
 ```
 
-Owner or admin can reset any user's password without knowing the current password. Requires `owner` or `admin` role. All active sessions for the affected user are invalidated.
+Users with manage permission (or `isOwner`) can reset any user's password without knowing the current password. All active sessions for the affected user are invalidated.
 
 This endpoint is also exposed as the `update_user_password` MCP tool.
 
@@ -7251,7 +7416,7 @@ Login as a tenant user. Returns a JWT for use with the REST API.
     "id": "uuid",
     "email": "user@example.com",
     "name": "Nombre",
-    "role": "member"
+    "isOwner": false
   },
   "usage": {
     "header": "Authorization",
@@ -7472,13 +7637,47 @@ No prior authentication required. The invitation token acts as the gate.
   "data": {
     "id": "uuid",
     "email": "colleague@example.com",
-    "name": "Jane Doe",
-    "role": "member"
+    "name": "Jane Doe"
   }
 }
 ```
 
 The invitation is claimed atomically — concurrent requests cannot claim the same token twice. Returns `409` if the email already exists in the tenant, `403` if the email does not match the invitation, and `403` if the token is invalid, expired, or revoked.
+
+---
+
+## Tenant-User Login
+
+Tenant users (invited via member invitations) log in through a dedicated endpoint:
+
+```bash
+POST /api/auth/tenant/login
+X-Tenant-ID: <tenant-slug>
+Content-Type: application/json
+
+{ "email": "user@example.com", "password": "password123" }
+```
+
+The returned JWT includes an `isTenantUser` flag. The frontend automatically injects the `X-Tenant-ID` header on all subsequent API calls.
+
+---
+
+## Role Assignment Audit
+
+All role assignments and revocations are logged in `role_assignment_log`:
+
+```bash
+GET /api/roles/:roleId/audit
+Authorization: Bearer <admin-token>
+```
+
+Returns a chronological log of who assigned or revoked the role, when, and for which user. Admin actions are also attributed — every CRUD operation records which admin user performed it.
+
+---
+
+## Deactivating Users
+
+Tenant owners can deactivate users from the admin panel. Deactivated users cannot log in but their data is preserved. Toggle the active status from the Users page.
 
 
 
@@ -8372,6 +8571,46 @@ Returns `201` on success with the document metadata.
 |------|-------------|
 | `400` | Missing `file` field or unsupported MIME type (only PDF accepted) |
 | `403` | Plan document or storage limit reached |
+
+### Bulk URL Indexing
+
+Index multiple URLs in one request (max 50):
+
+```bash
+curl -X POST https://api.fyso.dev/api/knowledge/documents/bulk \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "documents": [
+      { "title": "FAQ", "content": "https://example.com/faq", "source_type": "url" },
+      { "title": "Pricing", "content": "https://example.com/pricing", "source_type": "url" }
+    ]
+  }'
+```
+
+### Bulk File Upload
+
+Upload multiple files in one request (max 50):
+
+```bash
+curl -X POST https://api.fyso.dev/api/knowledge/documents/upload/bulk \
+  -H "Authorization: Bearer <token>" \
+  -F "files=@manual1.pdf" \
+  -F "files=@manual2.pdf"
+```
+
+Both bulk endpoints return a `207` response with per-item success/failure:
+
+```json
+{
+  "results": [
+    { "title": "FAQ", "status": "success", "document_id": "uuid" },
+    { "title": "Pricing", "status": "error", "error": "URL fetch timeout" }
+  ]
+}
+```
+
+Plan limits are checked before processing. If the batch would exceed your plan quota, the entire request is rejected.
 
 ### Plan limits
 
@@ -9311,6 +9550,440 @@ Go to **Platform → Invitations** in the admin panel to manage invitations:
 
 ---
 
+# AI Agents
+
+Fyso includes a built-in AI agent system. Agents are conversational AI assistants that operate on your tenant data using the same tools available to MCP clients. They can answer questions, create records, book appointments, and search your knowledge base — all through natural language.
+
+## Creating an Agent
+
+**MCP Tool: `fyso_agents`**
+
+```
+fyso_agents({
+  action: "create",
+  name: "Support Bot",
+  system_prompt: "You are a helpful support agent for a dental clinic."
+})
+```
+
+**REST API:**
+
+```bash
+curl -X POST "https://api.fyso.dev/api/tenants/:slug/agents-config" \
+  -H "Authorization: Bearer TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Support Bot",
+    "system_prompt": "You are a helpful support agent for a dental clinic."
+  }'
+```
+
+The agent slug is auto-generated from the name (e.g., `Support Bot` → `support-bot`).
+
+### Agent Fields
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `name` | string | required | Agent display name. Slug auto-generated from name. |
+| `system_prompt` | string | `""` | Custom system prompt appended to the base prompt. |
+| `fallback_mode` | `llm` \| `message` \| `silent` | `llm` | What to do when no deterministic rule matches. |
+| `fallback_messages` | object | `{}` | Custom fallback text messages by language. |
+| `tools_scope` | object | `{}` | Entity tools available: `{ "entity_name": ["query", "create", "update"] }` |
+| `max_steps` | number | `10` | Max tool-call iterations per run. |
+| `memory_enabled` | boolean | `false` | Extract and remember facts across conversations. |
+| `knowledge_enabled` | boolean | `false` | Inject `search_knowledge` tool for RAG retrieval. |
+| `schedules_enabled` | boolean | `false` | Inject scheduling tools (slots, bookings). |
+| `status` | `active` \| `paused` \| `archived` | `active` | Agent lifecycle status. |
+
+## Running an Agent
+
+**MCP Tool:**
+
+```
+fyso_agents({
+  action: "run",
+  agentId: "support-bot",
+  input: "When is my next appointment?"
+})
+```
+
+**REST API:**
+
+```bash
+curl -X POST "https://api.fyso.dev/api/tenants/:slug/agents/support-bot/run" \
+  -H "Authorization: Bearer TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"message": "When is my next appointment?"}'
+```
+
+**Response:**
+
+```json
+{
+  "response": "Your next appointment is on March 20 at 10:00 AM with Dr. López.",
+  "session_id": "a1b2c3d4-...",
+  "run_id": "e5f6g7h8-...",
+  "path": "llm",
+  "steps_used": 3,
+  "tokens": { "input": 450, "output": 120 }
+}
+```
+
+The `path` field tells you how the response was resolved:
+
+| Path | Meaning |
+|------|---------|
+| `rule` | Matched a deterministic rule — no LLM call, zero tokens |
+| `llm` | Processed by the AI model |
+| `fallback` | No rule matched and LLM was not used (fallback mode) |
+
+## Deterministic Rules (Fast Path)
+
+Agents can have deterministic rules that match user messages without calling the LLM. Rules are evaluated in order — first match wins.
+
+### Match Types
+
+| Type | Description | Example |
+|------|-------------|---------|
+| `exact` | Exact string match (case-insensitive) | `"hola"` |
+| `contains` | All terms must be present | `["precio", "producto"]` |
+| `starts_with` | Message starts with string | `"ayuda"` |
+| `regex` | Regular expression | `"^(hola\|buenos días)"` |
+
+When a deterministic rule matches, the response is instant: `steps_used: 0`, `total_tokens: 0`, `path: "rule"`. This is the cheapest and fastest path — use it for greetings, FAQs, and common questions.
+
+## Sessions
+
+Each agent run belongs to a session. Sessions track conversation history across multiple turns, so the agent remembers what was said earlier in the same conversation.
+
+- Sessions are identified by the tuple `(agent_id, external_ref, external_type)`
+- `external_type` values: `telegram`, `whatsapp`, `web`, `api`
+- The last 20 messages are loaded as context for each run
+- Sessions auto-expire after inactivity (configurable TTL)
+- Concurrent messages to the same session are serialized with a FIFO lock (60s timeout) — no race conditions
+
+## Agent Memory
+
+When `memory_enabled: true`, the agent extracts key facts from conversations and remembers them across sessions. After 3+ user turns in a conversation, the agent runs an extra AI call to extract facts like names, preferences, and context.
+
+Facts are stored per agent + client pair and injected into the system prompt on subsequent sessions. This means the agent can say "Welcome back, María" or remember that a patient prefers morning appointments.
+
+Cost: ~1 additional AI call per conversation (runs after the conversation, not during).
+
+## Tools Scope
+
+The `tools_scope` field defines which entity operations the agent can perform:
+
+```json
+{
+  "tools_scope": {
+    "citas": ["query", "create", "update"],
+    "pacientes": ["query"]
+  }
+}
+```
+
+This generates semantic tool definitions the agent can call:
+
+- `query_citas` — search with filters, pagination
+- `create_citas` — required fields inferred from entity schema
+- `update_citas` — requires `id`, all other fields optional
+- `query_pacientes` — read-only access
+
+### Additional Tools
+
+Extra tools are injected based on agent configuration:
+
+| Config Flag | Tools Injected |
+|-------------|---------------|
+| `knowledge_enabled: true` | `search_knowledge` — RAG retrieval, returns top 5 results |
+| `schedules_enabled: true` | `query_available_slots`, `create_booking`, `cancel_booking`, `query_bookings` |
+
+## Agent Templates
+
+Pre-built templates for common use cases. Each template comes with deterministic rules pre-configured:
+
+| Template | Description | Rules |
+|----------|-------------|-------|
+| `soporte` | FAQ answers + human escalation | 9 deterministic rules |
+| `citas` | Appointment booking flow | 10 deterministic rules |
+| `ventas` | Product catalog + lead capture | 13 deterministic rules |
+
+**MCP:**
+
+```
+fyso_agents({
+  action: "from_template",
+  templateId: "soporte",
+  name: "Mi Soporte"
+})
+```
+
+Templates give you a working agent out of the box. Customize the rules and system prompt after creation.
+
+## Industry Presets
+
+One-click starter configurations that create entities and a pre-configured agent together. Use these when starting from scratch:
+
+| Preset | Entities Created | Agent |
+|--------|-----------------|-------|
+| `taller` | vehicles, repairs, parts | Workshop assistant |
+| `clinica` | patients, doctors, appointments, treatments | Reception agent |
+| `tienda` | products, orders, customers | Sales assistant |
+
+**MCP:**
+
+```
+fyso_ai({
+  action: "install_preset",
+  preset: "clinica"
+})
+```
+
+This creates all the entities with sensible fields, plus an agent configured with the right `tools_scope` and deterministic rules for that industry.
+
+## Prompt Versioning
+
+Every change to `system_prompt` or `rules` is automatically versioned. Fyso keeps up to 50 versions per agent, rotating out the oldest.
+
+**List versions:**
+
+```
+fyso_agents({ action: "list_versions", agentId: "support-bot" })
+```
+
+```bash
+curl "https://api.fyso.dev/api/agents-config/:id/versions" \
+  -H "Authorization: Bearer TOKEN"
+```
+
+**Rollback to a previous version:**
+
+```
+fyso_agents({ action: "rollback", agentId: "support-bot", versionId: "3" })
+```
+
+```bash
+curl -X POST "https://api.fyso.dev/api/agents-config/:id/rollback/3" \
+  -H "Authorization: Bearer TOKEN"
+```
+
+## Prompt Templates
+
+Reusable prompt templates that can be shared across agents and referenced in business rule `ai_call` actions:
+
+```
+fyso_ai({
+  action: "create_template",
+  name: "classifier",
+  prompt: "Classify the following message: {{descripcion}}"
+})
+```
+
+Templates use `{{field_name}}` placeholders that are replaced at execution time. Reference them in business rules via the `prompt_template` slug.
+
+## Agent Runs and Observability
+
+Every agent execution is recorded in `_fyso_agent_runs`. Use this for debugging, monitoring, and usage tracking.
+
+**MCP:**
+
+```
+fyso_agents({ action: "list_runs", agentId: "support-bot" })
+```
+
+**Run fields:**
+
+| Field | Description |
+|-------|-------------|
+| `id` | Unique run identifier |
+| `agent_id` | Which agent handled this |
+| `session_id` | Conversation session |
+| `path` | Resolution path: `rule`, `llm`, or `fallback` |
+| `steps_used` | Number of tool-call iterations |
+| `tokens` | `{ input, output }` token counts |
+| `status` | `success`, `error`, `timeout`, or `max_steps` |
+| `input_message` | What the user sent |
+| `output_message` | What the agent replied |
+| `created_at` | Timestamp |
+
+## Testing Agents
+
+Dry-run mode evaluates deterministic rules without calling the LLM. Use this to verify your rules before going live:
+
+```
+fyso_agents({
+  action: "test",
+  agentId: "support-bot",
+  input: "hola"
+})
+```
+
+The response includes diagnostics showing which rules matched, which didn't, and why. No tokens are consumed during dry-run.
+
+
+
+---
+
+# Channels
+
+Channels connect AI agents to external messaging platforms. Each agent can be connected to multiple channels simultaneously.
+
+## Supported Channels
+
+| Channel | Streaming | Setup |
+|---------|-----------|-------|
+| **Web Widget** | SSE token streaming | Embed `<script>` tag |
+| **Telegram** | Typing indicator | Connect bot token via MCP |
+
+## Web Widget
+
+Embed an agent as a floating chat bubble on any website.
+
+### Setup
+
+```html
+<script
+  src="https://api.fyso.dev/widget.js"
+  data-tenant="my-tenant"
+  data-agent="my-bot"
+  data-title="Chat with us"
+  data-color="#4F46E5"
+  data-position="bottom-right"
+></script>
+```
+
+The widget opens a chat interface that streams agent responses token-by-token via Server-Sent Events (SSE).
+
+### Streaming endpoint
+
+```
+POST /api/tenants/:slug/agents/:agentSlug/chat/stream
+Content-Type: application/json
+
+{ "message": "Hello", "session_id": "optional-uuid" }
+```
+
+Response: SSE stream with `data: {"token": "Hello"}` chunks, ending with `data: {"done": true, "session_id": "uuid"}`.
+
+If streaming fails, the widget falls back to the standard non-streaming endpoint.
+
+## Telegram
+
+Connect a Telegram bot to an agent so users can chat via Telegram.
+
+### Connect via MCP
+
+```
+fyso_agents({ action: "connect_telegram", agentId: "my-bot", bot_token: "123456:ABC-DEF...", secret_token: "my-webhook-secret" })
+```
+
+This:
+1. Verifies the bot token via Telegram's `getMe` API
+2. Registers a webhook URL: `https://api.fyso.dev/api/webhooks/telegram/:tenantSlug`
+3. Encrypts and stores the bot config in tenant secrets
+
+### Disconnect
+
+```
+fyso_agents({ action: "disconnect_telegram", agentId: "my-bot" })
+```
+
+Removes the webhook from Telegram and deletes the stored config.
+
+### How it works
+
+1. User sends a message to the Telegram bot
+2. Telegram POSTs the webhook to `https://api.fyso.dev/api/webhooks/telegram/:tenantSlug`
+3. Webhook receiver validates the `X-Telegram-Bot-Api-Secret-Token` header
+4. Loads bot config from tenant secrets
+5. Runs the agent with the incoming message
+6. Sends the response back via Telegram `sendMessage` (Markdown)
+
+Supported Telegram message types: text, photo, document, location.
+
+Before the LLM responds, a typing indicator (`sendChatAction: typing`) is sent so the user sees the bot is working.
+
+### Webhook signature
+
+The `secret_token` (optional but recommended) is verified on every incoming webhook. If the header doesn't match, the request is rejected with 401.
+
+## Channel Architecture
+
+Each channel implements the `ChannelAdapter` interface:
+
+- `send(externalRef, message)` — Send a message to the user
+- `receive(payload)` — Parse incoming webhook payload into a normalized `IncomingMessage`
+- `getStatus()` — Health check (e.g., Telegram `getMe` probe)
+
+Channels that support streaming also implement:
+- `sendChunk(externalRef, chunk)` — Send a partial response
+- `sendStreamStart(externalRef)` — Signal stream start (e.g., typing indicator)
+
+## Agent-Channel Relationship
+
+Each agent can have multiple channels (1:N). Connect channels via the agent editor UI or MCP tools. A channel connected to one agent receives messages only for that agent.
+
+
+
+---
+
+# GDPR Compliance
+
+Fyso provides built-in GDPR (RGPD) compliance tools for tenants that use AI features.
+
+## Data Processing Agreement (DPA)
+
+Before using AI features, the tenant owner must accept the DPA:
+
+```bash
+curl -X POST "https://api.fyso.dev/api/auth/tenants/:id/dpa-accept" \
+  -H "Authorization: Bearer OWNER_TOKEN"
+```
+
+DPA acceptance is recorded with timestamp and IP address. AI features are blocked until the DPA is accepted.
+
+## Session Consent
+
+Each agent session can track whether the user has given explicit consent for AI data processing:
+
+```bash
+curl -X POST "https://api.fyso.dev/api/rgpd/sessions/:sessionId/consent" \
+  -H "Authorization: Bearer TOKEN" \
+  -d '{"ai_consent": true}'
+```
+
+The `ai_consent` flag is stored on `_fyso_agent_sessions`. When consent is not given, the agent can still respond but AI-specific data (debug payloads, memory extraction) is suppressed.
+
+## Data Suppression
+
+Users can request deletion of all AI-related data for a specific external reference (e.g., a phone number or email):
+
+```bash
+curl -X DELETE "https://api.fyso.dev/api/rgpd/users/:externalRef/ai-data" \
+  -H "Authorization: Bearer TOKEN"
+```
+
+This removes:
+- Agent sessions and their message history
+- Agent memory facts associated with the external reference
+- AI call logs linked to those sessions
+
+The operation is logged in the consent audit log.
+
+## Consent Audit Log
+
+All consent-related events are recorded in `_fyso_consent_audit_log`:
+- DPA acceptance
+- Session consent changes
+- Data suppression requests
+
+The audit log is immutable and retained for compliance purposes.
+
+
+
+---
+
 # n8n Integration
 
 The `n8n-nodes-fyso` community node lets you read and write Fyso entity records from n8n workflows, and trigger workflows in response to Fyso events.
@@ -9507,6 +10180,151 @@ Check the payload shape using an n8n **Code** node after the trigger to inspect 
 **"Entity not found" error**
 
 The entity slug is case-sensitive and must match the slug shown in the Fyso admin panel (e.g., `patients`, not `Patients`).
+
+
+
+---
+
+# Integration SDK
+
+Fyso supports third-party integrations that extend the platform with custom actions, tools, and data storage.
+
+## Overview
+
+An integration is a package with:
+- A **manifest** (`fyso-integration.json`) describing the integration
+- **Tool handlers** that execute actions
+- **SQL migrations** for integration-specific tables (prefixed automatically)
+- A **config schema** defining required credentials
+
+## Manifest
+
+```json
+{
+  "slug": "discord",
+  "name": "Discord Webhooks",
+  "version": "1.0.0",
+  "description": "Send messages and embeds to Discord channels",
+  "configSchema": {
+    "type": "object",
+    "properties": {
+      "webhook_url": {
+        "type": "string",
+        "pattern": "^https://discord\\.com/api/webhooks/",
+        "description": "Discord webhook URL"
+      }
+    },
+    "required": ["webhook_url"]
+  },
+  "tools": [
+    {
+      "slug": "send-message",
+      "name": "Send Message",
+      "description": "Send a text message to a Discord channel",
+      "handler": "tools/send-message.ts",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "content": { "type": "string", "maxLength": 2000 }
+        },
+        "required": ["content"]
+      }
+    }
+  ]
+}
+```
+
+Manifest validation enforces: valid slug pattern, semver version, valid JSON Schema for config and inputs, handler files must exist.
+
+## Writing a Tool Handler
+
+```typescript
+import { defineAction, IntegrationContext } from '@fyso/integrations-sdk';
+
+export default defineAction(async (ctx: IntegrationContext, input: { content: string }) => {
+  const config = await ctx.getConfig();
+
+  const res = await fetch(config.webhook_url + '?wait=true', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ content: input.content }),
+  });
+
+  if (!res.ok) {
+    throw new IntegrationError('Discord API error', { statusCode: res.status, retryable: res.status === 429 });
+  }
+
+  return { success: true, messageId: (await res.json()).id };
+});
+```
+
+`defineAction` wraps your handler with structured logging and an error boundary.
+
+## Lifecycle
+
+Integrations go through these states:
+
+```
+registered → installed → active ↔ deactivated → uninstalled
+```
+
+| State | Description |
+|-------|-------------|
+| `registered` | Manifest validated, available in catalog |
+| `installed` | Migrations run, config stored (encrypted) |
+| `active` | Tools available to agents and rules |
+| `deactivated` | Tools disabled, config preserved |
+| `uninstalled` | Config and data removed |
+
+### MCP Tools
+
+| Tool | Description |
+|------|-------------|
+| `list_integrations` | List available integrations and their status |
+| `install_integration` | Install and configure an integration |
+| `configure_integration` | Update integration config |
+| `activate_integration` | Enable integration tools |
+| `test_integration` | Test integration connectivity |
+| `uninstall_integration` | Remove integration |
+| `list_integration_logs` | View integration health logs |
+
+## Credential Store
+
+Fields with `format: "secret"` in the config schema are AES-256-GCM encrypted before storage. Credentials are stored in `tenant_registry.integration_installations`, outside tenant schemas.
+
+Cross-tenant isolation is enforced — all queries are scoped by `(tenant_id, integration_slug)`.
+
+## Integration Tools in Agents
+
+Active integrations inject their tools into the agent runner as `integration:<slug>:<tool-slug>`. For example, when the Discord integration is active, agents can call `integration:discord:send-message`.
+
+## Circuit Breaker
+
+The runtime tracks consecutive failures. After 10 consecutive failures, the integration is automatically deactivated. A successful execution resets the counter.
+
+## Testing
+
+The SDK includes a 3-tier test battery:
+
+| Tier | Focus | Checks |
+|------|-------|--------|
+| Structural | Manifest validity | Files exist, handlers export, no forbidden imports |
+| Functional | Tool behavior | Success/error response shapes, 5s timeout guard |
+| Security | Isolation | No raw SQL, no `SET search_path`, no cross-integration config |
+
+```bash
+bun run test:integration packages/integrations/discord
+```
+
+## Built-in: Discord
+
+The Discord webhook integration ships with Fyso:
+
+**Tools:**
+- `send-message` — Send a text message (max 2000 chars, 429 rate limit handling)
+- `send-embed` — Send a rich embed (title, description, color, fields, footer, timestamp)
+
+**Config:** Requires a Discord webhook URL.
 
 
 
@@ -10483,6 +11301,23 @@ Required environment variables:
 | `STRIPE_PRICE_ID` | Price ID for the Pro plan |
 
 
+
+---
+
+## v1.34.0 — 2026-03-17
+
+### Features
+- **Multi-user tenant admin** — Tenant owners can invite users with specific roles. Invitation flow carries the assigned role. Includes role assignment audit log, admin action attribution, and tenant-user login via `/login/tenant`.
+- **resolve_depth on single record** — `GET /entities/:name/records/:id?resolve_depth=1` now resolves relations without needing `?resolve=true`. Max depth aligned to 2 across all endpoints.
+- **Agent retry on rate limit** — Agent runner retries with exponential backoff when the AI provider returns 429 (rate limited).
+
+### Fixes
+- **Consistent 429 error shape** — Rate limit middleware now returns a standard `{ error: "RATE_LIMITED", ... }` response across all endpoints.
+- **Stable record ordering** — Records query adds a secondary sort key (`id`) to prevent non-deterministic ordering when multiple records share the same sort field value.
+- **Agent run authentication** — Agent run endpoint now accepts both session tokens and API keys, not just admin tokens.
+- **Agent creation warning** — Creating an agent when no AI provider is configured returns a warning in the response instead of failing silently at run time.
+- **MCP `select_tenant` fuzzy match** — `select_tenant` now tries prefix matching when no exact slug match is found. Auto-selects if exactly one match; lists candidates if multiple.
+- **`generate_business_rule` removed** — The unreliable NL-to-DSL tool has been removed. Use `create_business_rule` with agent-generated DSL instead.
 
 ---
 

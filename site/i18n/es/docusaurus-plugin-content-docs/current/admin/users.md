@@ -16,18 +16,16 @@ Crea un usuario dentro del tenant.
 | `email` | string | Si | Email (unico en el tenant) |
 | `password` | string | Si | Password (min 8 caracteres, se hashea) |
 | `name` | string | Si | Nombre completo |
-| `role` | string | No | Rol: `owner`, `admin`, `member`, `viewer`. Default: `member` |
-| `permissions` | object | No | Permisos por entidad |
+| `isOwner` | boolean | No | Otorga privilegios de propietario (gestionar toda la configuracion). Default: `false` |
 | `metadata` | object | No | Datos adicionales (telefono, departamento, posicion, avatar) |
 
-### Roles
+### Modelo RBAC
 
-| Rol | Descripcion |
-|-----|-------------|
-| `owner` | Control total. Puede gestionar todo |
-| `admin` | Puede gestionar usuarios y configuraciones |
-| `member` | Puede crear y editar registros |
-| `viewer` | Solo lectura |
+Fyso usa un **modelo RBAC puro**. No hay roles fijos predefinidos. En su lugar, se crean roles personalizados con permisos especificos y se asignan a los usuarios.
+
+Los roles semilla (admin, editor, viewer) se proporcionan como plantillas editables — se pueden renombrar, cambiar sus permisos o eliminarlos por completo.
+
+El unico flag especial es `isOwner`, que otorga acceso administrativo completo al tenant (gestionar usuarios, configuracion, facturacion). Uno o mas usuarios por tenant pueden tener el flag de owner.
 
 ### Permisos por entidad
 
@@ -51,7 +49,6 @@ create_user({
   email: "vendedor@empresa.com",
   password: "password123",
   name: "Carlos Vendedor",
-  role: "member",
   permissions: {
     entities: {
       clientes: ["create", "read", "update"],
@@ -108,7 +105,7 @@ list_users({ tenantSlug: "mi-empresa" })
       "id": "uuid",
       "email": "admin@empresa.com",
       "name": "Admin Principal",
-      "role": "owner",
+      "isOwner": true,
       "isActive": true,
       "lastLogin": "2026-02-18T10:00:00Z"
     }
@@ -162,7 +159,9 @@ Content-Type: application/json
 }
 ```
 
-Crea un usuario con rol `viewer`. Devuelve `403` si `selfRegistrationEnabled` es `false`, `409` si el email ya existe.
+Crea un usuario con el rol viewer por defecto. Devuelve `403` si `selfRegistrationEnabled` es `false`, `409` si el email ya existe.
+
+Rate limit: **5 requests por hora** por IP + tenant.
 
 **Respuesta (201):**
 
@@ -172,8 +171,7 @@ Crea un usuario con rol `viewer`. Devuelve `403` si `selfRegistrationEnabled` es
   "data": {
     "id": "uuid",
     "email": "jane@example.com",
-    "name": "Jane Builder",
-    "role": "viewer"
+    "name": "Jane Builder"
   }
 }
 ```
@@ -209,7 +207,9 @@ Content-Type: application/json
 }
 ```
 
-Aplica la nueva contraseña usando el token de un solo uso del email de recuperación. Los tokens vencen en **1 hora** y se invalidan en el primer uso. Devuelve `403` si `passwordResetEnabled` es `false`.
+Aplica la nueva contraseña usando el token de un solo uso del email de recuperación. Los tokens vencen en **1 hora** y se invalidan en el primer uso. Emitir un nuevo token de recuperacion invalida cualquier token pendiente anterior para ese usuario. Devuelve `403` si `passwordResetEnabled` es `false`.
+
+Todas las sesiones activas del usuario se invalidan cuando se resetea la contraseña exitosamente.
 
 ---
 
@@ -226,7 +226,7 @@ Content-Type: application/json
 }
 ```
 
-Los usuarios autenticados pueden cambiar su propia contraseña. Valida la contraseña actual antes de aplicar el cambio. Devuelve `401` si `current_password` es incorrecta.
+Los usuarios autenticados pueden cambiar su propia contraseña. Valida la contraseña actual antes de aplicar el cambio. Devuelve `401` si `current_password` es incorrecta. Todas las demas sesiones activas se invalidan despues de un cambio exitoso.
 
 ---
 
@@ -240,7 +240,36 @@ Content-Type: application/json
 { "new_password": "nuevacontraseña123" }
 ```
 
-Owner o admin puede resetear la contraseña de cualquier usuario sin conocer la contraseña actual. Requiere rol `owner` o `admin`.
+Usuarios con permiso de gestion (o `isOwner`) pueden resetear la contraseña de cualquier usuario sin conocer la contraseña actual. Todas las sesiones activas del usuario afectado se invalidan.
+
+Este endpoint tambien esta disponible como la herramienta MCP `update_user_password`.
+
+---
+
+## MCP Tool: `update_user_password`
+
+**Perfil:** core
+
+Resetea la contraseña de un usuario del tenant. Los owners y admins pueden establecer una nueva contraseña para cualquier usuario sin conocer la actual. Util para recuperacion de cuentas cuando el usuario no puede iniciar sesion.
+
+### Parametros
+
+| Parametro | Tipo | Requerido | Descripcion |
+|-----------|------|-----------|-------------|
+| `userId` | string | Si | UUID del usuario |
+| `newPassword` | string | Si | Nueva contraseña (min 8 caracteres) |
+| `tenantSlug` | string | No | Slug del tenant. Default: tenant seleccionado |
+
+### Ejemplo
+
+```
+update_user_password({
+  userId: "uuid-del-usuario",
+  newPassword: "nuevacontraseña123"
+})
+```
+
+Todas las sesiones activas del usuario se invalidan cuando se resetea la contraseña. El usuario puede iniciar sesion inmediatamente con la nueva contraseña.
 
 ---
 
@@ -268,7 +297,7 @@ Login como usuario del tenant. Retorna un JWT para usar con la REST API.
     "id": "uuid",
     "email": "user@example.com",
     "name": "Nombre",
-    "role": "member"
+    "isOwner": false
   },
   "usage": {
     "header": "Authorization",
@@ -489,10 +518,44 @@ No requiere autenticacion previa. El token de invitacion actua como acceso.
   "data": {
     "id": "uuid",
     "email": "colega@empresa.com",
-    "name": "Juan Perez",
-    "role": "member"
+    "name": "Juan Perez"
   }
 }
 ```
 
 La invitacion se reclama de forma atomica — solicitudes concurrentes no pueden reclamar el mismo token dos veces. Retorna `409` si el email ya existe en el tenant, `403` si el email no coincide con la invitacion, y `403` si el token es invalido, vencido o revocado.
+
+---
+
+## Login de usuario del tenant
+
+Los usuarios del tenant (invitados mediante invitaciones de miembros) inician sesion a traves de un endpoint dedicado:
+
+```bash
+POST /api/auth/tenant/login
+X-Tenant-ID: <tenant-slug>
+Content-Type: application/json
+
+{ "email": "user@example.com", "password": "password123" }
+```
+
+El JWT retornado incluye un flag `isTenantUser`. El frontend inyecta automaticamente el header `X-Tenant-ID` en todas las llamadas posteriores a la API.
+
+---
+
+## Auditoria de asignacion de roles
+
+Todas las asignaciones y revocaciones de roles se registran en `role_assignment_log`:
+
+```bash
+GET /api/roles/:roleId/audit
+Authorization: Bearer <admin-token>
+```
+
+Retorna un registro cronologico de quien asigno o revoco el rol, cuando y para que usuario. Las acciones de administradores tambien se atribuyen — cada operacion CRUD registra que usuario administrador la realizo.
+
+---
+
+## Desactivar usuarios
+
+Los propietarios del tenant pueden desactivar usuarios desde el panel de administracion. Los usuarios desactivados no pueden iniciar sesion pero sus datos se preservan. Cambie el estado activo desde la pagina de Usuarios.

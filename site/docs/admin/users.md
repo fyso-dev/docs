@@ -16,18 +16,16 @@ Creates a user within the tenant.
 | `email` | string | Yes | Email (unique within the tenant) |
 | `password` | string | Yes | Password (min 8 characters, hashed) |
 | `name` | string | Yes | Full name |
-| `role` | string | No | Role: `owner`, `admin`, `member`, `viewer`. Default: `member` |
-| `permissions` | object | No | Per-entity permissions |
+| `isOwner` | boolean | No | Grant owner privileges (manage all settings). Default: `false` |
 | `metadata` | object | No | Additional data (phone, department, position, avatar) |
 
-### Roles
+### RBAC Model
 
-| Role | Description |
-|------|-------------|
-| `owner` | Full control. Can manage everything |
-| `admin` | Can manage users and settings |
-| `member` | Can create and edit records |
-| `viewer` | Read only |
+Fyso uses a **pure RBAC model**. There are no built-in fixed roles. Instead, you create custom roles with specific permissions and assign them to users.
+
+Seed roles (admin, editor, viewer) are provided as editable templates — you can rename them, change their permissions, or delete them entirely.
+
+The only special flag is `isOwner`, which grants full administrative access to the tenant (manage users, settings, billing). One or more users per tenant can be flagged as owner.
 
 ### Per-Entity Permissions
 
@@ -51,7 +49,6 @@ create_user({
   email: "vendedor@empresa.com",
   password: "password123",
   name: "Carlos Vendedor",
-  role: "member",
   permissions: {
     entities: {
       clientes: ["create", "read", "update"],
@@ -108,7 +105,7 @@ list_users({ tenantSlug: "mi-empresa" })
       "id": "uuid",
       "email": "admin@empresa.com",
       "name": "Admin Principal",
-      "role": "owner",
+      "isOwner": true,
       "isActive": true,
       "lastLogin": "2026-02-18T10:00:00Z"
     }
@@ -162,7 +159,7 @@ Content-Type: application/json
 }
 ```
 
-Creates a user with role `viewer`. Returns `403` if `selfRegistrationEnabled` is `false`, `409` on duplicate email.
+Creates a user with the default viewer role. Returns `403` if `selfRegistrationEnabled` is `false`, `409` on duplicate email.
 
 Rate-limited to **5 requests per hour** per IP + tenant.
 
@@ -174,8 +171,7 @@ Rate-limited to **5 requests per hour** per IP + tenant.
   "data": {
     "id": "uuid",
     "email": "jane@example.com",
-    "name": "Jane Builder",
-    "role": "viewer"
+    "name": "Jane Builder"
   }
 }
 ```
@@ -244,7 +240,7 @@ Content-Type: application/json
 { "new_password": "newpassword123" }
 ```
 
-Owner or admin can reset any user's password without knowing the current password. Requires `owner` or `admin` role. All active sessions for the affected user are invalidated.
+Users with manage permission (or `isOwner`) can reset any user's password without knowing the current password. All active sessions for the affected user are invalidated.
 
 This endpoint is also exposed as the `update_user_password` MCP tool.
 
@@ -301,7 +297,7 @@ Login as a tenant user. Returns a JWT for use with the REST API.
     "id": "uuid",
     "email": "user@example.com",
     "name": "Nombre",
-    "role": "member"
+    "isOwner": false
   },
   "usage": {
     "header": "Authorization",
@@ -522,10 +518,44 @@ No prior authentication required. The invitation token acts as the gate.
   "data": {
     "id": "uuid",
     "email": "colleague@example.com",
-    "name": "Jane Doe",
-    "role": "member"
+    "name": "Jane Doe"
   }
 }
 ```
 
 The invitation is claimed atomically — concurrent requests cannot claim the same token twice. Returns `409` if the email already exists in the tenant, `403` if the email does not match the invitation, and `403` if the token is invalid, expired, or revoked.
+
+---
+
+## Tenant-User Login
+
+Tenant users (invited via member invitations) log in through a dedicated endpoint:
+
+```bash
+POST /api/auth/tenant/login
+X-Tenant-ID: <tenant-slug>
+Content-Type: application/json
+
+{ "email": "user@example.com", "password": "password123" }
+```
+
+The returned JWT includes an `isTenantUser` flag. The frontend automatically injects the `X-Tenant-ID` header on all subsequent API calls.
+
+---
+
+## Role Assignment Audit
+
+All role assignments and revocations are logged in `role_assignment_log`:
+
+```bash
+GET /api/roles/:roleId/audit
+Authorization: Bearer <admin-token>
+```
+
+Returns a chronological log of who assigned or revoked the role, when, and for which user. Admin actions are also attributed — every CRUD operation records which admin user performed it.
+
+---
+
+## Deactivating Users
+
+Tenant owners can deactivate users from the admin panel. Deactivated users cannot log in but their data is preserved. Toggle the active status from the Users page.

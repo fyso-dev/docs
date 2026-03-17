@@ -177,7 +177,11 @@ Transforma valores de campos:
 
 ## Actions
 
-Efectos secundarios que se ejecutan despues de guardar:
+Efectos secundarios que se ejecutan despues de guardar. Las acciones se ejecutan secuencialmente y pueden compartir datos a traves del [contexto de ejecucion](#contexto-de-ejecucion).
+
+### `update_related`
+
+Actualiza un registro en una entidad diferente:
 
 ```json
 {
@@ -199,6 +203,129 @@ Efectos secundarios que se ejecutan despues de guardar:
   ]
 }
 ```
+
+### `update_record`
+
+Actualiza campos en el registro actual. A diferencia de `update_related`, no requiere `entity` ni `recordId` — apunta al registro que disparo la regla.
+
+```json
+{
+  "type": "update_record",
+  "fields": {
+    "estado": "aprobado",
+    "aprobado_por": "$ctx.approver_name"
+  }
+}
+```
+
+| Propiedad | Tipo | Requerido | Descripcion |
+|-----------|------|-----------|-------------|
+| `fields` | object | Si | Pares campo→valor a establecer en el registro actual |
+
+Los valores pueden referenciar variables del contexto de ejecucion usando la sintaxis `$ctx.*`. Esto es util para encadenar acciones — por ejemplo, almacenar el resultado de una clasificacion por IA y luego escribirlo de vuelta en el registro.
+
+### `ai_call`
+
+Invoca un modelo de IA como accion de regla. Util para clasificacion, extraccion, resumen, o cualquier tarea de generacion de texto disparada por cambios en registros.
+
+```json
+{
+  "type": "ai_call",
+  "prompt": "Classify this support ticket: {{descripcion}}",
+  "system_prompt": "You are a ticket classifier. Respond with exactly one of: bug, feature, question",
+  "model": "gpt-4o-mini",
+  "temperature": 0.3,
+  "max_tokens": 100,
+  "store_result_as": "$ctx.classification"
+}
+```
+
+| Propiedad | Tipo | Requerido | Descripcion |
+|-----------|------|-----------|-------------|
+| `prompt` | string | Si (salvo `prompt_template`) | El prompt a enviar. Soporta sustitucion `{{campo}}` desde el registro actual. |
+| `prompt_template` | string | No | Slug de un prompt template reutilizable (se resuelve desde `_fyso_ai_templates`) |
+| `system_prompt` | string | No | System prompt para la llamada de IA |
+| `system_prompt_template` | string | No | Slug de un system prompt template |
+| `model` | string | No | Modelo a usar. Si se omite, usa el modelo predeterminado del tenant. |
+| `temperature` | number | No | 0–2. Si se omite, usa el valor predeterminado del proveedor. |
+| `max_tokens` | number | No | 1–32000 |
+| `store_result_as` | string | No | Almacena la respuesta de la IA en el contexto de ejecucion. Debe seguir el formato `$ctx.<identificador>`. |
+
+**Protecciones:**
+
+- Se verifica el presupuesto antes de cada llamada de IA. Si el tenant agoto su presupuesto de IA, la llamada se omite.
+- Se verifica el limite de tasa antes de la verificacion de presupuesto.
+- Los errores se capturan como validaciones de tipo `error` — el pipeline continua con las acciones restantes.
+- Todas las llamadas se registran en `_fyso_ai_call_logs`.
+
+### `webhook_send`
+
+Envia una solicitud HTTP POST a una URL externa. Util para notificaciones, integraciones y reenvio de eventos.
+
+```json
+{
+  "type": "webhook_send",
+  "url": "https://hooks.example.com/notify",
+  "headers": {
+    "X-Api-Key": "my-token"
+  },
+  "payload": {
+    "ticket_id": "id",
+    "status": "estado",
+    "customer": "nombre_cliente"
+  },
+  "timeoutMs": 5000
+}
+```
+
+| Propiedad | Tipo | Requerido | Descripcion |
+|-----------|------|-----------|-------------|
+| `url` | string | Si | URL de destino. Soporta templates `{{campo}}`. Proteccion SSRF habilitada. |
+| `headers` | object | No | Headers HTTP personalizados. Soporta templates `{{campo}}`. |
+| `payload` | object | No | Payload clave→valor. Los valores se resuelven desde el registro actual al momento de ejecucion. `_record_id` se inyecta automaticamente. |
+| `timeoutMs` | number | No | 100–30000 ms (por defecto: 5000) |
+
+**Comportamiento:**
+
+- Siempre envia una solicitud `POST` con cuerpo JSON.
+- 1 reintento automatico en caso de fallo (fire-and-forget — no bloquea el pipeline de reglas).
+- El filtro SSRF bloquea IPs privadas/internas tanto al guardar la regla como al ejecutarla.
+
+## Contexto de ejecucion
+
+Las reglas de negocio pueden compartir datos entre acciones usando el **contexto de ejecucion** (`$ctx`). Asi se encadenan acciones — por ejemplo, llamando a un modelo de IA y luego escribiendo el resultado de vuelta en el registro.
+
+El flujo:
+
+1. Una accion `ai_call` almacena su resultado via `store_result_as: "$ctx.classification"`.
+2. Una accion `update_record` posterior referencia `$ctx.classification` en sus `fields`.
+
+```json
+{
+  "actions": [
+    {
+      "type": "ai_call",
+      "prompt": "Classify: {{descripcion}}",
+      "system_prompt": "Respond with one of: bug, feature, question",
+      "store_result_as": "$ctx.classification"
+    },
+    {
+      "type": "update_record",
+      "fields": {
+        "categoria": "$ctx.classification"
+      }
+    }
+  ]
+}
+```
+
+Las variables de contexto tienen alcance dentro de una sola ejecucion de regla. No persisten entre disparos de reglas separados.
+
+## Bloqueo optimista
+
+Todos los registros incluyen un campo `_record_version` en las respuestas de la API. Cuando se actualiza un registro via la API e incluyen `_record_version` en el payload, el servidor verifica que la version coincida con el valor almacenado. Si no coincide (otra actualizacion ocurrio en el intermedio), la solicitud se rechaza con un error de conflicto de version.
+
+Las acciones disparadas por reglas de negocio (`update_related`, `update_record`) omiten la verificacion de version para evitar conflictos durante el procesamiento automatizado.
 
 ## Operadores permitidos
 
