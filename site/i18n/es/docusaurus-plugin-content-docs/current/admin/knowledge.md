@@ -330,7 +330,7 @@ Authorization: Bearer <token>
 
 ## Panel de administracion
 
-Desde el panel de admin, anda a **Conocimiento** en la barra lateral para gestionar tu base de conocimiento visualmente:
+Desde el panel de administración, navegue a **Conocimiento** en la barra lateral para gestionar la base de conocimiento visualmente:
 
 - **Barra de estadisticas** — cantidad de documentos, almacenamiento usado, fragmentos totales
 - **Lista de documentos** — badge PDF, estado (listo/procesando/error), tamano, vista previa de contenido, boton eliminar
