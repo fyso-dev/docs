@@ -1,3 +1,128 @@
+## v1.38.0 — 2026-03-23
+
+### Features — Agent Messaging
+- **`_agent_messages` system entity** — Tenant-scoped inbox table for agent-to-agent communication. Created automatically in every tenant schema.
+- **Messaging actions in `fyso_agents`** — Five new MCP actions: `send_message`, `inbox`, `read_message`, `archive_message`, `count_unread`. See [Agent Messaging](./agents/messaging.md).
+- **Agent name fuzzy resolution** — `send_message` resolves partial names: `"cero"` auto-resolves to `"cero-a3f2c1"` if unique. Returns candidates list when ambiguous.
+- **Auto-run on message** — Setting `auto_run: true` on a message triggers the recipient Fyso agent immediately in the background. Fire-and-forget; HTTP response returns before the run completes.
+- **Chain depth limit** — Auto-run chains halt at 5 hops. The 6th message is left as `pending` and a `message.chain_limit` SSE event is emitted.
+
+### Features — External Agent Identity
+- **`.fyso-agent` file + registration handshake** — External agents (e.g. Claude Code) can register a persistent identity with `POST /api/v1/tenants/:slug/agents/register`. The `agent_id` is stored in `.fyso-agent` and used to subscribe to incoming messages via SSE. See [External Agent Identity](./agents/external-identity.md).
+- **Reconnect validation** — `POST /agents/reconnect` validates a stored `agent_id` and updates `last_seen_at`. Returns `AGENT_NOT_FOUND` if the file is stale.
+
+### Features — SSE and Event Bus
+- **`TriggeredBy` field** — All `record.*` events now include `data.triggered_by`: `mcp`, `api`, `flow`, `webhook`, `ui`, `rule`, or `system`.
+- **Rule events** — `rule.executed` and `rule.failed` events stream via SSE after every `after_save` rule execution.
+- **`?events=` filter** — SSE connections can filter by event type: `?events=record.created,rule.executed`. Omit for all types.
+- **`?agent_id=` filter** — SSE connections can subscribe to incoming agent messages by passing `agent_id` from `.fyso-agent`.
+- **Event bus coverage** — All CRUD paths (including the agent runner) now emit events.
+
+### Features — Developer Experience
+- **`forceDebug` in agent test UI** — Debug info is always visible in the agent test panel, regardless of the `ai.debug` tenant setting.
+- **`create_api_key` in `fyso_auth`** — Create a tenant API key from an MCP session. The full key is returned once only.
+
+### Fixes
+- **DB connection pool** — `max_lifetime` set to 240 s, `keep_alive` enabled at 10 s. Prevents `CONNECTION_CLOSED` errors under high load.
+- **SSE stability** — Accepts both `fyso_pkey_*` and legacy `fyso_ak_*` keys. Sends immediate `connected` event on open to prevent proxy timeout. `idleTimeout` set to 255 s via `Bun.serve`. `X-Accel-Buffering: no` header disables Nginx proxy buffering.
+- **UUID guard** — `findById`/`findByIds` now reject non-UUID strings before hitting the database, preventing `PostgresError` from LLM tool calls.
+
+---
+
+## v1.37.0 — 2026-03-20
+
+### Features — Channels Fase 1
+- **In-process event bus** — Tenant-scoped EventEmitter for CRUD events. Emits `record.created`, `record.updated`, `record.deleted` from all write paths.
+- **SSE endpoint** — `GET /api/v1/tenants/:slug/events/stream` — persistent Server-Sent Events stream for tenant events. See [SSE Event Stream](./api/sse-events.md).
+- **`/fyso:listen` skill** — Claude Code skill that bridges the SSE stream to a Claude Code channel.
+
+### Features
+- **Unified login** — The tenant workspace field on the login page expands inline; `/login/tenant` removed.
+- **`create_api_key` in `fyso_auth`** — Backported to v1.37; creates a tenant API key from MCP.
+
+### Fixes
+- **Org invitation email** — Invitation email is now sent when inviting a user to an org.
+- **Stale chunk auto-reload** — `ChunkLoadError` after a deploy now triggers an automatic page reload.
+- **UUID guard on record lookups** — Non-UUID ids from LLM tool calls no longer reach the database.
+- **i18n dynamic keys** — `bulk_tab_files` and `bulk_tab_urls` translation keys now expand correctly.
+- **SSE proxy hardening** — `fyso_pkey_*` keys accepted; immediate `connected` event; 255 s idle timeout; `X-Accel-Buffering: no`.
+
+### Cleanup
+- **Dead invitation code removed** — `invitation_codes` table and `platform_invitations` table deleted (−1,094 lines). Beta access is now controlled via the admin panel directly.
+
+---
+
+## v1.36.3 — 2026-03-19
+
+### Fixes
+- **Server startup guard** — Missing `SECRETS_ENCRYPTION_KEY` now causes an immediate fatal error with a clear message and the generation command, instead of silently hanging.
+- **Org UX** — Fixed org switcher navigation, plan expiry display, role badge rendering, and personal org name disambiguation.
+
+---
+
+## v1.36.2 — 2026-03-19
+
+### Fixes
+- **Org invitation acceptance** — Inviting an existing user now creates a pending invitation instead of auto-adding them. Membership is granted only after the user accepts.
+- **Org UI scroll** — Content below the fold on org pages is now reachable.
+
+---
+
+## v1.36.1 — 2026-03-19
+
+### Features
+- **`POST /api/orgs/invitations/:token/accept`** — New authenticated endpoint for accepting org invitations.
+
+### Fixes
+- **Org invitation acceptance** — Inviting an existing user creates a pending invitation instead of auto-adding them.
+- **Personal org names** — Personal orgs show the owner name for disambiguation (`"Personal (slug)"` for other admins' orgs).
+- **Owner/member badges** — Crown and Users icons in the org and tenant switcher.
+- **Dashboard scroll** — Content below the fold is reachable.
+
+---
+
+## v1.36.0 — 2026-03-19
+
+### Features — Organizations
+- **Organization layer** — Orgs sit between admin users and tenants (similar to Supabase projects/teams). Every admin gets a personal org on signup; existing users were migrated automatically.
+- **Billing on org** — Plans (`Free`, `Pro`, `Beta`, `Enterprise`) moved from admin user to org. Quota enforcement reads from org plan.
+- **Multi-org support** — Admins can create multiple orgs and switch between them via the top-left switcher.
+- **Org invitations** — Invite collaborators to an org by email. Invited admins get access to all tenants in that org. Free plan: no invitations. Pro+: unlimited.
+- **New MCP tools** — `list_orgs`, `create_org`, `invite_to_org`, `list_org_members` actions added to `fyso_auth`. See [Organizations](./admin/organizations.md).
+- **New REST endpoints** — Full CRUD under `/api/orgs` plus members and invitations. See [Organizations](./admin/organizations.md).
+
+### Frontend
+- **Org+Tenant switcher** — Hierarchical dropdown in TopNav: org list with collapsible tenant groups.
+- **Organization sidebar group** — Members, Billing, and Org Settings pages under a new sidebar section.
+- **Members page** (`/org/members`) — Invite by email, manage roles, revoke pending invitations.
+- **Billing page moved** — `/billing` redirects to `/org/billing`.
+- **Org Settings** (`/org/settings`) — Name, slug, delete org (owner only).
+- **Invitation accept page** (`/signup/org-invite`) — Register or log in to join an org.
+
+### Breaking changes
+- `POST /api/auth/tenants` accepts `org_id` in the body. If omitted, defaults to the personal org.
+- `/billing` redirects to `/org/billing`.
+- `admin_users.plan` is deprecated — read from `organizations.plan` via org membership. Billing webhooks dual-write during the transition period.
+
+---
+
+## v1.34.0 — 2026-03-17
+
+### Features
+- **Multi-user tenant admin** — Tenant owners can invite users with specific roles. Invitation flow carries the assigned role. Includes role assignment audit log, admin action attribution, and tenant-user login via `/login/tenant`.
+- **resolve_depth on single record** — `GET /entities/:name/records/:id?resolve_depth=1` now resolves relations without needing `?resolve=true`. Max depth aligned to 2 across all endpoints.
+- **Agent retry on rate limit** — Agent runner retries with exponential backoff when the AI provider returns 429 (rate limited).
+
+### Fixes
+- **Consistent 429 error shape** — Rate limit middleware now returns a standard `{ error: "RATE_LIMITED", ... }` response across all endpoints.
+- **Stable record ordering** — Records query adds a secondary sort key (`id`) to prevent non-deterministic ordering when multiple records share the same sort field value.
+- **Agent run authentication** — Agent run endpoint now accepts both session tokens and API keys, not just admin tokens.
+- **Agent creation warning** — Creating an agent when no AI provider is configured returns a warning in the response instead of failing silently at run time.
+- **MCP `select_tenant` fuzzy match** — `select_tenant` now tries prefix matching when no exact slug match is found. Auto-selects if exactly one match; lists candidates if multiple.
+- **`generate_business_rule` removed** — The unreliable NL-to-DSL tool has been removed. Use `create_business_rule` with agent-generated DSL instead.
+
+---
+
 ## v1.33.2 — 2026-03-15
 
 ### Security
