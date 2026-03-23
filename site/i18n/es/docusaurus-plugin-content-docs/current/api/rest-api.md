@@ -52,7 +52,9 @@ GET /api/entities/{entityName}/records
 | `order` | string | `asc` | Direccion: `asc` o `desc` |
 | `search` | string | - | Busqueda full-text en campos de texto |
 | `resolve` | boolean | - | Expandir relaciones a objetos completos |
-| `filter.{fieldKey}` | string | - | Filtro por campo (ej: `filter.estado=activo`) |
+| `resolve_depth` | number | - | Profundidad de resolución de relaciones (máximo 2). `?resolve_depth=1` activa la resolución sin necesitar `?resolve=true`. |
+| `filters` | string | - | Expresion de filtro. Ejemplo: `?filters=status = active`. Operadores: `=`, `!=`, `>`, `<`, `>=`, `<=`, `contains`. Combinar con `AND`: `?filters=status = active AND role = admin` |
+| `filter.{fieldKey}` | string | - | Filtro legacy por campo (ej: `filter.estado=activo`). Prefiera `filters` para logica compuesta. |
 
 **Respuesta:**
 

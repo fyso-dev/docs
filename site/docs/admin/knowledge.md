@@ -84,6 +84,46 @@ Returns `201` on success with the document metadata.
 | `400` | Missing `file` field or unsupported MIME type (only PDF accepted) |
 | `403` | Plan document or storage limit reached |
 
+### Bulk URL Indexing
+
+Index multiple URLs in one request (max 50):
+
+```bash
+curl -X POST https://api.fyso.dev/api/knowledge/documents/bulk \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "documents": [
+      { "title": "FAQ", "content": "https://example.com/faq", "source_type": "url" },
+      { "title": "Pricing", "content": "https://example.com/pricing", "source_type": "url" }
+    ]
+  }'
+```
+
+### Bulk File Upload
+
+Upload multiple files in one request (max 50):
+
+```bash
+curl -X POST https://api.fyso.dev/api/knowledge/documents/upload/bulk \
+  -H "Authorization: Bearer <token>" \
+  -F "files=@manual1.pdf" \
+  -F "files=@manual2.pdf"
+```
+
+Both bulk endpoints return a `207` response with per-item success/failure:
+
+```json
+{
+  "results": [
+    { "title": "FAQ", "status": "success", "document_id": "uuid" },
+    { "title": "Pricing", "status": "error", "error": "URL fetch timeout" }
+  ]
+}
+```
+
+Plan limits are checked before processing. If the batch would exceed your plan quota, the entire request is rejected.
+
 ### Plan limits
 
 | Plan | Documents | Storage |

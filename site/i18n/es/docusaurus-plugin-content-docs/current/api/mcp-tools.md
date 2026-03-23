@@ -6,7 +6,7 @@ sidebar_position: 2
 
 Referencia completa de todas las herramientas MCP disponibles.
 
-El servidor MCP expone **8 herramientas agrupadas** (cada una con un parametro `action` tipo enum) mas **7 herramientas de super administrador**. No se exponen herramientas individuales. Configura que herramientas se exponen con la variable de entorno `FYSO_TOOLS`. Ver [Perfiles de herramientas](tool-profiles.md).
+El servidor MCP expone **10 herramientas agrupadas** (cada una con un parametro `action` tipo enum), mas `fyso_welcome` para onboarding. Configura que herramientas se exponen con la variable de entorno `FYSO_TOOLS`. Ver [Perfiles de herramientas](tool-profiles.md).
 
 ## Como funcionan las herramientas agrupadas
 
@@ -108,7 +108,6 @@ Crear, testear, publicar y gestionar reglas de negocio.
 | `create` | Crear regla desde DSL | `name`, `triggerType`, `rule` |
 | `get` | Detalles de la regla | `ruleId` |
 | `list` | Listar reglas | — |
-| `generate` | Generar desde prompt/DSL | `description` o `rule` |
 | `publish` | Activar regla en borrador | `ruleId` |
 | `delete` | Eliminar regla | `ruleId` |
 | `test` | Dry-run con datos de prueba | `ruleId`, `testData` |
@@ -122,12 +121,13 @@ Crear, testear, publicar y gestionar reglas de negocio.
 | `entityName` | string | todos | Entidad a la que pertenece la regla |
 | `ruleId` | string | get, publish, delete, test, logs | ID de la regla |
 | `name` | string | create | Nombre de la regla |
-| `description` | string | create, generate | Descripcion o prompt en lenguaje natural |
+| `description` | string | create | Descripcion de la regla |
 | `triggerType` | `field_change` \| `before_save` \| `after_save` \| `on_load` | create | Cuando se dispara la regla |
 | `triggerFields` | string[] | create | Campos que disparan la regla |
-| `rule` | object | create, generate | DSL de la regla con compute/validate/transform/actions |
+| `rule` | object | create | DSL de la regla con compute/validate/transform/actions |
+| `ruleDsl` | object | create | Alias de `rule` |
 | `priority` | number | create | Prioridad de ejecucion, menor = primero (default: 100) |
-| `auto_publish` | boolean | create, generate | Auto-publicar despues de crear/generar |
+| `auto_publish` | boolean | create | Auto-publicar despues de crear |
 | `include_drafts` | boolean | list | Incluir reglas en borrador |
 | `testData` | object | test | Datos de prueba para dry-run |
 | `limit` | number | logs | Max entradas de log |
@@ -150,7 +150,8 @@ Gestion de usuarios, RBAC y operaciones de tenant.
 | `login` | Autenticarse como usuario de tenant | `tenantSlug`, `email`, `password` |
 | `list_tenants` | Listar tenants accesibles | — |
 | `select_tenant` | Seleccionar tenant activo | `tenantSlug` |
-| `generate_invitation` | Generar codigo de invitacion beta | `note` |
+| `create_tenant` | Crear un nuevo tenant (cuota por plan: free=1, pro=5) | `name` |
+| `generate_invitation` | Generar codigo de invitacion beta (FYSO-XXXX-XXXX) | — |
 | `list_invitations` | Listar codigos de invitacion con estadisticas de uso | — |
 
 ### Parametros
@@ -165,7 +166,7 @@ Gestion de usuarios, RBAC y operaciones de tenant.
 | `roleId` | string | assign_role, revoke_role | ID del rol |
 | `permissions` | object | create_role | Objeto de permisos del rol |
 | `description` | string | create_role | Descripcion del rol |
-| `tenantSlug` | string | create_user, login, select_tenant, update_password | Slug del tenant |
+| `tenantSlug` | string | create_user, login, select_tenant, update_password | Slug del tenant. `select_tenant` soporta coincidencia por prefijo — si no hay coincidencia exacta, auto-selecciona cuando hay una sola coincidencia por prefijo. |
 | `note` | string | generate_invitation | Nota para el codigo de invitacion |
 | `maxUses` | number | generate_invitation | Numero maximo de usos |
 | `expiresAt` | string | generate_invitation | Fecha de expiracion ISO 8601 |
@@ -264,6 +265,7 @@ Spec de API, generacion de clientes, import/export de metadata, secretos y metri
 | `usage` | Metricas de facturacion | — |
 | `set_secret` | Almacenar secreto encriptado | `key`, `value` |
 | `delete_secret` | Eliminar un secreto | `key` |
+| `feedback` | Reportar feedback o bug | `feedback_type`, `title` |
 
 ### Parametros
 
@@ -279,6 +281,121 @@ Spec de API, generacion de clientes, import/export de metadata, secretos y metri
 | `tenantId` | string | export, import | Override de ID/slug de tenant |
 | `key` | string | set_secret, delete_secret | Nombre del secreto |
 | `value` | string | set_secret | Valor del secreto (encriptado en reposo) |
+| `feedback_type` | `bug` \| `suggestion` \| `question` | feedback | Categoria del feedback |
+| `title` | string | feedback | Resumen corto |
+| `description` | string | feedback | Descripcion detallada |
+| `context` | string | feedback | Contexto adicional opcional |
+
+---
+
+## `fyso_agents` — Gestion de agentes
+
+Crear, configurar y ejecutar agentes de IA. Gestionar versiones, ejecuciones y plantillas.
+
+| Accion | Descripcion | Parametros requeridos |
+|--------|-------------|----------------------|
+| `list` | Listar todos los agentes | — |
+| `create` | Crear un nuevo agente | `name` |
+| `update` | Modificar un agente | `agentId` |
+| `delete` | Eliminar un agente | `agentId` |
+| `run` | Ejecutar un agente con input | `agentId`, `input` |
+| `test` | Ejecutar agente en modo sandbox | `agentId`, `input` |
+| `list_runs` | Listar historial de ejecuciones | `agentId` |
+| `list_versions` | Listar versiones de prompt | `agentId` |
+| `rollback` | Revertir a una version anterior | `agentId`, `versionId` |
+| `list_templates` | Listar plantillas preset de industria | — |
+| `from_template` | Crear agente desde plantilla | `templateId`, `name` |
+
+### Parametros
+
+| Parametro | Tipo | Usado por | Descripcion |
+|-----------|------|-----------|-------------|
+| `action` | string (enum) | todos | Operacion a realizar |
+| `agentId` | string | update, delete, run, test, list_runs, list_versions, rollback | ID del agente |
+| `name` | string | create, from_template | Nombre del agente |
+| `input` | string | run, test | Mensaje del usuario o prompt |
+| `versionId` | string | rollback | ID de la version a restaurar |
+| `templateId` | string | from_template | ID de la plantilla |
+| `session_id` | string | run | Continuar una sesion existente (omitir para crear nueva) |
+| `memory_enabled` | boolean | create, update | Habilitar extraccion de memoria entre sesiones |
+| `knowledge_enabled` | boolean | create, update | Habilitar recuperacion RAG de la base de conocimiento del tenant |
+| `schedules_enabled` | boolean | create, update | Habilitar herramientas de scheduling (slots, reservas) |
+| `tools_scope` | object | create, update | Herramientas por entidad: `{ "entity": ["query", "create", "update"] }` |
+| `system_prompt` | string | create, update | Prompt de sistema del agente |
+| `fallback_mode` | `llm` \| `message` \| `silent` | create, update | Comportamiento cuando ninguna regla deterministica coincide |
+| `channels` | object[] | create, update | Configuraciones de canal (web, telegram, etc.) |
+
+---
+
+## `fyso_ai` — Proveedores de IA y llamadas
+
+Configurar proveedores de IA, gestionar prompts, probar llamadas y ver logs.
+
+| Accion | Descripcion | Parametros requeridos |
+|--------|-------------|----------------------|
+| `configure_provider` | Configurar proveedor de IA por defecto | `provider`, `apiKey` |
+| `list_providers` | Listar proveedores configurados | — |
+| `add_provider` | Agregar un proveedor adicional | `provider`, `apiKey` |
+| `remove_provider` | Eliminar un proveedor | `providerId` |
+| `test_call` | Probar un prompt contra un proveedor | `prompt` |
+| `call_logs` | Ver historial de llamadas de IA | — |
+| `debug_log` | Obtener payload de debug de una llamada | `callId` |
+| `create_template` | Crear plantilla de prompt reutilizable | `name`, `prompt` |
+| `list_templates` | Listar plantillas de prompt | — |
+| `update_template` | Modificar una plantilla de prompt | `templateId` |
+| `list_presets` | Listar presets de industria (taller, clinica, tienda) | — |
+| `install_preset` | Instalar un preset de industria con entidades y agente | `preset` |
+| `rate_limit_status` | Estado actual de rate limit de IA | — |
+| `cost_dashboard` | Resumen de gasto en IA (semanal, mensual, proyecciones) | — |
+
+### Parametros
+
+| Parametro | Tipo | Usado por | Descripcion |
+|-----------|------|-----------|-------------|
+| `action` | string (enum) | todos | Operacion a realizar |
+| `provider` | string | configure_provider, add_provider | Tipo de proveedor: `openai`, `anthropic`, o cualquier URL base compatible con OpenAI |
+| `apiKey` | string | configure_provider, add_provider | API key del proveedor |
+| `providerId` | string | remove_provider | ID de configuracion del proveedor |
+| `model` | string | configure_provider, add_provider, test_call | Nombre del modelo (ej. `gpt-4o`, `claude-3-5-sonnet-20241022`) |
+| `prompt` | string | test_call, create_template | Texto del prompt |
+| `name` | string | create_template | Nombre de la plantilla |
+| `templateId` | string | update_template | ID de la plantilla |
+| `callId` | string | debug_log | ID de la llamada de IA (requiere configuracion `ai.debug` del tenant) |
+| `limit` | number | call_logs | Max entradas de log |
+| `preset` | string | install_preset | Nombre del preset: `taller`, `clinica`, `tienda` |
+| `system_prompt` | string | test_call | Prompt de sistema para la llamada de prueba |
+| `temperature` | number | test_call | Temperatura 0-2 |
+| `max_tokens` | number | test_call | Max tokens 1-32000 |
+
+---
+
+## `fyso_welcome` — Onboarding
+
+Una herramienta de conversacion de onboarding. Dado un `businessType`, propone un conjunto inicial de entidades y campos adecuados para ese negocio, y retorna pasos siguientes sugeridos. Usada por el plugin de Claude Code en la primera conexion.
+
+| Parametro | Tipo | Requerido | Descripcion |
+|-----------|------|-----------|-------------|
+| `businessType` | string | Si | Categoria del negocio (ej. `freelancer`, `clinic`, `ecommerce`, `saas`, `nonprofit`, `other`) |
+
+Esta herramienta no acepta un parametro `action` — es una herramienta de proposito unico, no un router agrupado.
+
+---
+
+## Herramientas de gestion de integraciones
+
+Estas herramientas independientes gestionan el ciclo de vida de integraciones (no agrupadas):
+
+| Herramienta | Descripcion | Parametros requeridos |
+|-------------|-------------|----------------------|
+| `list_integrations` | Listar integraciones disponibles y estado | — |
+| `install_integration` | Instalar una integracion | `slug` |
+| `configure_integration` | Actualizar configuracion de integracion | `slug`, `config` |
+| `activate_integration` | Habilitar herramientas de integracion | `slug` |
+| `test_integration` | Probar conectividad | `slug` |
+| `uninstall_integration` | Eliminar integracion | `slug` |
+| `list_integration_logs` | Ver logs de salud | `slug` |
+
+Las integraciones activas inyectan herramientas en los runners de agentes como `integration:<slug>:<tool-slug>`.
 
 ---
 
@@ -286,8 +403,8 @@ Spec de API, generacion de clientes, import/export de metadata, secretos y metri
 
 Las siguientes funcionalidades estan disponibles via la [REST API](/api/rest-api) pero no se exponen como herramientas MCP:
 
-- **Canales** — `search_channels`, `get_channel_info`, `get_channel_tools`, `execute_channel_tool`, `get_my_channel`, `publish_channel`, `update_channel`, `unpublish_channel`, `set_channel_permissions`, `define_channel_tool`, `update_channel_tool`, `remove_channel_tool`
-- **Bots** — `register_bot`, `identify_bot`, `list_bots`, `whoami_bot`, `revoke_bot`
+- **Canales** — Gestion de canales de agentes (Telegram, widget web). Ver [Canales](/admin/channels).
+- **Bots** — `register_bot`, `identify_bot`, `list_bots`, `whoami_bot`, `revoke_bot` (ver [Identidad de Bot](/agents/bot-identity))
 - **Flows** — `create_flow`, `list_flows`, `update_flow`, `delete_flow`, `toggle_flow`
 - **Webhooks** — `create_webhook`, `list_webhooks`, `delete_webhook`
 - **Documentos** — `upload_document`, `list_documents`, `get_document`, `delete_document`

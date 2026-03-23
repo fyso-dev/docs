@@ -1,3 +1,20 @@
+## v1.34.0 — 2026-03-17
+
+### Funcionalidades
+- **Administración multi-usuario de tenant** — Los propietarios de tenants pueden invitar usuarios con roles específicos. El flujo de invitación incluye el rol asignado. Incluye log de auditoría de asignación de roles, atribución de acciones administrativas y login de usuario-tenant via `/login/tenant`.
+- **resolve_depth en registro individual** — `GET /entities/:name/records/:id?resolve_depth=1` ahora resuelve relaciones sin necesitar `?resolve=true`. La profundidad máxima se alineó a 2 en todos los endpoints.
+- **Reintento de agente por rate limit** — El agent runner reintenta con backoff exponencial cuando el proveedor de IA devuelve 429 (rate limited).
+
+### Correcciones
+- **Forma consistente de error 429** — El middleware de rate limit ahora devuelve una respuesta estándar `{ error: "RATE_LIMITED", ... }` en todos los endpoints.
+- **Orden estable de registros** — La consulta de registros agrega una clave de ordenamiento secundaria (`id`) para evitar ordenamiento no determinístico cuando varios registros comparten el mismo valor de campo de ordenamiento.
+- **Autenticación en ejecución de agente** — El endpoint de ejecución de agente ahora acepta tokens de sesión y API keys, no solo tokens de administrador.
+- **Advertencia al crear agente** — Crear un agente sin proveedor de IA configurado devuelve una advertencia en la respuesta en lugar de fallar silenciosamente al ejecutar.
+- **`select_tenant` con coincidencia parcial** — `select_tenant` ahora intenta coincidencia por prefijo cuando no hay coincidencia exacta de slug. Selecciona automáticamente si hay una sola coincidencia; lista candidatos si hay varias.
+- **`generate_business_rule` eliminado** — La herramienta poco confiable de NL-a-DSL fue eliminada. Usa `create_business_rule` con DSL generado por el agente.
+
+---
+
 ## v1.33.2 — 2026-03-15
 
 ### Seguridad

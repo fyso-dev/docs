@@ -10,11 +10,11 @@
 - Every REST API request requires `Authorization` and `X-Tenant-ID` headers.
 - Never create entities with fields that duplicate system fields (id, createdAt, updatedAt).
 - Use `generate_entity` with `auto_publish: true` for quick prototyping. Use the draft/publish cycle for production.
-- Use `generate_business_rule` with a natural language prompt instead of writing DSL manually — the server generates and validates the DSL.
+- Use `create_business_rule` with agent-generated DSL. The `generate_business_rule` tool has been removed.
 - For REST API access, prefer platform keys (`fyso_pkey_*`) over admin keys (`fyso_ak_*`) — platform keys enforce RBAC per entity and operation.
 - Default tool profile is `core` (~60 tools). Set `FYSO_TOOLS=advanced` for flows, webhooks, secrets, and destructive operations.
 - Filter syntax for `query_records`: `"field operator value"` (e.g., `"status = open"`, `"price > 100"`). Compound: `"status = open AND priority = high"`.
-- Relations store UUIDs. Use `resolve_depth` (1-3) in `query_records` to auto-resolve nested relations.
+- Relations store UUIDs. Use `resolve_depth` (1-2) in `query_records` to auto-resolve nested relations.
 - Static sites deploy to `{subdomain}-sites.fyso.dev`. Use `generate_deploy_token` for CI/CD (persistent, reusable).
 
 ## Agents Guide (start here if you are an AI agent)
@@ -79,6 +79,9 @@
 - [Import / Export](https://docs.fyso.dev/docs/admin/import-export): Metadata export and import as JSON
 - [Platform Invitations](https://docs.fyso.dev/docs/admin/platform-invitations): Invite new platform users
 - [n8n Integration](https://docs.fyso.dev/docs/admin/n8n-integration): Community node for n8n workflows
+- [AI Agents](https://docs.fyso.dev/docs/admin/ai-agents): Built-in agents, runner, sessions, memory, templates, presets, channels
+- [Channels](https://docs.fyso.dev/docs/admin/channels): Telegram bot, web widget, SSE streaming, channel adapters
+- [GDPR Compliance](https://docs.fyso.dev/docs/admin/gdpr): DPA acceptance, session consent, data suppression, audit log
 
 ## Deployment
 
@@ -103,4 +106,9 @@
 
 ## Optional
 
-- [Changelog](https://docs.fyso.dev/docs/changelog): Platform release notes (v1.16.0 — v1.33.2)
+- [Changelog](https://docs.fyso.dev/docs/changelog): Platform release notes (v1.16.0 — v1.34.0)
+
+## Integrations
+
+- [n8n](https://docs.fyso.dev/docs/integrations/n8n): Community node for n8n workflows
+- [Integration SDK](https://docs.fyso.dev/docs/integrations/sdk): Build third-party integrations — manifest, handlers, lifecycle, credential store, testing

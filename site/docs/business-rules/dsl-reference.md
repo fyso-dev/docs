@@ -177,7 +177,11 @@ Transforms field values:
 
 ## Actions
 
-Side effects that execute after saving:
+Side effects that execute after saving. Actions run sequentially and can share data through the [execution context](#execution-context).
+
+### `update_related`
+
+Updates a record in a different entity:
 
 ```json
 {
@@ -199,6 +203,129 @@ Side effects that execute after saving:
   ]
 }
 ```
+
+### `update_record`
+
+Updates fields on the current record. Unlike `update_related`, this does not require `entity` or `recordId` — it targets the record that triggered the rule.
+
+```json
+{
+  "type": "update_record",
+  "fields": {
+    "estado": "aprobado",
+    "aprobado_por": "$ctx.approver_name"
+  }
+}
+```
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| `fields` | object | Yes | Field→value pairs to set on the current record |
+
+Values can reference execution context variables using `$ctx.*` syntax. This is useful for chaining actions — for example, storing an AI classification result and then writing it back to the record.
+
+### `ai_call`
+
+Invokes an AI model as a rule action. Useful for classification, extraction, summarization, or any text generation task triggered by record changes.
+
+```json
+{
+  "type": "ai_call",
+  "prompt": "Classify this support ticket: {{descripcion}}",
+  "system_prompt": "You are a ticket classifier. Respond with exactly one of: bug, feature, question",
+  "model": "gpt-4o-mini",
+  "temperature": 0.3,
+  "max_tokens": 100,
+  "store_result_as": "$ctx.classification"
+}
+```
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| `prompt` | string | Yes (unless `prompt_template`) | The prompt to send. Supports `{{field}}` substitution from the current record. |
+| `prompt_template` | string | No | Slug of a reusable prompt template (resolves from `_fyso_ai_templates`) |
+| `system_prompt` | string | No | System prompt for the AI call |
+| `system_prompt_template` | string | No | Slug of a system prompt template |
+| `model` | string | No | Override model. Uses the tenant default if omitted. |
+| `temperature` | number | No | 0–2. Uses the provider default if omitted. |
+| `max_tokens` | number | No | 1–32000 |
+| `store_result_as` | string | No | Store the AI response in execution context. Must follow the format `$ctx.<identifier>`. |
+
+**Guardrails:**
+
+- A budget check runs before every AI call. If the tenant has exhausted its AI budget, the call is skipped.
+- A rate limit check runs before the budget check.
+- Failures are captured as `error` validations — the pipeline continues with remaining actions.
+- All calls are logged to `_fyso_ai_call_logs`.
+
+### `webhook_send`
+
+Sends an HTTP POST request to an external URL. Useful for notifications, integrations, and event forwarding.
+
+```json
+{
+  "type": "webhook_send",
+  "url": "https://hooks.example.com/notify",
+  "headers": {
+    "X-Api-Key": "my-token"
+  },
+  "payload": {
+    "ticket_id": "id",
+    "status": "estado",
+    "customer": "nombre_cliente"
+  },
+  "timeoutMs": 5000
+}
+```
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| `url` | string | Yes | Destination URL. Supports `{{field}}` templates. SSRF protection enforced. |
+| `headers` | object | No | Custom HTTP headers. Supports `{{field}}` templates. |
+| `payload` | object | No | Key→value payload. Values resolve from the current record at fire time. `_record_id` is injected automatically. |
+| `timeoutMs` | number | No | 100–30000 ms (default: 5000) |
+
+**Behavior:**
+
+- Always sends a `POST` request with a JSON body.
+- 1 automatic retry on failure (fire-and-forget — does not block the rule pipeline).
+- SSRF filter blocks private/internal IPs both at rule save time and at execution time.
+
+## Execution Context
+
+Business rules can share data between actions using the **execution context** (`$ctx`). This is how you chain actions together — for example, calling an AI model and then writing the result back to the record.
+
+The flow:
+
+1. An `ai_call` action stores its result via `store_result_as: "$ctx.classification"`.
+2. A subsequent `update_record` action references `$ctx.classification` in its `fields`.
+
+```json
+{
+  "actions": [
+    {
+      "type": "ai_call",
+      "prompt": "Classify: {{descripcion}}",
+      "system_prompt": "Respond with one of: bug, feature, question",
+      "store_result_as": "$ctx.classification"
+    },
+    {
+      "type": "update_record",
+      "fields": {
+        "categoria": "$ctx.classification"
+      }
+    }
+  ]
+}
+```
+
+Context variables are scoped to a single rule execution. They do not persist across separate rule triggers.
+
+## Optimistic Locking
+
+All records include a `_record_version` field in API responses. When you update a record via the API and include `_record_version` in the payload, the server checks that the version matches the stored value. If it doesn't match (another update happened in between), the request is rejected with a version conflict error.
+
+Actions triggered by business rules (`update_related`, `update_record`) bypass the version check to avoid conflicts during automated processing.
 
 ## Allowed Operators
 
