@@ -8,8 +8,6 @@ Complete reference of all available MCP tools.
 
 The MCP server exposes **10 grouped tools** (each with an `action` enum parameter), plus `fyso_welcome` for onboarding. Configure which tools are exposed with the `FYSO_TOOLS` environment variable. See [Tool Profiles](tool-profiles.md).
 
-Channels, bots, flows, webhooks, and other features are available via the [REST API](/api/rest-api) but not as MCP tools.
-
 ## How grouped tools work
 
 Each grouped tool accepts an `action` parameter that selects the operation. Additional parameters depend on the action chosen. Example:
@@ -110,7 +108,6 @@ Create, test, publish, and manage business rules.
 | `create` | Create rule from DSL | `name`, `triggerType`, `rule` |
 | `get` | Rule details | `ruleId` |
 | `list` | List rules | — |
-| `generate` | Generate from prompt/DSL | `description` or `rule` |
 | `publish` | Activate draft rule | `ruleId` |
 | `delete` | Delete rule | `ruleId` |
 | `test` | Dry-run with test data | `ruleId`, `testData` |
@@ -124,22 +121,22 @@ Create, test, publish, and manage business rules.
 | `entityName` | string | all | Entity the rule belongs to |
 | `ruleId` | string | get, publish, delete, test, logs | Rule ID |
 | `name` | string | create | Rule name |
-| `description` | string | create, generate | Rule description or natural language prompt |
+| `description` | string | create | Rule description |
 | `triggerType` | `field_change` \| `before_save` \| `after_save` \| `on_load` | create | When the rule triggers |
 | `triggerFields` | string[] | create | Fields that trigger the rule |
-| `rule` | object | create, generate | Rule DSL with compute/validate/transform/actions |
-| `ruleDsl` | object | create, generate | Alias for `rule` |
+| `rule` | object | create | Rule DSL with compute/validate/transform/actions |
+| `ruleDsl` | object | create | Alias for `rule` |
 | `priority` | number | create | Execution priority, lower = first (default: 100) |
-| `auto_publish` | boolean | create, generate | Auto-publish after create/generate |
+| `auto_publish` | boolean | create | Auto-publish after create |
 | `include_drafts` | boolean | list | Include draft rules |
 | `testData` | object | test | Test record data for dry-run |
 | `limit` | number | logs | Max log entries |
 
 ---
 
-## `fyso_auth` — Users, roles, and tenants
+## `fyso_auth` — Users, roles, tenants, and organizations
 
-User management, RBAC, and tenant operations.
+User management, RBAC, tenant operations, organization management, and API keys.
 
 | Action | Description | Required params |
 |--------|-------------|-----------------|
@@ -153,25 +150,37 @@ User management, RBAC, and tenant operations.
 | `login` | Authenticate as tenant user | `tenantSlug`, `email`, `password` |
 | `list_tenants` | List accessible tenants | — |
 | `select_tenant` | Select active tenant | `tenantSlug` |
+| `create_tenant` | Create a new tenant (plan quota enforced: free=1, pro=5) | `name` |
 | `generate_invitation` | Generate beta invitation code (FYSO-XXXX-XXXX) | — |
 | `list_invitations` | List invitation codes with usage stats | — |
+| `list_orgs` | List organizations for current admin | — |
+| `create_org` | Create a new organization | `orgName` |
+| `invite_to_org` | Invite an admin to an org | `orgId`, `email` |
+| `list_org_members` | List members of an org | `orgId` |
+| `create_api_key` | Create a tenant API key | — |
 
 ### Parameters
 
 | Param | Type | Used by | Description |
 |-------|------|---------|-------------|
 | `action` | string (enum) | all | Operation to perform |
-| `email` | string | create_user, login | User email |
+| `email` | string | create_user, login, invite_to_org | User or invitee email |
 | `name` | string | create_user, create_role | User or role name |
 | `password` | string | create_user, update_password, login | Password |
 | `userId` | string | update_password, assign_role, revoke_role | User ID |
 | `roleId` | string | assign_role, revoke_role | Role ID |
 | `permissions` | object | create_role | Role permissions object |
 | `description` | string | create_role | Role description |
-| `tenantSlug` | string | create_user, login, select_tenant, update_password | Tenant slug |
+| `tenantSlug` | string | create_user, login, select_tenant, update_password | Tenant slug. `select_tenant` supports prefix matching — if no exact match, auto-selects when one prefix match is found. |
 | `note` | string | generate_invitation | Optional note for the invitation |
 | `maxUses` | number | generate_invitation | Max uses for the code |
 | `expiresAt` | string | generate_invitation | Expiration date (ISO 8601) |
+| `orgName` | string | create_org | Organization display name |
+| `orgId` | string | invite_to_org, list_org_members | Organization ID |
+| `orgRole` | `owner` \| `member` | invite_to_org | Role to assign the invitee (default: `member`) |
+| `apiKeyName` | string | create_api_key | Optional name for the new API key |
+
+> **`create_api_key` note:** The full key is returned only once in the response — store it immediately. Subsequent calls return only the key prefix for identification.
 
 ---
 
@@ -283,41 +292,72 @@ API spec, client generation, metadata import/export, secrets, and usage metrics.
 | `tenantId` | string | export, import | Tenant ID/slug override |
 | `key` | string | set_secret, delete_secret | Secret name |
 | `value` | string | set_secret | Secret value (encrypted at rest) |
+| `feedback_type` | `bug` \| `suggestion` \| `question` | feedback | Feedback category |
+| `title` | string | feedback | Short summary |
+| `description` | string | feedback | Detailed description |
+| `context` | string | feedback | Optional additional context |
 
 ---
 
 ## `fyso_agents` — Agent management
 
-Create, configure, and run AI agents. Manage versions, runs, and templates.
+Create, configure, run AI agents, and send messages between agents. Manage versions, runs, and templates.
 
 | Action | Description | Required params |
 |--------|-------------|-----------------|
 | `list` | List all agents | — |
 | `create` | Create a new agent | `name` |
-| `update` | Modify an agent | `agentId` |
-| `delete` | Delete an agent | `agentId` |
-| `run` | Execute an agent with input | `agentId`, `input` |
-| `test` | Run agent in sandbox mode | `agentId`, `input` |
-| `list_runs` | List agent run history | `agentId` |
-| `list_versions` | List prompt versions | `agentId` |
-| `rollback` | Revert to a previous version | `agentId`, `versionId` |
+| `update` | Modify an agent | `id` or `slug` |
+| `delete` | Delete an agent | `slug` |
+| `run` | Execute an agent with input | `agent_slug`, `message` |
+| `test` | Run agent in sandbox mode | `agent_slug`, `message` |
+| `list_runs` | List agent run history | `agent_id` |
+| `list_versions` | List prompt versions | `agent_id` |
+| `rollback` | Revert to a previous version | `agent_id`, `version` |
 | `list_templates` | List industry preset templates | — |
-| `from_template` | Create agent from template | `templateId`, `name` |
+| `from_template` | Create agent from template | `template_id`, `name` |
+| `send_message` | Send a message to another agent | `to_agent` |
+| `inbox` | View an agent's inbox | `agent_name` |
+| `read_message` | Fetch a message and mark it read | `message_id` |
+| `archive_message` | Archive a message | `message_id` |
+| `count_unread` | Count pending messages for an agent | `agent_name` |
 
 ### Parameters
 
 | Param | Type | Used by | Description |
 |-------|------|---------|-------------|
 | `action` | string (enum) | all | Operation to perform |
-| `agentId` | string | update, delete, run, test, list_runs, list_versions, rollback | Agent ID |
-| `name` | string | create, from_template | Agent name |
-| `input` | string | run, test | User message or prompt |
-| `versionId` | string | rollback | Version ID to restore |
-| `templateId` | string | from_template | Template ID |
+| `id` | string | update | Agent UUID (preferred over slug for update) |
+| `slug` | string | update, delete | Agent slug identifier |
+| `agent_slug` | string | run, test | Agent slug |
+| `agent_id` | string | list_runs, list_versions, rollback | Agent UUID |
+| `name` | string | create, from_template | Agent display name |
+| `message` | string | run, test | User message input |
+| `version` | number | rollback | Version number to restore |
+| `template_id` | string | from_template | Template identifier |
+| `session_id` | string | run, list_runs | Session ID to continue or filter by |
 | `memory_enabled` | boolean | create, update | Enable cross-session memory extraction |
-| `tools_scope` | string[] | create, update | List of tool names available to the agent |
+| `knowledge_enabled` | boolean | create, update | Enable RAG retrieval from tenant knowledge base |
+| `schedules_enabled` | boolean | create, update | Enable scheduling tools (slots, bookings) |
+| `tools_scope` | object | create, update | Entity tools: `{ "entity": ["query", "create", "update"] }` |
 | `system_prompt` | string | create, update | Agent system prompt |
+| `fallback_mode` | `llm` \| `message` \| `silent` | create, update | Behavior when no deterministic rule matches |
 | `channels` | object[] | create, update | Channel configurations (web, telegram, etc.) |
+| **Messaging params** | | | |
+| `to_agent` | string | send_message | Recipient agent name or slug. Supports fuzzy matching: `"cero"` resolves to `"cero-a3f2c1"` if unique. |
+| `from_agent` | string | send_message | Sender name. Defaults to `mcp-caller`. |
+| `subject` | string | send_message | Optional subject line |
+| `payload` | object | send_message | Arbitrary JSON data (max 64 KB) |
+| `priority` | `normal` \| `high` \| `urgent` | send_message | Default: `normal` |
+| `in_reply_to` | string | send_message | UUID of parent message (for threading) |
+| `auto_run` | boolean | send_message | Run recipient agent automatically on delivery |
+| `agent_name` | string | inbox, count_unread | Agent whose inbox to access |
+| `message_id` | string | read_message, archive_message | Message UUID |
+| `inbox_status` | `pending` \| `read` \| `all` | inbox | Filter messages by status (default: `pending`) |
+| `inbox_limit` | number | inbox | Max messages (default 50, max 200) |
+| `inbox_offset` | number | inbox | Pagination offset |
+
+See [Agent Messaging](../agents/messaging.md) for the full guide.
 
 ---
 
@@ -337,6 +377,10 @@ Configure AI providers, manage prompts, test calls, and view logs.
 | `create_template` | Create a reusable prompt template | `name`, `prompt` |
 | `list_templates` | List prompt templates | — |
 | `update_template` | Modify a prompt template | `templateId` |
+| `list_presets` | List industry presets (taller, clinica, tienda) | — |
+| `install_preset` | Install an industry preset with entities and agent | `preset` |
+| `rate_limit_status` | Current AI rate limit status | — |
+| `cost_dashboard` | AI spend summary (weekly, monthly, projections) | — |
 
 ### Parameters
 
@@ -352,6 +396,10 @@ Configure AI providers, manage prompts, test calls, and view logs.
 | `templateId` | string | update_template | Template ID |
 | `callId` | string | debug_log | AI call ID (requires `ai.debug` tenant setting) |
 | `limit` | number | call_logs | Max log entries |
+| `preset` | string | install_preset | Preset name: `taller`, `clinica`, `tienda` |
+| `system_prompt` | string | test_call | System prompt for test call |
+| `temperature` | number | test_call | Temperature 0–2 |
+| `max_tokens` | number | test_call | Max tokens 1–32000 |
 
 ---
 
@@ -367,12 +415,34 @@ This tool does not accept an `action` parameter — it is a single-purpose tool,
 
 ---
 
+## Integration management tools
+
+These standalone tools manage the integration lifecycle (not grouped):
+
+| Tool | Description | Required params |
+|------|-------------|-----------------|
+| `list_integrations` | List available integrations and status | — |
+| `install_integration` | Install an integration | `slug` |
+| `configure_integration` | Update integration config | `slug`, `config` |
+| `activate_integration` | Enable integration tools | `slug` |
+| `test_integration` | Test connectivity | `slug` |
+| `uninstall_integration` | Remove integration | `slug` |
+| `list_integration_logs` | View health logs | `slug` |
+
+Active integrations inject tools into agent runners as `integration:<slug>:<tool-slug>`.
+
+---
+
 ## REST-only features
 
 The following features are available via the [REST API](/api/rest-api) but are not exposed as MCP tools:
 
-- **Channels** — `search_channels`, `get_channel_info`, `get_channel_tools`, `execute_channel_tool`, `publish_channel`, `update_channel`, `unpublish_channel`, `set_channel_permissions`, `define_channel_tool`, `update_channel_tool`, `remove_channel_tool`
-- **Bots** — `register_bot`, `identify_bot`, `list_bots`, `whoami_bot`, `revoke_bot` (see [Bot Identity](/agents/bot-identity))
+- **SSE Event Stream** — `GET /api/v1/tenants/:slug/events/stream` — real-time CRUD, rule, and agent message events. See [SSE Event Stream](/api/sse-events).
+- **External Agent Identity** — `POST /api/v1/tenants/:slug/agents/register`, `POST /reconnect`. See [External Agent Identity](/agents/external-identity).
+- **Agent Messages (REST)** — Send, inbox, read, archive, count. Also available via `fyso_agents` MCP actions. See [Agent Messaging](/agents/messaging).
+- **Organizations** — `/api/orgs` CRUD + members + invitations. Also available via `fyso_auth` MCP actions. See [Organizations](/admin/organizations).
+- **Channels** — Agent channel management (Telegram, web widget). See [Channels](/admin/channels).
+- **Bots** — `register_bot`, `identify_bot`, `list_bots`, `whoami_bot`, `revoke_bot`. See [Bot Identity](/agents/bot-identity).
 - **Flows** — `create_flow`, `list_flows`, `update_flow`, `delete_flow`, `toggle_flow`
 - **Webhooks** — `create_webhook`, `list_webhooks`, `delete_webhook`
 - **Documents** — `upload_document`, `list_documents`, `get_document`, `delete_document`
