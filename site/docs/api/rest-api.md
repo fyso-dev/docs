@@ -55,7 +55,51 @@ curl -H "X-API-Key: API_KEY" \
 | X-Tenant-ID | Yes | Tenant slug (e.g., `my-company-abc123`) |
 | Content-Type | Yes (POST/PUT) | `application/json` |
 
-### 3. Bot JWT
+### 3. Developer Token
+
+Developer tokens are long-lived session tokens intended for external app development — agent UIs, scripts, and integrations that need persistent access without re-authenticating every 24 hours.
+
+```bash
+curl -X POST "https://api.fyso.dev/api/auth/tenant/developer-token" \
+  -H "Content-Type: application/json" \
+  -H "X-Tenant-ID: my-workspace" \
+  -d '{"email":"dev@example.com","password":"password123","ttl_days":90}'
+```
+
+**Request body:**
+
+| Field | Type | Required | Notes |
+|-------|------|----------|-------|
+| `email` | string | Yes | Tenant user email |
+| `password` | string | Yes | Tenant user password |
+| `ttl_days` | number | No | Token lifetime in days. Default: 360. Max: 365. |
+
+**Required header:** `X-Tenant-ID` — the tenant slug.
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "token": "eyJhbGci...",
+    "expiresAt": "2027-03-28T00:00:00Z",
+    "user": { "id": "uuid", "email": "dev@example.com" }
+  }
+}
+```
+
+Use the returned token in the `Authorization: Bearer` header on any subsequent request. The token authenticates as the tenant user — it carries the same permissions as a normal session token, but lasts as long as `ttl_days` specifies.
+
+**When to use developer tokens vs. API keys:**
+
+| | Developer token | API key |
+|--|----------------|---------|
+| TTL | Up to 365 days | Non-expiring (until revoked) |
+| Bound to | A specific user (with their roles) | The tenant (entity-scoped permissions) |
+| Typical use | Development, agent UIs, external scripts | Server-to-server integrations, bots |
+
+### 4. Bot JWT
 
 Bots are service accounts that authenticate with a name and secret to receive a short-lived JWT. The JWT is then used on entity endpoints exactly like any other token.
 
@@ -209,17 +253,19 @@ curl -X POST -H "Authorization: Bearer JWT_TOKEN" \
 
 ```
 PUT /api/entities/{entityName}/records/{id}
+PATCH /api/entities/{entityName}/records/{id}
 ```
 
+Both verbs share the same handler and support partial updates — only the fields included in the request body are written.
+
 ```bash
-curl -X PUT -H "Authorization: Bearer JWT_TOKEN" \
+# PUT and PATCH are interchangeable
+curl -X PATCH -H "Authorization: Bearer JWT_TOKEN" \
   -H "X-Tenant-ID: my-company-abc123" \
   -H "Content-Type: application/json" \
   -d '{"email": "juan.nuevo@example.com"}' \
   "https://api.fyso.dev/api/entities/clientes/records/{id}"
 ```
-
-Supports partial updates.
 
 ### Delete a Record
 

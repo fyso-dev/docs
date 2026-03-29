@@ -1,3 +1,33 @@
+## v1.39.0 — 2026-03-29
+
+### Features — App Distribution
+
+- **Instance tenant mode** — Tenants now have a `mode` field: `standalone` (default) or `instance`. Instance tenants are linked to a source standalone tenant and protected by the `instanceGuard` middleware. See [Instance Tenants](/docs/admin/organizations#app-distribution--instance-tenants).
+- **`instanceGuard` middleware** — Blocks schema mutation requests on instance tenants for all actors except org owners. Bots, tenant users, and non-owner admins receive `403 INSTANCE_PROTECTED`. Read-only requests (GET/HEAD/OPTIONS) always pass.
+- **Creation restrictions** — Instance tenants can only be created by org owners. The source tenant must be standalone and belong to the same org. Instance-of-instance chains are not permitted.
+
+### Features — Developer Tokens
+
+- **`POST /auth/tenant/developer-token`** — Issues a long-lived session token for external app development. Authenticates via email and password; accepts an optional `ttl_days` (default 360, max 365). See [Developer Token](/docs/api/rest-api#3-developer-token).
+
+### Features — Records API
+
+- **PATCH verb on records** — `PATCH /api/entities/{entityName}/records/{id}` is now supported as an alias for `PUT`. Both verbs share the same handler and support partial updates.
+
+### Fixes — SSE Stability
+
+- **Immediate heartbeat after `connected`** — Eliminates the idle gap that caused proxy timeouts before the first real event.
+- **Heartbeat interval reduced to 5 s** — Down from 10 s (configurable via `SSE_HEARTBEAT_INTERVAL_MS`).
+- **`Content-Length` header regression fixed** — The header was incorrectly set on SSE responses, causing some clients to treat the stream as a finite response.
+
+### Fixes — Other
+
+- **`prepare` script tolerates missing git** — Docker builds no longer fail when git is not available in the build environment.
+- **Config dialog before install** — The configuration dialog now opens before the install step when required fields have not been filled.
+- **Session TTL restored to 24 h** — Default session token lifetime was accidentally extended in a prior patch; restored to 24 hours.
+
+---
+
 ## v1.38.0 — 2026-03-23
 
 ### Features — Agent Messaging

@@ -133,6 +133,81 @@ These actions are part of `fyso_auth`:
 | `GET` | `/api/orgs/invitations/:token` | Get invitation details |
 | `POST` | `/api/orgs/invitations/:token/accept` | Accept an org invitation |
 
+## App Distribution — Instance Tenants
+
+Instance tenants let you distribute a pre-built app to end customers. Instead of each customer configuring their own schema, they receive a copy that inherits the schema of a source (standalone) tenant and is protected from accidental modifications.
+
+### How it works
+
+```
+Org (owner)
+  ├── standalone tenant  ← you build and maintain the schema here
+  ├── instance tenant A  ← customer A's data, protected schema
+  └── instance tenant B  ← customer B's data, protected schema
+```
+
+Every instance tenant is linked to exactly one standalone source tenant within the same org. The schema is not literally copied — the instance has its own Postgres schema — but the protection layer ensures that schema mutations on instance tenants are only allowed for org owners.
+
+### Tenant modes
+
+| Mode | Description |
+|------|-------------|
+| `standalone` | Default. Full schema access for all authorized actors. |
+| `instance` | Schema mutations blocked for bots and tenant users. Only the org owner can modify the schema. |
+
+### Creating an instance tenant
+
+**Restrictions enforced at creation time:**
+
+- `mode: "instance"` requires a `sourceTenantId` and an `orgId`.
+- The source tenant must be `standalone` — instances of instances are not allowed.
+- The source tenant must belong to the same org.
+- Only org owners can create instance tenants.
+
+**REST:**
+
+```bash
+curl -X POST https://api.fyso.dev/api/tenants \
+  -H "Authorization: Bearer <admin_token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Customer A Workspace",
+    "orgId": "<org-id>",
+    "mode": "instance",
+    "sourceTenantId": "<standalone-tenant-id>"
+  }'
+```
+
+### Schema mutation protection
+
+On instance tenants, any non-read request from a bot or tenant user is rejected with `403 INSTANCE_PROTECTED`:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "INSTANCE_PROTECTED",
+    "message": "Schema mutations are not allowed on instance tenants"
+  }
+}
+```
+
+An admin acting as an org member (not owner) also gets `403`:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "INSTANCE_PROTECTED",
+    "message": "Only org owners can modify schema on instance tenants"
+  }
+}
+```
+
+Record-level CRUD (data operations) is not affected — bots and users can still create, read, update, and delete records. The guard only applies to schema mutation paths (entity definitions, field changes, rule publishing, etc.).
+
+GET, HEAD, and OPTIONS requests always pass, so reading schema and preflight requests work without restriction.
+
 ## Billing
 
 Plans are attached to orgs, not individual admin users. The Billing page is at `/org/billing`. See [Plans](../billing/plans.md) for available plans and limits.
