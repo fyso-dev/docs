@@ -27,11 +27,11 @@ The key must belong to the specified tenant. Admin session tokens are not accept
 
 | Limit | Value |
 |-------|-------|
-| Max connections per tenant | 5 |
-| Max connections globally | 100 |
+| Max connections per tenant | 500 (env: `SSE_MAX_CONNECTIONS_PER_TENANT`) |
+| Max connections globally | 1000 (env: `SSE_MAX_CONNECTIONS_GLOBAL`) |
 | Backpressure threshold | 100 queued events |
-| Idle timeout | 1 hour |
-| Heartbeat interval | 30 seconds |
+| Idle timeout | 10 minutes |
+| Heartbeat interval | 5 seconds (env: `SSE_HEARTBEAT_INTERVAL_MS`) |
 
 If the per-tenant or global limit is reached, the endpoint returns `429`.
 
@@ -39,7 +39,9 @@ Slow consumers that fall more than 100 events behind receive a `backpressure` er
 
 ## Heartbeat
 
-The server sends a `: ping` comment every 30 seconds to keep the connection alive through proxies and load balancers. Standard SSE clients ignore comments; custom parsers should discard lines that start with `:`.
+The server sends a heartbeat event every 5 seconds. An immediate heartbeat is sent right after the `connected` event — this eliminates the idle gap that previously caused some proxies to close the connection before the first real event arrived.
+
+The idle safety timeout (10 minutes) resets on every heartbeat and every business event, so in practice it only triggers when the client has vanished without closing the TCP connection.
 
 ## Query parameters
 
