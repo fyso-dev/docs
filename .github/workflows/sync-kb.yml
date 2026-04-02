@@ -1,0 +1,37 @@
+name: Sync to Knowledge Base
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'site/docs/**/*.md'
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Get changed docs
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          list-files: shell
+          filters: |
+            docs:
+              - 'site/docs/**/*.md'
+
+      - name: Upload changed docs to Knowledge Base
+        if: steps.changes.outputs.docs == 'true'
+        env:
+          FYSO_DOCS_API_KEY: ${{ secrets.FYSO_DOCS_API_KEY }}
+        run: |
+          for file in ${{ steps.changes.outputs.docs_files }}; do
+            echo "Uploading $file..."
+            curl -sf -X POST https://app.fyso.dev/api/knowledge/upload \
+              -H "Authorization: Bearer $FYSO_DOCS_API_KEY" \
+              -H "X-Tenant-Slug: fyso-docs" \
+              -F "file=@$file"
+          done
