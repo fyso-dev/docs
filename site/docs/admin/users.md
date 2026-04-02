@@ -230,19 +230,39 @@ Authenticated users can change their own password. Validates the current passwor
 
 ---
 
-### Admin password reset
+### Admin: set a user's password
+
+```bash
+PUT /api/auth/tenant/users/:id/password
+Authorization: Bearer <admin-token>
+Content-Type: application/json
+
+{ "password": "newpassword123" }
+```
+
+Sets a new password for the specified user. Requires an active tenant context with owner or admin role. The password is hashed with bcrypt (cost 10) before saving.
+
+### Admin: reset a user's password
 
 ```bash
 PATCH /api/auth/tenant/users/:id/reset-password
 Authorization: Bearer <admin-token>
 Content-Type: application/json
 
-{ "new_password": "newpassword123" }
+{ "password": "newpassword123" }
 ```
 
-Users with manage permission (or `isOwner`) can reset any user's password without knowing the current password. All active sessions for the affected user are invalidated.
+Alternative reset endpoint. Same behavior as `PUT /password` — requires owner or admin role, hashes the new password, and invalidates all active sessions for the affected user.
 
 This endpoint is also exposed as the `update_user_password` MCP tool.
+
+### Warning: general update endpoint ignores password
+
+```bash
+PUT /api/auth/tenant/users/:id
+```
+
+This endpoint accepts a whitelist of fields: `name`, `isOwner`, `isActive`, and `metadata`. If you include `password` in the body, the request returns `200` but **the password is silently ignored**. Always use the dedicated `/password` endpoint to change a user's password.
 
 ---
 
