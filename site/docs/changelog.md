@@ -1,3 +1,43 @@
+## v1.41.0 — 2026-04-03
+
+### Features — Admin UX and Scheduling
+
+- **Tenants page redesign** — The superadmin tenants page now uses a denser, org-oriented layout for faster scanning across workspaces.
+- **`setup_scheduling` MCP tool** — New idempotent tool that creates `_fyso_schedules`, `_fyso_schedule_exceptions`, and `_fyso_bookings` for a tenant before using scheduling flows.
+- **Org switcher clarity** — Personal orgs you do not own now render as `Personal (Owner Name)` and show role badges in the switcher.
+
+### Fixes — Metadata and MCP
+
+- **Stateless MCP tenant context** — MCP requests that do not carry prior session state now recover the selected tenant context correctly.
+- **Metadata export/import hardening** — `/metadata/export` now keeps the standard JSON envelope for normal responses, negotiates gzip when requested, and `/metadata/import` correctly restores entity rows and nullable custom-field metadata.
+- **Metadata smoke coverage** — Added end-to-end smoke tests for metadata export/import and header negotiation to catch regressions earlier.
+
+### Fixes — Scheduling
+
+- **Scheduling bootstrap and booking race conditions** — New tenants now get the required scheduling entities, missing setup fails with a clear `422`, and slot creation closes a time-of-check/time-of-use race.
+
+---
+
+## v1.40.0 — 2026-04-01
+
+### Features — App Distribution
+
+- **Instance tenant metadata cloning** — Creating an `instance` tenant can now clone metadata from its source standalone tenant.
+- **`mode` and `sourceTenantId` forwarding** — MCP `create_tenant` and `POST /auth/tenants` now forward app-distribution fields consistently during tenant creation.
+
+### Features — Developer Experience
+
+- **Team helper scripts** — Added `lib/start-team` and `lib/team-status` scripts to boot and inspect local multi-agent/dev sessions.
+- **E2E smoke coverage for MCP tool groups** — Added smoke coverage across all documented MCP tool groups to validate live server behavior end to end.
+
+### Fixes
+
+- **`instanceGuard` enforcement** — Schema mutation routes now apply instance-tenant protection consistently in the correct middleware order.
+- **Metadata transport fixes** — Metadata export now respects `Accept-Encoding` for content negotiation, and import fixes handle entity inserts plus nullable `isSystem` values correctly.
+- **Scheduling bootstrap** — Scheduling system entities are seeded on tenant creation so booking flows work on fresh tenants without manual repair.
+- **Landing and messaging polish** — Signup CTAs now route to onboarding, the web app ships a favicon, and agent message hooks guard against undefined thread state.
+
+---
 ## v1.39.0 — 2026-03-29
 
 ### Features — App Distribution

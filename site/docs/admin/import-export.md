@@ -49,6 +49,8 @@ The export endpoint wraps its response in the standard API envelope. The MCP too
 
 When working via REST, the schema payload lives inside `data`.
 
+When working via REST, the schema payload lives inside `data`. When working via MCP, the grouped `fyso_meta` export action returns a short text summary plus the temp file path where the full JSON was written.
+
 ### What gets exported
 
 - Only **published** entities (drafts are excluded)
@@ -58,13 +60,13 @@ When working via REST, the schema payload lives inside `data`.
 
 ### Content negotiation
 
-For payloads larger than 10 KB, the server returns the response compressed as `application/gzip` — but **only** when the client sends the header:
+For payloads larger than 10 KB, the server may return the response compressed as `application/gzip` — but **only** when the client sends:
 
 ```
-Accept: application/gzip
+Accept-Encoding: gzip
 ```
 
-The `Accept-Encoding: gzip` header is transport-level and does **not** trigger a gzip content-type response. If neither header is present (or `Accept: application/json` is used), the response is always `application/json`.
+If the client omits that header, or explicitly uses `Accept-Encoding: identity`, the response stays `application/json` in the standard envelope.
 
 When gzip is returned, the response includes two diagnostic headers:
 
@@ -82,6 +84,8 @@ When gzip is returned, the response includes two diagnostic headers:
 ```
 fyso_meta({ action: "import", data: "<json-string>" })
 ```
+
+The grouped MCP action delegates to the legacy metadata import tool. The `data` field must be a JSON string.
 
 ### REST endpoint
 

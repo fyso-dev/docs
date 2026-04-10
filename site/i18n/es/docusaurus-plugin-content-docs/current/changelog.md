@@ -1,3 +1,44 @@
+## v1.41.0 — 2026-04-03
+
+### Funcionalidades — UX de administracion y scheduling
+
+- **Rediseño de la pagina de tenants** — La pagina de tenants para superadmin ahora usa una vista mas compacta y orientada por organizacion para revisar workspaces mas rapido.
+- **Herramienta MCP `setup_scheduling`** — Nueva herramienta idempotente que crea `_fyso_schedules`, `_fyso_schedule_exceptions` y `_fyso_bookings` antes de usar los flujos de scheduling en un tenant.
+- **Mayor claridad en el selector de organizaciones** — Las organizaciones personales que no te pertenecen ahora se muestran como `Personal (Owner Name)` y exhiben badges de rol en el switcher.
+
+### Correcciones — Metadata y MCP
+
+- **Contexto de tenant en MCP stateless** — Las requests MCP que no traen estado previo de sesion ahora recuperan correctamente el tenant seleccionado.
+- **Endurecimiento de export/import de metadata** — `/metadata/export` conserva el envelope JSON estandar en respuestas normales, negocia gzip cuando corresponde, y `/metadata/import` restaura correctamente filas de entidades y metadata nullable de custom fields.
+- **Cobertura smoke para metadata** — Se agregaron pruebas end-to-end para export/import de metadata y negociacion por headers para detectar regresiones antes.
+
+### Correcciones — Scheduling
+
+- **Bootstrap de scheduling y carreras al reservar** — Los tenants nuevos ahora reciben las entidades requeridas de scheduling, la falta de setup devuelve un `422` claro y la creacion de slots cierra una condicion de carrera TOCTOU.
+
+---
+
+## v1.40.0 — 2026-04-01
+
+### Funcionalidades — App Distribution
+
+- **Clonado de metadata para tenants `instance`** — La creacion de un tenant `instance` ahora puede clonar la metadata desde su tenant standalone de origen.
+- **Forwarding de `mode` y `sourceTenantId`** — MCP `create_tenant` y `POST /auth/tenants` ahora propagan de forma consistente los campos de app distribution durante la creacion del tenant.
+
+### Funcionalidades — Developer Experience
+
+- **Scripts auxiliares de equipo** — Se agregaron `lib/start-team` y `lib/team-status` para iniciar e inspeccionar sesiones locales multi-agent/dev.
+- **Cobertura E2E para grupos de herramientas MCP** — Se agregaron smoke tests sobre todos los grupos de herramientas MCP documentados para validar el comportamiento del servidor en vivo.
+
+### Correcciones
+
+- **Aplicacion consistente de `instanceGuard`** — Las rutas de mutacion de schema ahora aplican la proteccion de tenants instance en el orden correcto de middlewares.
+- **Correcciones de transporte de metadata** — La exportacion de metadata ahora respeta `Accept-Encoding` para la negociacion de contenido, y las correcciones de importacion manejan inserts de entidades y valores nullable en `isSystem`.
+- **Bootstrap de scheduling** — Las entidades del sistema de scheduling se crean al crear un tenant para que los flujos de reservas funcionen en tenants nuevos sin reparacion manual.
+- **Pulido de landing y mensajeria** — Los CTAs de signup ahora van a onboarding, la web incluye favicon y los hooks de mensajes de agentes manejan correctamente estado de thread undefined.
+
+---
+
 ## v1.34.0 — 2026-03-17
 
 ### Funcionalidades
