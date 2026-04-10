@@ -2,7 +2,7 @@
 
 Complete reference of all MCP tools available in Fyso.
 
-The MCP server exposes **8 grouped tools** (each with an `action` enum parameter) plus **7 super admin tools**. No individual tools are exposed. Configure which tools are available with the `FYSO_TOOLS` environment variable. See [Tool Profiles](tool-profiles.md).
+The MCP server exposes **10 grouped tools** (each with an `action` enum parameter), plus `fyso_welcome` and `setup_scheduling`. Legacy tool names such as `export_metadata` and `import_metadata` are still dispatched for backward compatibility. Configure which tools are available with the `FYSO_TOOLS` environment variable. See [Tool Profiles](tool-profiles.md).
 
 ## How grouped tools work
 
@@ -14,6 +14,18 @@ fyso_data({ action: "query", entity: "tasks", filters: "status = open" })
 fyso_auth({ action: "list_tenants" })
 ```
 
+## Standalone utility tools
+
+These tools are advertised separately from the grouped routers:
+
+| Tool | Description | Notes |
+|------|-------------|-------|
+| `fyso_welcome` | First-run onboarding helper | Suggests an initial schema based on business type |
+| `setup_scheduling` | Initialise scheduling system entities | Run once on a new tenant before `get_slots` or `create_booking` |
+| `export_metadata` | Backward-compatible metadata export tool | See [Import / Export Metadata](../admin/import-export.md) |
+| `import_metadata` | Backward-compatible metadata import tool | See [Import / Export Metadata](../admin/import-export.md) |
+
+---
 ---
 
 ## `fyso_data` — Records and scheduling

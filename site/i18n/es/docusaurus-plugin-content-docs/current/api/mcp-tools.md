@@ -6,7 +6,7 @@ sidebar_position: 2
 
 Referencia completa de todas las herramientas MCP disponibles.
 
-El servidor MCP expone **10 herramientas agrupadas** (cada una con un parametro `action` tipo enum), mas `fyso_welcome` para onboarding. Configura que herramientas se exponen con la variable de entorno `FYSO_TOOLS`. Ver [Perfiles de herramientas](tool-profiles.md).
+El servidor MCP expone **10 herramientas agrupadas** (cada una con un parametro `action` tipo enum), mas `fyso_welcome` y `setup_scheduling`. Los nombres legacy como `export_metadata` e `import_metadata` siguen despachandose por compatibilidad hacia atras. Configura que herramientas se exponen con la variable de entorno `FYSO_TOOLS`. Ver [Perfiles de herramientas](tool-profiles.md).
 
 ## Como funcionan las herramientas agrupadas
 
@@ -17,6 +17,17 @@ fyso_data({ action: "create", entity: "tasks", data: { title: "Fix bug" } })
 fyso_data({ action: "query", entity: "tasks", filters: "status = open" })
 fyso_auth({ action: "list_tenants" })
 ```
+
+## Herramientas utilitarias standalone
+
+Estas herramientas se anuncian por separado de los routers agrupados:
+
+| Herramienta | Descripcion | Notas |
+|-------------|-------------|-------|
+| `fyso_welcome` | Asistente de onboarding para el primer uso | Sugiere un schema inicial segun el tipo de negocio |
+| `setup_scheduling` | Inicializa las entidades del sistema de scheduling | Ejecutarla una vez en un tenant nuevo antes de `get_slots` o `create_booking` |
+| `export_metadata` | Herramienta legacy compatible para exportar metadata | Ver [Import / Export de metadata](/docs/admin/import-export) |
+| `import_metadata` | Herramienta legacy compatible para importar metadata | Ver [Import / Export de metadata](/docs/admin/import-export) |
 
 ---
 
