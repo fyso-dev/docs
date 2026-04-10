@@ -4,84 +4,120 @@
 
 **Profile:** core
 
-Creates a booking after validating that the slot is available.
+Creates a booking after validating that the requested slot is available.
+
+The booking is stored in `_fyso_bookings` with `status = "confirmed"`.
 
 ### Parameters
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `profesional_id` | string | Yes | Professional's UUID |
-| `paciente_id` | string | Yes | Patient/client UUID |
-| `fecha` | string | Yes | Date (YYYY-MM-DD) |
-| `hora` | string | Yes | Time (HH:MM) |
-| `duracion` | number | No | Duration in minutes. Default: professional's slot duration |
-| `notas` | string | No | Optional notes |
-
-### Internal Flow
-
-1. Queries available slots for the date
-2. Verifies that `fecha + hora` is in the available slots list
-3. If available, creates a record in the `turnos` entity with `estado = "confirmado"`
-4. If not available, returns an error
+| `professional_id` | string | Yes | Professional UUID |
+| `patient_id` | string | Yes | Patient/client UUID |
+| `date` | string | Yes | Date in `YYYY-MM-DD` |
+| `time` | string | Yes | Time in `HH:MM` |
+| `duration` | number | No | Duration in minutes. Defaults to the schedule slot size |
+| `notes` | string | No | Optional notes |
 
 ### Example
 
-```
+```js
 create_booking({
-  profesional_id: "uuid-del-profesional",
-  paciente_id: "uuid-del-paciente",
-  fecha: "2026-02-20",
-  hora: "10:00",
-  notas: "Control de rutina"
+  professional_id: "9d5e3e28-6eb8-49e3-8a34-1a6b7d91f002",
+  patient_id: "1f8f3577-365a-4e28-aa41-88e8cb4a351e",
+  date: "2026-05-05",
+  time: "10:00",
+  notes: "Routine checkup"
 })
 ```
+
+### Internal Flow
+
+1. Validates request shape and UUID/date/time formats.
+2. Checks whether scheduling entities exist for the tenant.
+3. Computes current availability for the requested slot.
+4. Creates a record in `_fyso_bookings` with `status = "confirmed"` if the slot is still available.
+5. Rejects the request if the slot is missing or already taken.
 
 ### Successful Response
 
 ```json
 {
   "success": true,
-  "message": "Booking created for 2026-02-20 at 10:00",
-  "record": {
-    "id": "uuid-del-turno",
-    "profesional_id": "uuid",
-    "paciente_id": "uuid",
-    "fecha": "2026-02-20",
-    "hora": "10:00",
-    "duracion": 30,
-    "estado": "confirmado",
-    "notas": "Control de rutina"
+  "data": {
+    "id": "uuid-del-booking",
+    "professional_id": "9d5e3e28-6eb8-49e3-8a34-1a6b7d91f002",
+    "patient_id": "1f8f3577-365a-4e28-aa41-88e8cb4a351e",
+    "date": "2026-05-05",
+    "time": "10:00",
+    "duration": 30,
+    "status": "confirmed",
+    "notes": "Routine checkup"
   }
 }
 ```
 
-### Error: Slot Not Available
+### Common Errors
+
+Slot not available:
 
 ```json
 {
   "success": false,
-  "error": "Slot 2026-02-20 10:00 is not available for this professional"
+  "error": "Slot 2026-05-05 10:00 is not available for this professional"
 }
 ```
 
-## Cancel an Appointment
+Scheduling not initialized:
 
-There is no dedicated tool for canceling. Update the record directly:
-
-```
-update_record({
-  entityName: "turnos",
-  recordId: "uuid-del-turno",
-  data: { estado: "cancelado" }
-})
+```json
+{
+  "success": false,
+  "error": "Scheduling entities not found. Run setup_scheduling (MCP) or POST /scheduling/setup to initialise _fyso_schedules, _fyso_schedule_exceptions, and _fyso_bookings."
+}
 ```
 
 ## REST API
 
-The REST endpoint for availability:
+Create booking:
 
-```
-GET /api/scheduling/available-slots?profesional_id=uuid&fecha=2026-02-20
+```text
+POST /api/scheduling/bookings
+Authorization: Bearer TOKEN
+Content-Type: application/json
 ```
 
-Headers: `Authorization: Bearer TOKEN`
+Request body:
+
+```json
+{
+  "professional_id": "9d5e3e28-6eb8-49e3-8a34-1a6b7d91f002",
+  "patient_id": "1f8f3577-365a-4e28-aa41-88e8cb4a351e",
+  "date": "2026-05-05",
+  "time": "10:00",
+  "duration": 30,
+  "notes": "Routine checkup"
+}
+```
+
+Availability lookup:
+
+```text
+GET /api/scheduling/available-slots?professional_id=<uuid>&date=2026-05-05
+```
+
+## Cancellation
+
+There is no dedicated cancel-booking tool yet.
+
+To cancel a booking, update the `_fyso_bookings` record and set:
+
+```json
+{ "status": "cancelled" }
+```
+
+## Notes
+
+- `create_booking` uses English parameter names in both MCP and REST.
+- The engine does not write to domain entities such as `appointments`.
+- If your tenant uses the `clinica` preset, treat `_fyso_bookings` as scheduling-engine state and add your own sync to `appointments` if your product flow needs both.
