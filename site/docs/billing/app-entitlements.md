@@ -353,8 +353,8 @@ Five exclusive page states:
 
 | Condition | Banner |
 |-----------|--------|
-| `status = 'active_until_period_end'` | "Your subscription ends on {currentPeriodEnd}" |
-| `status = 'past_due'` | "Payment pending. Reactivate before {pastDueSince + 30d}" |
+| `status = 'active_until_period_end'` | "Your subscription ends on `currentPeriodEnd`" |
+| `status = 'past_due'` | "Payment pending. Reactivate before `pastDueSince + 30d`" |
 | `status = 'suspended'` | "Your subscription is suspended" + "Reactivate subscription" CTA |
 
 ### Paddle.js checkout overlay
