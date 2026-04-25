@@ -1,3 +1,53 @@
+## v1.43.0 — 2026-04-25
+
+### Feature — Fyso Teams paid-only entitlement (Paddle)
+
+Introduces a subscription-gated app entitlement system. Fyso Teams now requires
+an active Paddle monthly subscription (USD 15/mo) before an org can create an instance.
+The system is generic: any distributed app can opt into `required_plan = 'paid'`.
+
+**Schema (migrations 0085–0087):**
+
+- `app_catalog` extended with 8 new columns: `source_tenant_id`, `required_plan`, `trial_config`, `provider`, `paddle_price_id`, `allow_free_instances`, `max_instances_per_entitlement`, `display_price`. Existing apps default to `required_plan = 'free'` — no behavior change.
+- New table `app_entitlements` — subscription state per `(org_id, source_tenant_id)` with status enum `active | active_until_period_end | past_due | suspended | refunded`.
+- New table `paddle_webhook_events` — idempotency table keyed by Paddle `event_id` (`ON CONFLICT DO NOTHING`). Generic; reusable by any future Paddle subscription.
+
+**New endpoints:**
+
+- `GET /api/auth/app-entitlements/:sourceTenantId` — returns entitlement state including `canCreateInstance` (the consolidated access flag).
+- `POST /api/auth/app-entitlements/:sourceTenantId/checkout` — creates a Paddle checkout session; supports new subscription and reactivation.
+
+**Modified endpoint:**
+
+- `POST /api/auth/tenants` — now enforces paid entitlement for paid apps before creating an instance. Returns `402 APP_SUBSCRIPTION_REQUIRED` or `409 APP_INSTANCE_QUOTA_REACHED` as applicable.
+
+**Webhook routing:**
+
+- `POST /api/webhooks/paddle` extended: `custom_data.scope = 'app_entitlement'` routes to the new entitlement handler. All other events continue to the existing billing handler.
+- Handles: `subscription.created`, `subscription.updated`, `subscription.canceled`, `transaction.completed`, `adjustment.created`.
+
+**State machine cron:**
+
+- In-process `startEntitlementTransitionsCron()` runs every 1 hour.
+- T1: `active_until_period_end` → `past_due` when `current_period_end` passes.
+- T2: `past_due` → `suspended` after 30 days. Both transitions set `tenants.is_active = false`.
+
+**Frontend (Wave 3):**
+
+- New route `/apps/fyso-teams` with states: `paywall`, `polling`, `create`, `quota_reached`, `error`.
+- Status-aware banners for `active_until_period_end`, `past_due`, and `suspended`.
+- Paddle.js overlay checkout with `eventCallback` per `Checkout.open` call.
+- Post-checkout polling: 2 s interval, 60 s timeout, `SlowConfirmModal` on timeout.
+- i18n namespace `fysoteams`; `common.retry` added to `en.json` and `es.json`.
+
+**New error codes:** `APP_SUBSCRIPTION_REQUIRED` (402), `APP_INSTANCE_QUOTA_REACHED` (409), `APP_NOT_CONFIGURED` (500), `APP_NOT_PAID` (400), `ENTITLEMENT_ALREADY_ACTIVE` (409).
+
+**New env vars:** `PADDLE_FYSO_TEAMS_PRICE_ID`, `FYSO_TEAMS_SOURCE_TENANT_ID`.
+
+See [App Entitlements (Paddle)](/docs/billing/app-entitlements) for the full reference.
+
+---
+
 ## v1.41.0 — 2026-04-03
 
 ### Features — Admin UX and Scheduling
