@@ -1,3 +1,16 @@
+## v1.43.2 — 2026-05-02
+
+### Feature — Paddle Webhook Observability
+
+- **Paddle ingress logs** — `POST /api/webhooks/paddle` now records every delivery that reaches the route, including missing signatures, invalid signatures, valid billing events, and valid app-entitlement events. Logs capture signature status, selected handler, HTTP status, Paddle IDs, Fyso org/app context, timestamps, and handler errors.
+- **Superadmin Paddle Webhooks page** — `/superadmin/paddle-webhooks` shows delivery totals, signed/rejected/error summaries, latest deliveries, app context, Paddle IDs, and error details for support triage.
+- **Superadmin API filters** — `GET /api/admin/platform/paddle-webhooks` supports pagination plus `signatureStatus`, `handler`, `eventType`, and free-text `q` filters. Search covers event, notification, customer, subscription, transaction, org, and source tenant IDs.
+- **Support tooling** — Added `support:replay-app-entitlement` for dry-run-first signed app-entitlement webhook replay, and `smoke:fyso-teams-payment` for opt-in Fyso Teams payment diagnostics.
+
+See [Paddle Webhook Observability](/docs/billing/paddle-webhook-observability) for the full operator guide.
+
+---
+
 ## v1.41.0 — 2026-04-03
 
 ### Features — Admin UX and Scheduling

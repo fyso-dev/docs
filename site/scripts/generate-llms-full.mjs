@@ -82,6 +82,7 @@ const FILES = [
   // Billing
   'billing/plans.md',
   'billing/storage-usage.md',
+  'billing/paddle-webhook-observability.md',
   'billing/stripe.md',
   // Changelog & intro
   'changelog.md',

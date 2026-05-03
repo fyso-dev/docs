@@ -44,4 +44,4 @@ If you prefer the web panel or want to understand how things work:
 | [Deployment](deployment/static-sites.md) | Static sites, GitHub Actions, custom domains |
 | [PDF](pdf/generation.md) | Templates and document generation |
 | [Scheduling](scheduling/availability.md) | Availability, bookings, schedules |
-| [Billing](billing/plans.md) | Plans, limits, storage usage |
+| [Billing](billing/plans.md) | Plans, limits, storage usage, payment provider diagnostics |

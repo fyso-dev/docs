@@ -1,6 +1,8 @@
 # Stripe and Payments
 
-Fyso billing is managed through Stripe.
+Fyso supports provider-specific billing flows. This page covers the Stripe subscription
+flow. For Paddle webhook diagnostics and the superadmin ingress log, see
+[Paddle Webhook Observability](./paddle-webhook-observability.md).
 
 ## Subscription Flow
 
