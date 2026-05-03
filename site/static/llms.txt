@@ -102,6 +102,7 @@
 
 - [Plans and Limits](https://docs.fyso.dev/docs/billing/plans): Free, Pro, Beta, Enterprise — limits, rate limits, quotas
 - [Storage Usage](https://docs.fyso.dev/docs/billing/storage-usage): DB, knowledge base, bucket breakdown
+- [Paddle Webhook Observability](https://docs.fyso.dev/docs/billing/paddle-webhook-observability): Superadmin Paddle ingress logs, filters, support replay, manual payment smoke
 - [Stripe](https://docs.fyso.dev/docs/billing/stripe): Subscription flow, customer portal, webhooks
 
 ## Optional
