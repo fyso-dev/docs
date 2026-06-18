@@ -54,6 +54,7 @@ See [REST API](/docs/api/rest-api) for endpoint reference.
 | **Deploy** | Static sites on `*.sites.fyso.dev`, custom domains (Pro), persistent deploy tokens for CI/CD |
 | **Integration** | Channels (custom MCP tools for bots), [web widget](./web-widget.md), bot identity system, publishable apps catalog, n8n community node |
 | **Memory** | [Agent memory](./agent-memory.md) — fact extraction and retrieval across conversations per end user |
+| **Agent operations** | [Agent Awareness Framework](./agent-awareness-framework.md) — methodology for private worklogs, live awareness, handoff, and self-improvement |
 | **Compliance** | [RGPD / GDPR](./rgpd-compliance.md) — DPA acceptance, session AI consent, data suppression, audit log |
 | **Testing** | [Test panel](./test-panel.md) — live chat with inspector modal (Flow, Steps, Summary, Raw) |
 
